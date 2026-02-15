@@ -271,7 +271,10 @@ export default function PayrollPage() {
                                         </div>
                                     </td>
                                     <td className="px-8 py-6 text-right">
-                                        <button className="p-2.5 rounded-xl bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all">
+                                        <button
+                                            onClick={() => toast('Payslip generation protocol initiated', { icon: '📄' })}
+                                            className="p-2.5 rounded-xl bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+                                        >
                                             <FileText className="w-5 h-5" />
                                         </button>
                                     </td>

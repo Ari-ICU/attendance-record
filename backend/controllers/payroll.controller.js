@@ -1,5 +1,6 @@
 const PayrollService = require('../services/payroll.service');
-const ApiResponse = require('../utils/apiResponse');
+const { ApiResponse } = require('../utils/apiResponse');
+
 
 class PayrollController {
     static async getStats(req, res) {
