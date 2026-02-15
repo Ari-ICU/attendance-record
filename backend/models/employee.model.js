@@ -13,12 +13,12 @@ const employeeSchema = new mongoose.Schema({
     // New photo field
     photoUrl: {
         type: String,
-        default: null, // Can be null if no photo uploaded
+        default: null,
         trim: true
     },
 
     faceDescriptor: {
-        type: [Number], // 128-d descriptor as array
+        type: [Number],
         default: null
     },
     faceVerifiedAt: {

@@ -7,7 +7,8 @@ import VerifyCard from '@/components/verify/VerifyCard';
 import { EmployeeService } from '@/services/employee.service';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Fingerprint, ShieldCheck, UserCheck } from 'lucide-react';
+import { Clock, Fingerprint, Search, ShieldCheck, UserCheck, Users } from 'lucide-react';
+import Image from 'next/image';
 
 export default function VerifyPage() {
     const params = useParams();
@@ -30,6 +31,13 @@ export default function VerifyPage() {
         position: '---',
         manager: '---',
     });
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredEmployees = employees.filter(emp =>
+        `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.position?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -136,12 +144,75 @@ export default function VerifyPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12 items-start">
-                    {/* Identification Card Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-8 items-start">
+                    {/* Directory Section */}
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="order-2 lg:order-1"
+                        className="lg:col-span-3 order-3 lg:order-1"
+                    >
+                        <div className="glass-pane rounded-3xl p-6 border border-white/10 shadow-2xl bg-white/[0.02] h-[600px] flex flex-col">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-2 bg-indigo-500/10 rounded-xl">
+                                    <Users className="w-5 h-5 text-indigo-400" />
+                                </div>
+                                <h2 className="text-lg font-black text-white tracking-tight">Directory</h2>
+                            </div>
+
+                            <div className="relative mb-6">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                <input
+                                    type="text"
+                                    placeholder="Search identity..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-slate-300 placeholder:text-slate-600 outline-none focus:border-indigo-500/50 transition-all"
+                                />
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-2">
+                                {filteredEmployees.length > 0 ? (
+                                    filteredEmployees.map((emp) => (
+                                        <button
+                                            key={emp._id}
+                                            onClick={() => handleEmployeeSelect(emp._id)}
+                                            className={`w-full flex items-center gap-4 p-3 rounded-2xl border transition-all group ${selectedEmployeeId === emp._id
+                                                ? 'bg-indigo-600/20 border-indigo-500/50'
+                                                : 'bg-white/5 border-white/5 hover:border-white/10 hover:bg-white/[0.08]'
+                                                }`}
+                                        >
+                                            <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-800 flex-shrink-0 border border-white/10">
+                                                {emp.photoUrl ? (
+                                                    <img src={emp.photoUrl} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Fingerprint className="w-5 h-5 text-slate-600 absolute inset-0 m-auto" />
+                                                )}
+                                            </div>
+                                            <div className="text-left overflow-hidden">
+                                                <div className="text-[11px] font-black text-white truncate leading-tight group-hover:text-indigo-400 transition-colors">
+                                                    {emp.firstName} {emp.lastName}
+                                                </div>
+                                                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                                                    {emp.position}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                                        <ShieldCheck className="w-8 h-8 text-slate-700 mb-3" />
+                                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">No target found</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Identification Card Section */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="lg:col-span-4 order-2"
                     >
                         <div className="glass-pane rounded-3xl p-8 border border-white/10 shadow-2xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -184,32 +255,20 @@ export default function VerifyPage() {
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="order-1 lg:order-2"
+                        className="lg:col-span-5 order-1 lg:order-3"
                     >
                         <div className="glass-pane rounded-3xl p-8 border border-white/10 shadow-2xl relative overflow-hidden bg-white/[0.02]">
                             <div className="flex flex-col items-center text-center">
                                 <div className="w-full max-w-md bg-slate-950/50 rounded-2xl overflow-hidden border border-white/5 shadow-inner relative group">
-                                    {selectedEmployeeId ? (
-                                        <VerifyWebcam employeeId={selectedEmployeeId} mode={mode} />
-                                    ) : (
-                                        <div className="aspect-[4/3] flex flex-col items-center justify-center p-8 bg-slate-950/50">
-                                            <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center mb-6 border border-blue-500/20">
-                                                <Fingerprint className="w-10 h-10 text-blue-500/50" />
-                                            </div>
-                                            <h3 className="text-white font-black text-lg mb-2 italic">Awaiting Identity</h3>
-                                            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-[240px] mb-8">Select subject to initialize scanner</p>
-
-                                            <select
-                                                onChange={(e) => handleEmployeeSelect(e.target.value)}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs font-black text-slate-300 uppercase tracking-widest outline-none focus:border-blue-500/50 transition-all appearance-none text-center"
-                                            >
-                                                <option value="">Choose Employee</option>
-                                                {employees.map(emp => (
-                                                    <option key={emp._id} value={emp._id}>{emp.firstName} {emp.lastName}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
+                                    <VerifyWebcam
+                                        employeeId={selectedEmployeeId}
+                                        mode={mode}
+                                        onSuccess={(data) => {
+                                            if (data.employee) {
+                                                handleEmployeeSelect(data.employee._id);
+                                            }
+                                        }}
+                                    />
 
                                     {/* Scanning Animation Overlays */}
                                     {selectedEmployeeId && (

@@ -64,13 +64,14 @@ export interface EmployeeUpdateData {
 
 // Data for face verification request
 export interface VerifyFaceData {
-    employeeId: string;
+    employeeId?: string;
     faceDescriptor: number[]; // required for sending face embeddings
 }
 
 // Result of face verification
 export interface VerifyFaceResult {
-    employeeId: string;
+    employeeId?: string;
+    employee?: Employee;
     similarity: number;
     verifiedAt: string; // ISO date string
 }

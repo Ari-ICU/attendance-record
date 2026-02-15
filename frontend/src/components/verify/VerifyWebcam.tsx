@@ -20,7 +20,7 @@ const DEFAULT_OFFICE_COORDS = { lat: 11.5564, lng: 104.9282 };
 const DEFAULT_MAX_RANGE = 50;
 
 interface FaceVerifyProps {
-    employeeId: string;
+    employeeId?: string;
     mode?: 'verify-only' | 'check-in' | 'check-out';
     onSuccess?: (data: any) => void;
 }
@@ -144,9 +144,8 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
             let statusMessage = 'Position face within scanner frame';
 
             if (!employeeId) {
-                statusMessage = 'Awaiting Authorization ID';
-                setStatus(statusMessage);
-                return;
+                statusMessage = 'Awaiting Biometric Data...';
+                // Don't return, allow detection for identification
             }
 
             if (detections.length === 0) {
@@ -204,23 +203,29 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
 
                         if (mode === 'check-in') {
                             result = await AttendanceService.checkIn({
-                                employeeId,
+                                employeeId: employeeId || undefined,
                                 method: 'face_verification',
                                 faceDescriptor: descriptorArray
                             });
                         } else if (mode === 'check-out') {
                             result = await AttendanceService.checkOut({
-                                employeeId,
+                                employeeId: employeeId || undefined,
                                 method: 'face_verification',
                                 faceDescriptor: descriptorArray
                             });
                         } else {
-                            result = await EmployeeService.verifyFace({ employeeId, faceDescriptor: descriptorArray });
+                            result = await EmployeeService.verifyFace({
+                                employeeId: employeeId || '', // verifyFace might still need an ID or we should handle it
+                                faceDescriptor: descriptorArray
+                            });
                         }
 
+                        // If it was identification (no employeeId initially), result should contain the employee info
+                        const identifiedName = result.employee ? `${result.employee.firstName} ${result.employee.lastName}` : '';
+
                         setIsSuccess(true);
-                        setStatus('Authentication Confirmed');
-                        toast.success('Check-point passed.');
+                        setStatus(identifiedName ? `Welcome, ${identifiedName}` : 'Authentication Confirmed');
+                        toast.success(identifiedName ? `Identified: ${identifiedName}` : 'Check-point passed.');
                         if (onSuccess) onSuccess(result);
 
                         setTimeout(() => {

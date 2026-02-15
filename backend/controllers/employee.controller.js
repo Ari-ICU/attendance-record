@@ -114,19 +114,28 @@ class EmployeeController {
     // Verify face in real-time using live image or optional stored photo
     static async verifyFace(req, res) {
         try {
-            const { employeeId, image } = req.body;
-            if (!Types.ObjectId.isValid(employeeId)) {
-                return res.status(400).json(ApiResponse.error('Invalid employee ID', 400));
+            const { employeeId, image, faceDescriptor } = req.body;
+            let result;
+
+            if (employeeId) {
+                if (!Types.ObjectId.isValid(employeeId)) {
+                    return res.status(400).json(ApiResponse.error('Invalid employee ID', 400));
+                }
+
+                if (!image && !faceDescriptor) {
+                    return res.status(400).json(ApiResponse.error('No image or descriptor provided for verification', 400));
+                }
+
+                const liveInput = faceDescriptor || Buffer.from(image, 'base64');
+                result = await EmployeeService.verifyFace(employeeId, liveInput);
+            } else if (faceDescriptor || image) {
+                // Identity find
+                console.log('[Employee] Attempting automatic identification...');
+                const liveInput = faceDescriptor || Buffer.from(image, 'base64');
+                result = await EmployeeService.identifyEmployee(liveInput);
+            } else {
+                return res.status(400).json(ApiResponse.error('Employee ID or identity input required', 400));
             }
-
-            if (!image) {
-                return res.status(400).json(ApiResponse.error('No image provided for verification', 400));
-            }
-
-            const liveImageBuffer = Buffer.from(image, 'base64');
-
-            // Pass buffer directly; EmployeeService handles descriptor extraction
-            const result = await EmployeeService.verifyFace(employeeId, liveImageBuffer);
 
             return res.status(200).json(ApiResponse.success(result, 'Face verification successful', 200));
         } catch (err) {

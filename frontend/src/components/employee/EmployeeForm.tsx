@@ -51,6 +51,17 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
     }, []);
 
 
+    const formatDateForInput = (dateString?: string) => {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '';
+            return date.toISOString().split('T')[0];
+        } catch (e) {
+            return '';
+        }
+    };
+
     useEffect(() => {
         if (initialData) {
             setFormData({
@@ -60,17 +71,21 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
                 phone: initialData.phone,
                 position: initialData.position,
                 department: initialData.department,
-                dateOfJoining: initialData.dateOfJoining,
+                dateOfJoining: formatDateForInput(initialData.dateOfJoining),
                 type: initialData.type || 'employee',
                 baseSalary: initialData.baseSalary || 0,
                 hourlyRate: initialData.hourlyRate || 0,
                 currency: initialData.currency || 'USD',
-                image: undefined, // Reset image field
+                image: undefined,
             });
 
             if (initialData.photoUrl) setImagePreview(getFullImageUrl(initialData.photoUrl) || null);
         } else {
-            setFormData(prev => ({ ...prev, type: initialType }));
+            setFormData(prev => ({
+                ...prev,
+                type: initialType,
+                dateOfJoining: formatDateForInput(new Date().toISOString())
+            }));
         }
     }, [initialData, initialType]);
 
@@ -94,8 +109,8 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
             const reader = new FileReader();
             reader.onloadend = () => {
                 const base64 = reader.result as string;
-                setFormData({ ...formData, image: base64.split(',')[1] }); // Store only base64 string
-                setImagePreview(base64); // Show preview
+                setFormData({ ...formData, image: base64.split(',')[1] });
+                setImagePreview(base64);
             };
             reader.readAsDataURL(file);
         }
