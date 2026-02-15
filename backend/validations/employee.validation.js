@@ -11,11 +11,14 @@ const employeeCreateSchema = Joi.object({
     department: Joi.string().trim().optional().allow('', null),
     type: Joi.string().valid('employee', 'student').default('employee'),
     dateOfJoining: Joi.date().required(),
-    photoUrl: Joi.string().optional().allow(null, ''), // New field
-    faceDescriptor: Joi.array().items(Joi.number()).optional().allow(null), // Optional 128-d face descriptor
+    photoUrl: Joi.string().optional().allow(null, ''),
+    faceDescriptor: Joi.array().items(Joi.number()).optional().allow(null),
     faceVerifiedAt: Joi.date().optional().allow(null),
     faceVerificationEnabled: Joi.boolean().optional().default(false),
-    isActive: Joi.boolean().optional().default(true)
+    isActive: Joi.boolean().optional().default(true),
+    baseSalary: Joi.number().min(0).optional().default(0),
+    hourlyRate: Joi.number().min(0).optional().default(0),
+    currency: Joi.string().valid('USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD').default('USD')
 });
 
 const employeeUpdateSchema = Joi.object({
@@ -31,7 +34,10 @@ const employeeUpdateSchema = Joi.object({
     faceDescriptor: Joi.array().items(Joi.number()).optional().allow(null),
     faceVerifiedAt: Joi.date().optional().allow(null),
     faceVerificationEnabled: Joi.boolean().optional(),
-    isActive: Joi.boolean()
+    isActive: Joi.boolean(),
+    baseSalary: Joi.number().min(0).optional(),
+    hourlyRate: Joi.number().min(0).optional(),
+    currency: Joi.string().valid('USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD').optional()
 }).min(1);
 
 const employeeQuerySchema = Joi.object({

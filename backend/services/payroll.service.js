@@ -70,35 +70,84 @@ class PayrollService {
     }
 
     // Helper to generate monthly payroll for all employees
+    // Helper to generate monthly payroll for all employees
     static async generateMonthlyPayroll(month, year) {
         const employees = await Employee.find({ isActive: true });
-        const createdRecords = [];
+        const processedRecords = [];
+
+        // Get start and end dates for the month to query attendance
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59);
+
+        // Fetch all attendance records for this period once to minimize DB calls
+        const allAttendance = await Attendance.find({
+            date: { $gte: startDate, $lte: endDate },
+            status: 'present' // Only count present days
+        });
 
         for (const emp of employees) {
             try {
-                // Check if already exists
+                // Check if a finalized (disbursed) payroll already exists
                 const existing = await Payroll.findOne({ employeeId: emp._id, month, year });
-                if (existing) continue;
+                if (existing && existing.status === 'disbursed') {
+                    continue; // Skip if already paid
+                }
 
-                // Simple logic: Base salary
-                const netAmount = emp.baseSalary;
+                let baseAmount = 0;
+                let totalHours = 0;
 
-                const payroll = new Payroll({
+                // Calculate Salary
+                if (emp.hourlyRate > 0) {
+                    // Hourly Calculation
+                    const empAttendance = allAttendance.filter(a => a.employeeId.toString() === emp._id.toString());
+
+                    // Sum up hours (assuming checkIn/checkOut exist and are valid)
+                    empAttendance.forEach(record => {
+                        if (record.checkIn && record.checkOut) {
+                            const inTime = new Date(record.checkIn);
+                            const outTime = new Date(record.checkOut);
+                            const durationMs = outTime - inTime;
+                            const durationHours = durationMs / (1000 * 60 * 60);
+                            totalHours += durationHours;
+                        }
+                    });
+
+                    baseAmount = parseFloat((totalHours * emp.hourlyRate).toFixed(2));
+                } else {
+                    // Fixed Monthly Salary
+                    baseAmount = emp.baseSalary || 0;
+                }
+
+                // Simple Deductions/Bonuses Logic (Placeholders for now)
+                const bonus = 0;
+                const deductions = 0;
+                const netAmount = Math.max(0, baseAmount + bonus - deductions);
+
+                // Create or Update Payroll Record
+                const payrollData = {
                     employeeId: emp._id,
                     month,
                     year,
-                    baseAmount: emp.baseSalary,
+                    baseAmount,
+                    bonus,
+                    deductions,
                     netAmount,
-                    status: 'pending'
-                });
+                    status: 'pending',
+                    totalHours: parseFloat(totalHours.toFixed(2)) // Optional: store hours if schema supports it
+                };
 
-                await payroll.save();
-                createdRecords.push(payroll);
+                const payroll = await Payroll.findOneAndUpdate(
+                    { employeeId: emp._id, month, year },
+                    payrollData,
+                    { new: true, upsert: true }
+                );
+
+                processedRecords.push(payroll);
             } catch (err) {
                 console.error(`Failed to generate payroll for ${emp.fullName}:`, err);
             }
         }
-        return createdRecords;
+        return processedRecords;
     }
 }
 
