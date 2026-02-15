@@ -16,9 +16,8 @@ const onRefreshed = (token: string) => {
     refreshSubscribers = [];
 };
 
-// Create Axios instance
 const api: AxiosInstance = axios.create({
-    baseURL: `${BASE_URL}/api`,
+    baseURL: BASE_URL,
     headers: { 'Content-Type': 'application/json' },
     withCredentials: true,
 });

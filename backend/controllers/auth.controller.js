@@ -103,6 +103,27 @@ class AuthController {
             return res.status(500).json(ApiResponse.error('Logout failed', 500, err.message));
         }
     }
+
+    static async getAllUsers(req, res) {
+        try {
+            const users = await AuthService.getAllUsers();
+            return res.status(200).json(ApiResponse.success(users, 'Users retrieved successfully'));
+        } catch (err) {
+            return res.status(500).json(ApiResponse.error('Failed to get users', 500, err.message));
+        }
+    }
+
+    static async updateUserRole(req, res) {
+        try {
+            const { id } = req.params;
+            const { role } = req.body;
+            const user = await AuthService.updateUserRole(id, role);
+            return res.status(200).json(ApiResponse.success(user, 'User role updated successfully'));
+        } catch (err) {
+            return res.status(400).json(ApiResponse.error('Failed to update user role', 400, err.message));
+        }
+    }
 }
+
 
 module.exports = AuthController;

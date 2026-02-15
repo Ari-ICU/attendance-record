@@ -23,7 +23,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EmployeeService } from '@/services/employee.service';
 import { Employee } from '@/types/employee.types';
 import { getFullImageUrl } from '@/utils/url.utils';
+import { PayrollService } from '@/services/payroll.service';
 import toast from 'react-hot-toast';
+
 
 export default function PayrollPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -32,11 +34,23 @@ export default function PayrollPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDisbursing, setIsDisbursing] = useState(false);
 
+    const [stats, setStats] = useState({
+        totalPayroll: 0,
+        disbursed: 0,
+        pending: 0,
+        efficiency: 99.8
+    });
+    const [ledger, setLedger] = useState<any[]>([]);
+
     const fetchData = async () => {
         try {
             setRefreshing(true);
-            const response = await EmployeeService.getAllEmployees({ limit: 1000 });
-            setEmployees(response.employees || []);
+            const [statsData, ledgerData] = await Promise.all([
+                PayrollService.getStats(),
+                PayrollService.getLedger()
+            ]);
+            setStats(statsData);
+            setLedger(ledgerData);
         } catch (error) {
             toast.error('Financial data sync failed');
         } finally {
@@ -45,29 +59,50 @@ export default function PayrollPage() {
         }
     };
 
+
     useEffect(() => {
         fetchData();
     }, []);
 
-    const filteredEmployees = employees.filter(emp =>
-        emp.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredLedger = ledger.filter(item =>
+        item.employee.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.employee.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Mock financial stats
-    const stats = [
-        { label: 'Total Payroll', value: '$124,500', icon: DollarSign, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: '+4.2%' },
-        { label: 'Disbursed', value: '$98,200', icon: Banknote, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: '82%' },
-        { label: 'Pending Distribution', value: '$26,300', icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: '18%' },
-        { label: 'System Efficiency', value: '99.8%', icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-500/10', trend: '+0.1%' },
+
+    const statCards = [
+        { label: 'Total Payroll', value: `$${stats.totalPayroll.toLocaleString()}`, icon: DollarSign, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: '+4.2%' },
+        { label: 'Disbursed', value: `$${stats.disbursed.toLocaleString()}`, icon: Banknote, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: '82%' },
+        { label: 'Pending Distribution', value: `$${stats.pending.toLocaleString()}`, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: '18%' },
+        { label: 'System Efficiency', value: `${stats.efficiency}%`, icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-500/10', trend: '+0.1%' },
     ];
 
-    const handleDisburse = () => {
-        setIsDisbursing(true);
-        setTimeout(() => {
+    const handleDisburse = async () => {
+        try {
+            setIsDisbursing(true);
+            await PayrollService.disburse();
             toast.success('Batch disbursement sequence completed');
+            fetchData();
+        } catch (err) {
+            toast.error('Disbursement failed');
+        } finally {
             setIsDisbursing(false);
-        }, 2000);
+        }
     };
+
+    const handleGenerate = async () => {
+        try {
+            setRefreshing(true);
+            await PayrollService.generate();
+            toast.success('Generated payroll for current cycle');
+            fetchData();
+        } catch (err) {
+            toast.error('Generation failed');
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
 
     return (
         <div className="space-y-8 pb-12">
@@ -84,6 +119,14 @@ export default function PayrollPage() {
 
                 <div className="flex items-center gap-3">
                     <button
+                        onClick={handleGenerate}
+                        disabled={refreshing}
+                        className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 text-slate-400 font-black text-xs tracking-widest hover:bg-white/10 transition-all border border-white/10 uppercase"
+                    >
+                        {refreshing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                        Generate Cycle
+                    </button>
+                    <button
                         onClick={handleDisburse}
                         disabled={isDisbursing}
                         className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-blue-600 text-white font-black text-xs tracking-[0.2em] hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/30 active:scale-95 disabled:opacity-50 uppercase italic"
@@ -92,11 +135,12 @@ export default function PayrollPage() {
                         Execute Multi-Pay
                     </button>
                 </div>
+
             </div>
 
             {/* Financial Overview Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat, index) => (
+                {statCards.map((stat, index) => (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -120,6 +164,7 @@ export default function PayrollPage() {
                     </motion.div>
                 ))}
             </div>
+
 
             {/* Main Ledger */}
             <motion.div
@@ -176,31 +221,31 @@ export default function PayrollPage() {
                                         </td>
                                     </tr>
                                 ))
-                            ) : filteredEmployees.map((emp, index) => (
-                                <tr key={emp._id} className="hover:bg-white/[0.02] transition-colors group">
+                            ) : filteredLedger.map((item, index) => (
+                                <tr key={item.employee._id} className="hover:bg-white/[0.02] transition-colors group">
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-4">
                                             <div className="relative">
                                                 <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-white/10 overflow-hidden shadow-2xl">
-                                                    {emp.photoUrl ? (
+                                                    {item.employee.photoUrl ? (
                                                         <img
-                                                            src={getFullImageUrl(emp.photoUrl)}
+                                                            src={getFullImageUrl(item.employee.photoUrl)}
                                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                             alt=""
                                                         />
                                                     ) : <UserCircle className="w-full h-full text-slate-700 p-2" />}
                                                 </div>
-                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-900 shadow-[0_0_10px_rgba(16,185,129,0.5)] ${item.payroll.status === 'disbursed' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-black text-white leading-tight mb-0.5">{emp.fullName}</p>
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{emp.position || 'Specialist'}</p>
+                                                <p className="text-sm font-black text-white leading-tight mb-0.5">{item.employee.firstName} {item.employee.lastName}</p>
+                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{item.employee.position || 'Specialist'}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className="space-y-1">
-                                            <p className="text-sm font-black text-white">$4,500.00</p>
+                                            <p className="text-sm font-black text-white">${item.payroll.netAmount.toLocaleString()}.00</p>
                                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">Gross Primary</p>
                                         </div>
                                     </td>
@@ -219,9 +264,9 @@ export default function PayrollPage() {
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-2">
-                                            <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                                Verified
+                                            <div className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${item.payroll.status === 'disbursed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-400'}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${item.payroll.status === 'disbursed' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                                                {item.payroll.status === 'disbursed' ? 'Verified' : 'Pending'}
                                             </div>
                                         </div>
                                     </td>
@@ -232,13 +277,15 @@ export default function PayrollPage() {
                                     </td>
                                 </tr>
                             ))}
+
                         </tbody>
                     </table>
                 </div>
 
                 {/* Footer Controls */}
                 <div className="p-8 bg-white/[0.01] border-t border-white/5 flex items-center justify-between">
-                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Ledger contains {filteredEmployees.length} unique financial entities</p>
+                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Ledger contains {filteredLedger.length} unique financial entities</p>
+
                     <div className="flex items-center gap-4">
                         <span className="text-[10px] font-bold text-slate-500 uppercase">Page 1 of 5</span>
                         <div className="flex gap-2">

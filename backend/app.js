@@ -33,8 +33,13 @@ const attendanceRoutes = require('./routes/attendance.routes');
 const workScheduleRoutes = require('./routes/workSchedule.routes');
 const employeeRoutes = require('./routes/employee.route');
 const departmentRoutes = require('./routes/department.routes');
+const systemSettingRoutes = require('./routes/systemSetting.routes');
+const payrollRoutes = require('./routes/payroll.routes');
+
 
 const { initializeAdminAndPermissions } = require('./utils/initAdminUser');
+const systemSettingService = require('./services/systemSetting.service');
+
 
 
 
@@ -155,6 +160,14 @@ app.use('/api/work-schedule', workScheduleRoutes)
 // Attendance routes (protected with permissions)
 app.use('/api/attendance', attendanceRoutes);
 
+// System settings routes
+app.use('/api/settings', systemSettingRoutes);
+
+// Payroll routes
+app.use('/api/payroll', payrollRoutes);
+
+
+
 // CORS error handling middleware
 app.use(handleCorsError);
 
@@ -200,7 +213,12 @@ async function startServer() {
                 console.log('🔄 Initializing admin user...');
                 await initializeAdminAndPermissions();
                 console.log('✅ Admin user initialized successfully');
+
+                // Initialize system settings
+                await systemSettingService.initializeDefaults();
+                console.log('✅ System settings initialized');
             } catch (adminError) {
+
                 console.warn('⚠️ Admin user initialization failed:', adminError.message);
             }
         } catch (mongoError) {

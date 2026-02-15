@@ -28,7 +28,11 @@ const employeeSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    baseSalary: { type: Number, default: 0 },
+    hourlyRate: { type: Number, default: 0 },
+    currency: { type: String, default: 'USD' },
     isActive: { type: Boolean, default: true }
+
 }, {
     timestamps: true,
     toJSON: { virtuals: true },

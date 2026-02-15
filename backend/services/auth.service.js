@@ -115,6 +115,20 @@ class AuthService {
         if (!user) throw new Error('User not found');
         return user;
     }
+
+    static async getAllUsers() {
+        return await User.find().select('-password').sort({ createdAt: -1 });
+    }
+
+    static async updateUserRole(userId, role) {
+        if (!['admin', 'employee', 'student'].includes(role)) {
+            throw new Error('Invalid role');
+        }
+        const user = await User.findByIdAndUpdate(userId, { role }, { new: true }).select('-password');
+        if (!user) throw new Error('User not found');
+        return user;
+    }
 }
+
 
 module.exports = AuthService;

@@ -1,6 +1,8 @@
 const Attendance = require('../models/attendance.model');
 const EmployeeService = require('./employee.service');
+const systemSettingService = require('./systemSetting.service');
 const { checkInSchema, checkOutSchema, attendanceQuerySchema } = require('../validations/attendance.validation');
+
 
 class AttendanceService {
     // Check-in
@@ -47,8 +49,31 @@ class AttendanceService {
             });
         }
 
+        // Logic for marking LATE based on settings
+        try {
+            const workStartTimeStr = await systemSettingService.getSetting('work_start_time') || '08:00';
+            const gracePeriod = await systemSettingService.getSetting('grace_period_minutes') || 0;
+
+            const [hours, minutes] = workStartTimeStr.split(':').map(Number);
+            const workStart = new Date(checkInData.time);
+            workStart.setHours(hours, minutes, 0, 0);
+
+            // Add grace period
+            const threshold = new Date(workStart.getTime() + gracePeriod * 60000);
+
+            if (checkInData.time > threshold) {
+                attendance.status = 'late';
+            } else {
+                attendance.status = 'present';
+            }
+        } catch (settingsErr) {
+            console.error('Error fetching settings for late check:', settingsErr);
+            attendance.status = 'present'; // Default
+        }
+
         await attendance.save();
-        return { checkInTime: checkInData.time, faceVerificationData: faceData };
+        return { checkInTime: checkInData.time, faceVerificationData: faceData, status: attendance.status };
+
     }
 
     // Check-out

@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { Employee, EmployeeCreateData } from '@/types/employee.types';
 import toast from 'react-hot-toast';
 import { getFullImageUrl } from '@/utils/url.utils';
+import { DepartmentService } from '@/services/department.service';
+import { Department } from '@/types/department.types';
+
 
 interface EmployeeFormProps {
     initialData?: Employee | null;
@@ -24,9 +27,29 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
         department: '',
         dateOfJoining: '',
         type: initialType,
+        baseSalary: 0,
+        hourlyRate: 0,
+        currency: 'USD',
     });
 
+
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [departments, setDepartments] = useState<Department[]>([]);
+
+    useEffect(() => {
+        const fetchDepartments = async () => {
+            try {
+                const res = await DepartmentService.getAll();
+                if (res.success) {
+                    setDepartments(res.data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch departments:', err);
+            }
+        };
+        fetchDepartments();
+    }, []);
+
 
     useEffect(() => {
         if (initialData) {
@@ -39,8 +62,12 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
                 department: initialData.department,
                 dateOfJoining: initialData.dateOfJoining,
                 type: initialData.type || 'employee',
+                baseSalary: initialData.baseSalary || 0,
+                hourlyRate: initialData.hourlyRate || 0,
+                currency: initialData.currency || 'USD',
                 image: undefined, // Reset image field
             });
+
             if (initialData.photoUrl) setImagePreview(getFullImageUrl(initialData.photoUrl) || null);
         } else {
             setFormData(prev => ({ ...prev, type: initialType }));
@@ -169,9 +196,45 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
                                     { label: 'Email Address', name: 'email', type: 'email', required: true, placeholder: 'john.doe@company.com' },
                                     { label: 'Phone Number', name: 'phone', type: 'tel', required: true, placeholder: '+1 (555) 000-0000' },
                                     { label: 'Position / Role', name: 'position', type: 'text', required: true, placeholder: 'Software Engineer' },
-                                    { label: 'Department', name: 'department', type: 'text', required: false, placeholder: 'Engineering' },
+                                    {
+                                        label: 'Department',
+                                        name: 'department',
+                                        type: 'select',
+                                        required: false,
+                                        options: [
+                                            { label: 'Select Department', value: '' },
+                                            ...departments.map(d => ({ label: d.name, value: d.name }))
+                                        ]
+                                    },
                                     { label: 'Date of Joining', name: 'dateOfJoining', type: 'date', required: true, placeholder: '' },
-                                    { label: 'Entity Type', name: 'type', type: 'select', required: true, options: ['employee', 'student'] },
+                                    {
+                                        label: 'Entity Type',
+                                        name: 'type',
+                                        type: 'select',
+                                        required: true,
+                                        options: [
+                                            { label: 'Employee', value: 'employee' },
+                                            { label: 'Student', value: 'student' }
+                                        ]
+                                    },
+                                    { label: 'Base Salary ($)', name: 'baseSalary', type: 'number', required: false, placeholder: '0.00' },
+                                    { label: 'Hourly Rate ($)', name: 'hourlyRate', type: 'number', required: false, placeholder: '0.00' },
+                                    {
+                                        label: 'Currency',
+                                        name: 'currency',
+                                        type: 'select',
+                                        required: true,
+                                        options: [
+                                            { label: 'USD', value: 'USD' },
+                                            { label: 'EUR', value: 'EUR' },
+                                            { label: 'GBP', value: 'GBP' },
+                                            { label: 'JPY', value: 'JPY' },
+                                            { label: 'CAD', value: 'CAD' },
+                                            { label: 'AUD', value: 'AUD' },
+                                        ]
+                                    },
+
+
                                 ].map((field) => (
                                     <div key={field.name} className={`${field.name === 'dateOfJoining' || field.name === 'department' ? 'col-span-1' : 'col-span-1'} space-y-2`}>
                                         <label htmlFor={field.name} className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
@@ -192,16 +255,23 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
                                                     appearance-none cursor-pointer
                                                 "
                                             >
-                                                {field.options?.map(opt => (
-                                                    <option key={opt} value={opt} className="bg-slate-900 capitalize">{opt}</option>
-                                                ))}
+                                                {field.options?.map((opt: any) => {
+                                                    const label = typeof opt === 'object' ? opt.label : opt;
+                                                    const value = typeof opt === 'object' ? opt.value : opt;
+                                                    return (
+                                                        <option key={value} value={value} className="bg-slate-900 capitalize">
+                                                            {label}
+                                                        </option>
+                                                    );
+                                                })}
                                             </select>
+
                                         ) : (
                                             <input
                                                 type={field.type}
                                                 name={field.name}
                                                 id={field.name}
-                                                value={formData[field.name as keyof EmployeeCreateData] || ''}
+                                                value={formData[field.name as keyof EmployeeCreateData] ?? ''}
                                                 onChange={handleChange}
                                                 required={field.required}
                                                 placeholder={field.placeholder}
@@ -214,6 +284,7 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
                                                 "
                                             />
                                         )}
+
                                     </div>
                                 ))}
                             </div>

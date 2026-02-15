@@ -16,7 +16,11 @@ export interface Employee {
     faceDescriptor?: number[]; // Optional 128-length array for face recognition
     faceVerifiedAt?: string; // Optional ISO date string
     faceVerificationEnabled: boolean;
+    baseSalary: number;
+    hourlyRate: number;
+    currency: string;
     isActive: boolean;
+
     createdAt: string; // ISO date string
     updatedAt: string; // ISO date string
 }
@@ -33,7 +37,11 @@ export interface EmployeeCreateData {
     dateOfJoining?: string;
     image?: string; // Optional base64-encoded image for face descriptor
     photoUrl?: string; // Optional photo URL (if already uploaded)
+    baseSalary?: number;
+    hourlyRate?: number;
+    currency?: string;
 }
+
 
 // Data for updating an employee
 export interface EmployeeUpdateData {
@@ -47,8 +55,12 @@ export interface EmployeeUpdateData {
     dateOfJoining?: string; // ISO date string
     image?: string; // Optional base64-encoded image for face descriptor
     photoUrl?: string; // Optional photo URL (if already uploaded)
+    baseSalary?: number;
+    hourlyRate?: number;
+    currency?: string;
     isActive?: boolean;
 }
+
 
 // Data for face verification request
 export interface VerifyFaceData {
