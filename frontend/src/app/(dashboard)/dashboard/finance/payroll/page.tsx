@@ -33,7 +33,7 @@ export default function PayrollPage() {
         totalPayroll: 0,
         disbursed: 0,
         pending: 0,
-        efficiency: 99.8
+        efficiency: 0
     });
     const [ledger, setLedger] = useState<any[]>([]);
 
@@ -149,29 +149,29 @@ export default function PayrollPage() {
 
     const handleDownloadPayslip = (item: any) => {
         const content = `
-PAYSLIP RECEIPT
---------------------------------------------------
-Employee: ${item.employee.firstName} ${item.employee.lastName}
-ID: ${item.employee._id}
-Position: ${item.employee.position}
-Department: ${item.employee.department || 'N/A'}
-Date: ${new Date().toLocaleDateString()}
+            PAYSLIP RECEIPT
+            --------------------------------------------------
+            Employee: ${item.employee.firstName} ${item.employee.lastName}
+            ID: ${item.employee._id}
+            Position: ${item.employee.position}
+            Department: ${item.employee.department || 'N/A'}
+            Date: ${new Date().toLocaleDateString()}
 
-EARNINGS
---------------------------------------------------
-Base Salary: $${item.payroll.baseAmount.toFixed(2)}
-Bonus:       $${(item.payroll.bonus || 0).toFixed(2)}
---------------------------------------------------
-Gross Pay:   $${(item.payroll.baseAmount + (item.payroll.bonus || 0)).toFixed(2)}
+            EARNINGS
+            --------------------------------------------------
+            Base Salary: $${item.payroll.baseAmount.toFixed(2)}
+            Bonus:       $${(item.payroll.bonus || 0).toFixed(2)}
+            --------------------------------------------------
+            Gross Pay:   $${(item.payroll.baseAmount + (item.payroll.bonus || 0)).toFixed(2)}
 
-DEDUCTIONS
---------------------------------------------------
-Tax/Deductions: $${(item.payroll.deductions || 0).toFixed(2)}
+            DEDUCTIONS
+            --------------------------------------------------
+            Tax/Deductions: $${(item.payroll.deductions || 0).toFixed(2)}
 
-NET PAY:     $${item.payroll.netAmount.toFixed(2)}
---------------------------------------------------
-Status: ${item.payroll.status.toUpperCase()}
-Transaction ID: ${item.payroll.transactionId || 'PENDING'}
+            NET PAY:     $${item.payroll.netAmount.toFixed(2)}
+            --------------------------------------------------
+            Status: ${item.payroll.status.toUpperCase()}
+            Transaction ID: ${item.payroll.transactionId || 'PENDING'}
         `;
 
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
@@ -332,7 +332,7 @@ Transaction ID: ${item.payroll.transactionId || 'PENDING'}
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className="space-y-1">
-                                            <p className="text-sm font-black text-white">${item.payroll.netAmount.toLocaleString()}.00</p>
+                                            <p className="text-sm font-black text-white">${item.payroll.baseAmount.toLocaleString()}.00</p>
                                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">Gross Primary</p>
                                         </div>
                                     </td>
@@ -341,12 +341,12 @@ Transaction ID: ${item.payroll.transactionId || 'PENDING'}
                                             <div className="flex-1 max-w-[100px] h-1.5 rounded-full bg-white/5 overflow-hidden">
                                                 <motion.div
                                                     initial={{ width: 0 }}
-                                                    animate={{ width: `${Math.random() * 20 + 80}%` }}
+                                                    animate={{ width: `${item.payroll.complianceScore}%` }}
                                                     transition={{ duration: 1, delay: index * 0.1 }}
                                                     className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
                                                 />
                                             </div>
-                                            <span className="text-[10px] font-black text-slate-400">96.4%</span>
+                                            <span className="text-[10px] font-black text-slate-400">{item.payroll.complianceScore}%</span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">

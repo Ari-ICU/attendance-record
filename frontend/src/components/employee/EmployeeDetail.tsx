@@ -14,7 +14,8 @@ import {
     Edit3,
     CheckCircle2,
     XCircle,
-    Fingerprint
+    Fingerprint,
+    DollarSign
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -106,8 +107,8 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                                             </span>
                                         )}
                                         <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${employee.type === 'student'
-                                                ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-                                                : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                            ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                                            : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                             }`}>
                                             {employee.type || 'Employee'}
                                         </span>
@@ -126,6 +127,17 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                                         <Calendar className="w-4 h-4 text-indigo-400" />
                                         <span className="text-sm font-semibold text-slate-300">Joined {employee.dateOfJoining ? new Date(employee.dateOfJoining).toLocaleDateString() : 'N/A'}</span>
                                     </div>
+                                    <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+                                        <DollarSign className="w-4 h-4 text-indigo-400" />
+                                        <span className="text-sm font-semibold text-slate-300">Base Salary {employee.baseSalary ? employee.baseSalary + ' $' : 'N/A'}</span>
+                                    </div>
+
+
+                                    <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+                                        <Building2 className="w-4 h-4 text-blue-400" />
+                                        <span className="text-sm font-semibold text-slate-300">Hourly Rate {employee.hourlyRate ? employee.hourlyRate + ' $' : 'N/A'}</span>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>

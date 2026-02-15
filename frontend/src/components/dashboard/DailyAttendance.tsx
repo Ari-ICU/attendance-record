@@ -24,11 +24,10 @@ export default function DailyAttendance() {
 
             // Fetch records for today
             const response = await AttendanceService.getRecords({
-                startDate: dateStr,
-                endDate: dateStr
+                limit: 50
             });
-
-            const data = response.data || [];
+            const data = response.data?.docs || response.data || [];
+            console.log(data);
 
             setRecords(data);
             setLastUpdated(new Date());
@@ -104,6 +103,15 @@ export default function DailyAttendance() {
                         <p className="text-2xl sm:text-3xl font-bold text-white mt-0.5">{totalPresent}</p>
                     </div>
                 </div>
+                <div className="bg-yellow-500/10 p-5 rounded-xl border border-yellow-500/10 flex items-center gap-4 transition-transform hover:scale-[1.02]">
+                    <div className="p-3 bg-yellow-500/20 rounded-xl shadow-sm text-yellow-400 ring-4 ring-yellow-500/5">
+                        <UserX size={24} color="yellow"/>
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-yellow-400/80 uppercase tracking-wider">Late</p>
+                        <p className="text-2xl sm:text-3xl font-bold text-white mt-0.5">{totalPresent}</p>
+                    </div>
+                </div>
                 <div className="bg-blue-500/10 p-5 rounded-xl border border-blue-500/10 flex items-center gap-4 transition-transform hover:scale-[1.02]">
                     <div className="p-3 bg-blue-500/20 rounded-xl shadow-sm text-blue-400 ring-4 ring-blue-500/5">
                         <Clock size={24} />
@@ -113,6 +121,7 @@ export default function DailyAttendance() {
                         <p className="text-2xl sm:text-3xl font-bold text-white mt-0.5">{currentlyClockedIn}</p>
                     </div>
                 </div>
+                
             </div>
 
             {/* List */}
