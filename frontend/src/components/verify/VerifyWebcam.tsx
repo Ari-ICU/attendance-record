@@ -63,8 +63,6 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
     }, []);
 
     // Get location on mount
-
-    // Get location on mount
     useEffect(() => {
         if ('geolocation' in navigator) {
             navigator.geolocation.getCurrentPosition(

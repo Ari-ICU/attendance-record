@@ -137,6 +137,47 @@ class EmployeeService {
             verifiedAt: new Date()
         };
     }
+
+    // Identify employee by face descriptor
+    static async identifyEmployee(liveDescriptor) {
+        if (!liveDescriptor) throw new Error('Live descriptor required for identification');
+
+        // Fetch all employees who have face verification enabled and a stored descriptor
+        const candidates = await Employee.find({
+            faceVerificationEnabled: true,
+            faceDescriptor: { $exists: true, $ne: [] }
+        });
+
+        if (candidates.length === 0) {
+            throw new Error('No registered biometric profiles found in system');
+        }
+
+        let bestMatch = null;
+        let highestSimilarity = -1;
+        const THRESHOLD = parseFloat(process.env.FACE_SIMILARITY_THRESHOLD || '0.8');
+
+        for (const candidate of candidates) {
+            try {
+                const similarity = cosineSimilarity(candidate.faceDescriptor, liveDescriptor);
+                if (similarity > highestSimilarity) {
+                    highestSimilarity = similarity;
+                    bestMatch = candidate;
+                }
+            } catch (err) {
+                console.warn(`Error comparing with candidate ${candidate._id}: ${err.message}`);
+                continue;
+            }
+        }
+
+        if (!bestMatch || highestSimilarity < THRESHOLD) {
+            throw new Error('Identity could not be confirmed. No matching profile found.');
+        }
+
+        return {
+            employee: bestMatch,
+            similarity: highestSimilarity
+        };
+    }
 }
 
 module.exports = EmployeeService;

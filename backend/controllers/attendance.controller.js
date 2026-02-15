@@ -1,4 +1,5 @@
 const AttendanceService = require('../services/attendance.service');
+const EmployeeService = require('../services/employee.service');
 const { ApiResponse } = require('../utils/apiResponse');
 
 class AttendanceController {
@@ -25,6 +26,12 @@ class AttendanceController {
             // 1. Resolve Target Employee
             if (employeeId) {
                 targetEmployee = await EmployeeModel.findById(employeeId);
+            } else if (req.body.method === 'face_verification' && req.body.faceDescriptor) {
+                // Identity not provided, try to find by face
+                console.log('[Attendance] No ID provided, attempting automatic face identification...');
+                const identifyResult = await EmployeeService.identifyEmployee(req.body.faceDescriptor);
+                targetEmployee = identifyResult.employee;
+                console.log(`[Attendance] Identified: ${targetEmployee.firstName} ${targetEmployee.lastName} (${targetEmployee.email})`);
             } else {
                 targetEmployee = await EmployeeModel.findOne({ email: req.user.email });
             }
@@ -67,6 +74,12 @@ class AttendanceController {
 
             if (employeeId) {
                 targetEmployee = await EmployeeModel.findById(employeeId);
+            } else if (req.body.method === 'face_verification' && req.body.faceDescriptor) {
+                // Identity not provided, try to find by face
+                console.log('[Attendance/Out] No ID provided, attempting automatic face identification...');
+                const identifyResult = await EmployeeService.identifyEmployee(req.body.faceDescriptor);
+                targetEmployee = identifyResult.employee;
+                console.log(`[Attendance/Out] Identified: ${targetEmployee.firstName} ${targetEmployee.lastName} (${targetEmployee.email})`);
             } else {
                 targetEmployee = await EmployeeModel.findOne({ email: req.user.email });
             }
