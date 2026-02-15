@@ -17,21 +17,37 @@ class AttendanceController {
         try {
             const ip = req.clientIp || req.ip;
             const userAgent = req.get('User-Agent');
-            let employee = req.user;
+            const EmployeeModel = require('../models/employee.model');
 
-            // Allow admin to check in for other employees
-            if (req.user.role === 'admin' && req.body.employeeId) {
-                // You might need to fetch the employee object here
-                // For now, let's assume the service handles specific employee logic or we fetch it:
-                const EmployeeService = require('../services/employee.service');
-                employee = await EmployeeService.getEmployeeById(req.body.employeeId);
+            let targetEmployee = null;
+            const { employeeId } = req.body;
+
+            // 1. Resolve Target Employee
+            if (employeeId) {
+                targetEmployee = await EmployeeModel.findById(employeeId);
+            } else {
+                targetEmployee = await EmployeeModel.findOne({ email: req.user.email });
             }
 
-            const result = await AttendanceService.checkIn(employee, req.body, ip, userAgent);
+            if (!targetEmployee) {
+                return res.status(404).json(ApiResponse.error('Biometric record not found for this identity', 404));
+            }
+
+            // 2. Security Check: Non-admins can only check-in/out for themselves
+            const isAdmin = req.user.role === 'admin';
+            const isSelf = targetEmployee.email?.toLowerCase() === req.user.email?.toLowerCase();
+
+            console.log(`[Security] User ${req.user.email} (Role: ${req.user.role}) targetting ${targetEmployee.email}. isAdmin: ${isAdmin}, isSelf: ${isSelf}`);
+
+            if (!isAdmin && !isSelf) {
+                return res.status(403).json(ApiResponse.error('Unauthorized: You can only verify your own attendance', 403));
+            }
+
+            const result = await AttendanceService.checkIn(targetEmployee, req.body, ip, userAgent);
             return res.status(200).json(ApiResponse.success(result, 'Check-in successful', 200));
         } catch (err) {
             console.error('Error in checkIn:', err);
-            return res.status(400).json(ApiResponse.error('Failed to check in', 400, err.message));
+            return res.status(400).json(ApiResponse.error(err.message || 'Failed to check in', 400));
         }
     }
 
@@ -40,18 +56,35 @@ class AttendanceController {
         try {
             const ip = req.clientIp || req.ip;
             const userAgent = req.get('User-Agent');
-            let employee = req.user;
+            const EmployeeModel = require('../models/employee.model');
 
-            if (req.user.role === 'admin' && req.body.employeeId) {
-                const EmployeeService = require('../services/employee.service');
-                employee = await EmployeeService.getEmployeeById(req.body.employeeId);
+            let targetEmployee = null;
+            const { employeeId } = req.body;
+
+            if (employeeId) {
+                targetEmployee = await EmployeeModel.findById(employeeId);
+            } else {
+                targetEmployee = await EmployeeModel.findOne({ email: req.user.email });
             }
 
-            const result = await AttendanceService.checkOut(employee, req.body, ip, userAgent);
+            if (!targetEmployee) {
+                return res.status(404).json(ApiResponse.error('Biometric record not found for this identity', 404));
+            }
+
+            const isAdmin = req.user.role === 'admin';
+            const isSelf = targetEmployee.email?.toLowerCase() === req.user.email?.toLowerCase();
+
+            console.log(`[Security/Out] User ${req.user.email} (Role: ${req.user.role}) targetting ${targetEmployee.email}. isAdmin: ${isAdmin}, isSelf: ${isSelf}`);
+
+            if (!isAdmin && !isSelf) {
+                return res.status(403).json(ApiResponse.error('Unauthorized: You can only verify your own attendance', 403));
+            }
+
+            const result = await AttendanceService.checkOut(targetEmployee, req.body, ip, userAgent);
             return res.status(200).json(ApiResponse.success(result, 'Check-out successful', 200));
         } catch (err) {
             console.error('Error in checkOut:', err);
-            return res.status(400).json(ApiResponse.error('Failed to check out', 400, err.message));
+            return res.status(400).json(ApiResponse.error(err.message || 'Failed to check out', 400));
         }
     }
 }

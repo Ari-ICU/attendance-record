@@ -13,7 +13,8 @@ import {
     CreditCard,
     Clock,
     ShieldCheck,
-    Users
+    Users,
+    Aperture
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -40,6 +41,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             items: [
                 { name: 'Live Monitor', href: '/dashboard/attendance/monitor', icon: <Clock size={20} /> },
                 { name: 'Records', href: '/dashboard/attendance/records', icon: <Calendar size={20} /> },
+                { name: 'Scan Station', href: '/verify', icon: <Aperture size={20} /> },
             ],
         },
         {

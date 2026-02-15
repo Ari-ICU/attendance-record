@@ -37,6 +37,7 @@ const faceVerificationSchema = Joi.object({
 });
 
 const checkInSchema = Joi.object({
+    employeeId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
     location: locationSchema.optional(),
     method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification').default('manual').messages({
         'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification'
@@ -57,6 +58,7 @@ const checkInSchema = Joi.object({
 });
 
 const checkOutSchema = Joi.object({
+    employeeId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
     location: locationSchema.optional(),
     method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification').default('manual').messages({
         'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification'
@@ -230,11 +232,11 @@ const attendanceQuerySchema = Joi.object({
         'number.integer': 'Page must be a whole number',
         'number.min': 'Page must be at least 1'
     }),
-    limit: Joi.number().integer().min(1).max(100).default(10).messages({
+    limit: Joi.number().integer().min(1).max(1000).default(10).messages({
         'number.base': 'Limit must be a number',
         'number.integer': 'Limit must be a whole number',
         'number.min': 'Limit must be at least 1',
-        'number.max': 'Limit cannot exceed 100'
+        'number.max': 'Limit cannot exceed 1000'
     }),
     employeeId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).messages({
         'string.pattern.base': 'Invalid employee ID format'

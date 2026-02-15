@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Bell, Search, Menu, User, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
@@ -101,14 +102,14 @@ export default function AHeader({ sidebarCollapsed, setSidebarCollapsed }: AHead
                                         </div>
 
                                         <div className="p-1">
-                                            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:bg-white/5 rounded-lg transition-colors">
+                                            <Link href="/dashboard/profile" onClick={() => setIsProfileOpen(false)} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:bg-white/5 rounded-lg transition-colors">
                                                 <User size={16} />
                                                 My Profile
-                                            </button>
-                                            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:bg-white/5 rounded-lg transition-colors">
+                                            </Link>
+                                            <Link href="/dashboard/settings" onClick={() => setIsProfileOpen(false)} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:bg-white/5 rounded-lg transition-colors">
                                                 <Settings size={16} />
                                                 Settings
-                                            </button>
+                                            </Link>
                                             <div className="h-px bg-white/5 my-1" />
                                             <button
                                                 onClick={() => logout()}

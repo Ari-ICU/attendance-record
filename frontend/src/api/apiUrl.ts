@@ -16,6 +16,13 @@ export const API_URLS = {
         DELETE: (id: string) => `${BASE_URL}/employees/${id}`,
         VERIFY_FACE: `${BASE_URL}/employees/verify-face`,
     },
+    DEPARTMENTS: {
+        CREATE: `${BASE_URL}/departments`,
+        GET_ALL: `${BASE_URL}/departments`,
+        GET_BY_ID: (id: string) => `${BASE_URL}/departments/${id}`,
+        UPDATE: (id: string) => `${BASE_URL}/departments/${id}`,
+        DELETE: (id: string) => `${BASE_URL}/departments/${id}`,
+    },
     ATTENDANCE: {
         GET_RECORDS: `${BASE_URL}/attendance`,
         CHECK_IN: `${BASE_URL}/attendance/check-in`, // Aligned with attendance.router.js

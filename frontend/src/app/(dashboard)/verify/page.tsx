@@ -18,45 +18,72 @@ export default function VerifyPage() {
 
     const [mode, setMode] = useState<'check-in' | 'check-out'>('check-in');
     const [loading, setLoading] = useState(true);
+    const [employees, setEmployees] = useState<any[]>([]);
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState(employeeId);
     const [idData, setIdData] = useState({
-        name: 'Loading...',
-        idNumber: '...',
-        dob: '...',
-        expiry: '...',
-        nationality: '...',
+        name: 'Awaiting ID...',
+        idNumber: '---',
+        dob: '---',
+        expiry: '---',
+        nationality: '---',
         photoUrl: '',
-        position: '...',
-        manager: '...',
+        position: '---',
+        manager: '---',
     });
 
     useEffect(() => {
-        const fetchEmployee = async () => {
-            if (!employeeId) {
-                setLoading(false);
-                return;
-            }
+        const loadInitialData = async () => {
             try {
-                const employee = await EmployeeService.getEmployeeById(employeeId);
-                setIdData({
-                    name: `${employee.firstName} ${employee.lastName}`,
-                    idNumber: employee._id,
-                    dob: 'N/A',
-                    expiry: 'N/A',
-                    nationality: 'Cambodian',
-                    photoUrl: employee.photoUrl || '',
-                    position: employee.position,
-                    manager: 'N/A',
-                });
+                setLoading(true);
+                const [empRes] = await Promise.all([
+                    EmployeeService.getAllEmployees({ limit: 1000 })
+                ]);
+                setEmployees(empRes.employees || []);
+
+                if (employeeId) {
+                    const employee = empRes.employees?.find((e: any) => e._id === employeeId) ||
+                        await EmployeeService.getEmployeeById(employeeId);
+                    if (employee) {
+                        setIdData({
+                            name: `${employee.firstName} ${employee.lastName}`,
+                            idNumber: employee._id,
+                            dob: 'N/A',
+                            expiry: 'N/A',
+                            nationality: 'Cambodian',
+                            photoUrl: employee.photoUrl || '',
+                            position: employee.position,
+                            manager: 'N/A',
+                        });
+                        setSelectedEmployeeId(employee._id);
+                    }
+                }
             } catch (err) {
                 console.error(err);
-                toast.error('Failed to load employee details');
+                toast.error('Failed to initialize verification station');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchEmployee();
+        loadInitialData();
     }, [employeeId]);
+
+    const handleEmployeeSelect = (id: string) => {
+        setSelectedEmployeeId(id);
+        const employee = employees.find(e => e._id === id);
+        if (employee) {
+            setIdData({
+                name: `${employee.firstName} ${employee.lastName}`,
+                idNumber: employee._id,
+                dob: 'N/A',
+                expiry: 'N/A',
+                nationality: 'Cambodian',
+                photoUrl: employee.photoUrl || '',
+                position: employee.position,
+                manager: 'N/A',
+            });
+        }
+    };
 
     return (
         <main className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -89,8 +116,8 @@ export default function VerifyPage() {
                         <button
                             onClick={() => setMode('check-in')}
                             className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all text-sm uppercase tracking-widest ${mode === 'check-in'
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                : 'text-slate-400 hover:text-white hover:bg-white/5'
                                 }`}
                         >
                             <Clock className="w-4 h-4" />
@@ -99,8 +126,8 @@ export default function VerifyPage() {
                         <button
                             onClick={() => setMode('check-out')}
                             className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all text-sm uppercase tracking-widest ${mode === 'check-out'
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                                : 'text-slate-400 hover:text-white hover:bg-white/5'
                                 }`}
                         >
                             <UserCheck className="w-4 h-4" />
@@ -162,20 +189,30 @@ export default function VerifyPage() {
                         <div className="glass-pane rounded-3xl p-8 border border-white/10 shadow-2xl relative overflow-hidden bg-white/[0.02]">
                             <div className="flex flex-col items-center text-center">
                                 <div className="w-full max-w-md bg-slate-950/50 rounded-2xl overflow-hidden border border-white/5 shadow-inner relative group">
-                                    {employeeId ? (
-                                        <VerifyWebcam employeeId={employeeId} mode={mode} />
+                                    {selectedEmployeeId ? (
+                                        <VerifyWebcam employeeId={selectedEmployeeId} mode={mode} />
                                     ) : (
-                                        <div className="aspect-[4/3] flex flex-col items-center justify-center p-12 bg-slate-950/50">
-                                            <div className="w-20 h-20 rounded-full bg-rose-500/10 flex items-center justify-center mb-6">
-                                                <ShieldCheck className="w-10 h-10 text-rose-500/50" />
+                                        <div className="aspect-[4/3] flex flex-col items-center justify-center p-8 bg-slate-950/50">
+                                            <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center mb-6 border border-blue-500/20">
+                                                <Fingerprint className="w-10 h-10 text-blue-500/50" />
                                             </div>
-                                            <h3 className="text-white font-black text-lg mb-2">Access Restricted</h3>
-                                            <p className="text-slate-500 text-sm font-medium max-w-[240px]">Please provide a valid employee ID to initiate the biometric scan.</p>
+                                            <h3 className="text-white font-black text-lg mb-2 italic">Awaiting Identity</h3>
+                                            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-[240px] mb-8">Select subject to initialize scanner</p>
+
+                                            <select
+                                                onChange={(e) => handleEmployeeSelect(e.target.value)}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs font-black text-slate-300 uppercase tracking-widest outline-none focus:border-blue-500/50 transition-all appearance-none text-center"
+                                            >
+                                                <option value="">Choose Employee</option>
+                                                {employees.map(emp => (
+                                                    <option key={emp._id} value={emp._id}>{emp.firstName} {emp.lastName}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                     )}
 
                                     {/* Scanning Animation Overlays */}
-                                    {employeeId && (
+                                    {selectedEmployeeId && (
                                         <div className="absolute inset-0 pointer-events-none">
                                             <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-blue-500 m-4 rounded-tl-xl opacity-50" />
                                             <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-blue-500 m-4 rounded-tr-xl opacity-50" />

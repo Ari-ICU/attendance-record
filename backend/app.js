@@ -32,6 +32,7 @@ const authRoutes = require('./routes/auth.routes');
 const attendanceRoutes = require('./routes/attendance.routes');
 const workScheduleRoutes = require('./routes/workSchedule.routes');
 const employeeRoutes = require('./routes/employee.route');
+const departmentRoutes = require('./routes/department.routes');
 
 const { initializeAdminAndPermissions } = require('./utils/initAdminUser');
 
@@ -146,6 +147,7 @@ app.use('/api/auth', authRoutes);
 
 // employee route
 app.use('/api/employees', employeeRoutes)
+app.use('/api/departments', departmentRoutes)
 
 // work-schedule route
 app.use('/api/work-schedule', workScheduleRoutes)

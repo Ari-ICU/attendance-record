@@ -36,7 +36,7 @@ const employeeUpdateSchema = Joi.object({
 
 const employeeQuerySchema = Joi.object({
     page: Joi.number().integer().min(1).default(1),
-    limit: Joi.number().integer().min(1).max(100).default(10),
+    limit: Joi.number().integer().min(1).max(1000).default(10),
     department: Joi.string().optional(),
     position: Joi.string().optional(),
     isActive: Joi.boolean().optional(),

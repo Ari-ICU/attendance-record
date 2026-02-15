@@ -19,6 +19,11 @@ const initializeAdminAndPermissions = async () => {
     let user = await User.findOne({ email: adminUserData.email });
     if (user) {
         console.log('Admin user already exists:', user.email);
+        if (user.role !== 'admin') {
+            user.role = 'admin';
+            await user.save();
+            console.log('✅ Admin role restored for:', user.email);
+        }
         return user;
     }
 

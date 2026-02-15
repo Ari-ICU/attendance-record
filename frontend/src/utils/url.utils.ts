@@ -1,7 +1,7 @@
 import { BASE_URL } from '@/api/apiUrl';
 
-export const getFullImageUrl = (path?: string | null) => {
-    if (!path) return null;
+export const getFullImageUrl = (path?: string | null): string | undefined => {
+    if (!path) return undefined;
     if (path.startsWith('http') || path.startsWith('data:')) return path; // Already absolute or base64
 
     // Remove '/api' from BASE_URL if present to get the root URL

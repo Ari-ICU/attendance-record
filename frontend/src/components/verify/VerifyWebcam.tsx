@@ -208,7 +208,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     ref={webcamRef}
                     screenshotFormat="image/jpeg"
                     videoConstraints={{ width: 640, height: 480, facingMode: 'user' }}
-                    className="absolute inset-0 w-full h-full object-cover grayscale-[0.5] opacity-60"
+                    className="absolute inset-0 w-full h-full object-cover"
                 />
                 <canvas
                     ref={canvasRef}
