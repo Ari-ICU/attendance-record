@@ -52,7 +52,8 @@ export default function DailyAttendance() {
     }, [fetchTodaysAttendance]);
 
     // Calculate Summary Stats
-    const totalPresent = records.filter(r => r.checkIn?.time).length;
+    const totalPresent = records.filter(r => r.status === 'present').length;
+    const totalLate = records.filter(r => r.status === 'late').length;
     const currentlyClockedIn = records.filter(r => r.checkIn?.time && !r.checkOut?.time).length;
 
     return (
@@ -99,17 +100,17 @@ export default function DailyAttendance() {
                         <UserCheck size={24} />
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-emerald-400/80 uppercase tracking-wider">Present</p>
+                        <p className="text-xs font-bold text-emerald-400/80 uppercase tracking-wider">On Time</p>
                         <p className="text-2xl sm:text-3xl font-bold text-white mt-0.5">{totalPresent}</p>
                     </div>
                 </div>
                 <div className="bg-yellow-500/10 p-5 rounded-xl border border-yellow-500/10 flex items-center gap-4 transition-transform hover:scale-[1.02]">
                     <div className="p-3 bg-yellow-500/20 rounded-xl shadow-sm text-yellow-400 ring-4 ring-yellow-500/5">
-                        <UserX size={24} color="yellow"/>
+                        <UserX size={24} color="yellow" />
                     </div>
                     <div>
                         <p className="text-xs font-bold text-yellow-400/80 uppercase tracking-wider">Late</p>
-                        <p className="text-2xl sm:text-3xl font-bold text-white mt-0.5">{totalPresent}</p>
+                        <p className="text-2xl sm:text-3xl font-bold text-white mt-0.5">{totalLate}</p>
                     </div>
                 </div>
                 <div className="bg-blue-500/10 p-5 rounded-xl border border-blue-500/10 flex items-center gap-4 transition-transform hover:scale-[1.02]">
@@ -121,7 +122,7 @@ export default function DailyAttendance() {
                         <p className="text-2xl sm:text-3xl font-bold text-white mt-0.5">{currentlyClockedIn}</p>
                     </div>
                 </div>
-                
+
             </div>
 
             {/* List */}

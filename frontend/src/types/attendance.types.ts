@@ -26,6 +26,7 @@ export interface AttendanceRecord {
         method: string;
         totalHours?: number;
     };
+    totalHours?: number;
     status: 'present' | 'absent' | 'late' | 'half_day' | 'remote' | 'on_leave';
     createdAt: string;
     updatedAt: string;

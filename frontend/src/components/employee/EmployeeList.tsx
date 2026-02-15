@@ -10,7 +10,7 @@ import { getFullImageUrl } from '@/utils/url.utils';
 interface EmployeeListProps {
     employees: Employee[];
     onEdit: (employee: Employee) => void;
-    onDelete: (id: string) => void;
+    onDelete: (id: string) => Promise<void>;
 }
 
 export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeListProps) {
@@ -23,13 +23,11 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
 
     const handleEdit = (employee: Employee) => {
         onEdit(employee);
-        toast.success(`Editing ${employee?.fullName || 'Employee'}`);
     };
 
-    const handleDelete = (id: string, fullName: string) => {
+    const handleDelete = async (id: string, fullName: string) => {
         if (confirm(`Are you sure you want to delete ${fullName || 'this record'}?`)) {
-            onDelete(id);
-            toast.success(`${fullName} has been deleted`);
+            await onDelete(id);
         }
     };
 

@@ -46,7 +46,10 @@ export default function SettingsPage() {
         work_end_time: '17:00',
         grace_period_minutes: 15,
         organization_name: 'KHMERWORK CORPORATE',
-        domain: 'khmerwork.com'
+        domain: 'khmerwork.com',
+        office_latitude: 11.5564,
+        office_longitude: 104.9282,
+        geofence_range_meters: 50
     });
 
     // Users state
@@ -56,12 +59,25 @@ export default function SettingsPage() {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const [settingsData, usersData] = await Promise.all([
+                // Fetch settings and users independently to prevent hard crash on permission issues
+                const [settingsData, usersData] = await Promise.allSettled([
                     SettingsService.getSettings(),
                     SettingsService.getAllUsers()
                 ]);
-                setSettings(prev => ({ ...prev, ...settingsData }));
-                setUsers(usersData);
+
+                if (settingsData.status === 'fulfilled') {
+                    setSettings(prev => ({ ...prev, ...settingsData.value }));
+                } else {
+                    console.error('Settings fetch failed:', settingsData.reason);
+                    toast.error('Partial system profile loaded');
+                }
+
+                if (usersData.status === 'fulfilled') {
+                    setUsers(usersData.value);
+                } else {
+                    console.warn('Personnel access list suppressed (insufficient clearance)');
+                    // We don't toast error here to keep the UI clean if they aren't an admin
+                }
             } catch (err) {
                 console.error(err);
                 toast.error('Failed to load system configuration');
@@ -284,6 +300,53 @@ export default function SettingsPage() {
                                                     onChange={(e) => setSettings({ ...settings, grace_period_minutes: parseInt(e.target.value) })}
                                                     className="w-48 accent-emerald-500 h-1 bg-slate-900 rounded-full"
                                                 />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6 pt-6 border-t border-white/5">
+                                        <div className="flex items-center gap-2">
+                                            <Globe className="w-4 h-4 text-emerald-400" />
+                                            <h3 className="text-xs font-black text-white uppercase tracking-widest italic">Biometric Boundaries (Geofencing)</h3>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Ref. Latitude</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.0001"
+                                                    value={settings.office_latitude}
+                                                    onChange={(e) => setSettings({ ...settings, office_latitude: parseFloat(e.target.value) })}
+                                                    className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3 px-5 text-sm font-bold text-white outline-none focus:border-emerald-500/50 transition-all font-mono"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Ref. Longitude</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.0001"
+                                                    value={settings.office_longitude}
+                                                    onChange={(e) => setSettings({ ...settings, office_longitude: parseFloat(e.target.value) })}
+                                                    className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3 px-5 text-sm font-bold text-white outline-none focus:border-emerald-500/50 transition-all font-mono"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-1">
+                                                    <p className="text-xs font-black text-white uppercase tracking-tight italic">Scanning Radius</p>
+                                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">Max distance (meters) for valid authentication</p>
+                                                </div>
+                                                <div className="flex items-center gap-6">
+                                                    <span className="text-lg font-black text-blue-400 font-mono w-16 text-right">{settings.geofence_range_meters}m</span>
+                                                    <input
+                                                        type="range"
+                                                        min="10" max="1000" step="10"
+                                                        value={settings.geofence_range_meters}
+                                                        onChange={(e) => setSettings({ ...settings, geofence_range_meters: parseInt(e.target.value) })}
+                                                        className="w-48 accent-blue-500 h-1 bg-slate-900 rounded-full"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

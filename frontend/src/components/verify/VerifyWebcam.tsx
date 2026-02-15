@@ -6,12 +6,18 @@ import * as faceapi from 'face-api.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { EmployeeService } from '@/services/employee.service';
 import { AttendanceService } from '@/services/attendance.service';
+import { SettingsService } from '@/services/settings.service';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Aperture, Camera, CheckCircle2, Loader2, Scan, ShieldAlert } from 'lucide-react';
 
 const FRAME_WIDTH = 280;
 const FRAME_HEIGHT = 340;
 const VERIFY_DEBOUNCE_MS = 2000;
+const EAR_THRESHOLD = 0.22; // Threshold for eye blink detection
+
+// Default fallbacks while settings load
+const DEFAULT_OFFICE_COORDS = { lat: 11.5564, lng: 104.9282 };
+const DEFAULT_MAX_RANGE = 50;
 
 interface FaceVerifyProps {
     employeeId: string;
@@ -28,6 +34,66 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
     const [framePulse, setFramePulse] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const lastVerifiedRef = useRef<number>(0);
+    const [blinkCount, setBlinkCount] = useState(0);
+    const wasClosedRef = useRef(false);
+    const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+    const [officeSettings, setOfficeSettings] = useState({
+        lat: DEFAULT_OFFICE_COORDS.lat,
+        lng: DEFAULT_OFFICE_COORDS.lng,
+        range: DEFAULT_MAX_RANGE
+    });
+
+    // Fetch office settings on mount
+    useEffect(() => {
+        const loadSettings = async () => {
+            try {
+                const settings = await SettingsService.getSettings();
+                if (settings) {
+                    setOfficeSettings({
+                        lat: parseFloat(settings.office_latitude) || DEFAULT_OFFICE_COORDS.lat,
+                        lng: parseFloat(settings.office_longitude) || DEFAULT_OFFICE_COORDS.lng,
+                        range: parseInt(settings.geofence_range_meters) || DEFAULT_MAX_RANGE
+                    });
+                }
+            } catch (err) {
+                console.warn('Could not sync office geofence settings', err);
+            }
+        };
+        loadSettings();
+    }, []);
+
+    // Get location on mount
+
+    // Get location on mount
+    useEffect(() => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                (err) => console.warn('Location access denied or unavailable', err),
+                { enableHighAccuracy: true }
+            );
+        }
+    }, []);
+
+    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371e3; // metres
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    };
+
+    const getEAR = (eye: any[]) => {
+        const p2_p6 = Math.sqrt(Math.pow(eye[1].x - eye[5].x, 2) + Math.pow(eye[1].y - eye[5].y, 2));
+        const p3_p5 = Math.sqrt(Math.pow(eye[2].x - eye[4].x, 2) + Math.pow(eye[2].y - eye[4].y, 2));
+        const p1_p4 = Math.sqrt(Math.pow(eye[0].x - eye[3].x, 2) + Math.pow(eye[0].y - eye[3].y, 2));
+        return (p2_p6 + p3_p5) / (2.0 * p1_p4);
+    };
 
     // Load face-api models
     useEffect(() => {
@@ -93,16 +159,43 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                 color = 'rgba(244, 63, 94, 0.5)';
             } else {
                 const box = detections[0].detection.box;
+                const landmarks = detections[0].landmarks;
+                const leftEye = landmarks.getLeftEye();
+                const rightEye = landmarks.getRightEye();
+                const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
+
+                // Simple blink logic
+                if (ear < EAR_THRESHOLD) {
+                    wasClosedRef.current = true;
+                } else if (wasClosedRef.current && ear > EAR_THRESHOLD + 0.05) {
+                    setBlinkCount(prev => prev + 1);
+                    wasClosedRef.current = false;
+                }
+
                 const insideFrame =
                     box.x >= frameX &&
                     box.y >= frameY &&
                     box.x + box.width <= frameX + FRAME_WIDTH &&
                     box.y + box.height <= frameY + FRAME_HEIGHT;
 
-                statusMessage = insideFrame ? 'Data Link Establishing...' : 'Recenter for optimal scan';
-                color = insideFrame ? 'rgba(245, 158, 11, 0.8)' : 'rgba(245, 158, 11, 0.4)';
+                let livenessMessage = blinkCount > 0 ? 'Liveness: OK' : 'Blink to prove identity';
+                statusMessage = insideFrame ? `${livenessMessage} - Link Establishing...` : 'Recenter for optimal scan';
+                color = insideFrame ? (blinkCount > 0 ? 'rgba(59, 130, 246, 0.8)' : 'rgba(245, 158, 11, 0.8)') : 'rgba(245, 158, 11, 0.4)';
 
-                if (insideFrame && Date.now() - lastVerifiedRef.current > VERIFY_DEBOUNCE_MS && !verifying) {
+                if (insideFrame && blinkCount > 0 && Date.now() - lastVerifiedRef.current > VERIFY_DEBOUNCE_MS && !verifying) {
+                    // Check Geofencing
+                    if (userLocation) {
+                        const dist = calculateDistance(userLocation.lat, userLocation.lng, officeSettings.lat, officeSettings.lng);
+                        if (dist > officeSettings.range) {
+                            setStatus('OUTSIDE AUTH RANGE');
+                            toast.error(`Scan denied: Device is ${Math.round(dist - officeSettings.range)}m outside authorized zone.`);
+                            return;
+                        }
+                    } else {
+                        setStatus('Awaiting Secure Geofence...');
+                        return;
+                    }
+
                     lastVerifiedRef.current = Date.now();
                     setVerifying(true);
                     setStatus('Extracting descriptors...');
@@ -301,11 +394,23 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
 
             {/* Bottom Status Bar */}
             <div className="w-full p-4 bg-slate-900 border-t border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${isSuccess ? 'bg-emerald-500' : 'bg-blue-500'} animate-pulse`} />
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                        {status}
-                    </span>
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${isSuccess ? 'bg-emerald-500' : 'bg-blue-500'} animate-pulse`} />
+                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                            {status}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-4 mt-1">
+                        <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full ${blinkCount > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                            <span className="text-[8px] font-bold text-slate-500 uppercase">Liveness: {blinkCount > 0 ? 'PROVEN' : 'REQUIRED'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full ${userLocation ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                            <span className="text-[8px] font-bold text-slate-500 uppercase">Geofence: {userLocation ? 'SECURED' : 'SYNCING'}</span>
+                        </div>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <Scan className="w-3 h-3 text-slate-500" />

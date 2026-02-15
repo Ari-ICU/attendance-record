@@ -35,6 +35,8 @@ const employeeRoutes = require('./routes/employee.route');
 const departmentRoutes = require('./routes/department.routes');
 const systemSettingRoutes = require('./routes/systemSetting.routes');
 const payrollRoutes = require('./routes/payroll.routes');
+const reportRoutes = require('./routes/report.routes');
+
 
 
 const { initializeAdminAndPermissions } = require('./utils/initAdminUser');
@@ -165,6 +167,8 @@ app.use('/api/settings', systemSettingRoutes);
 
 // Payroll routes
 app.use('/api/payroll', payrollRoutes);
+app.use('/api/reports', reportRoutes);
+
 
 
 

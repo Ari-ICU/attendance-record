@@ -23,19 +23,24 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { AttendanceService } from '@/services/attendance.service';
 import { EmployeeService } from '@/services/employee.service';
+import { ReportService } from '@/services/report.service';
 import toast from 'react-hot-toast';
 
 export default function AnalyticsPage() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [timeRange, setTimeRange] = useState('7d');
+    const [analytics, setAnalytics] = useState<any>(null);
 
     const fetchData = async () => {
         try {
             setRefreshing(true);
-            // Simulate deep data processing
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const res = await ReportService.getAnalytics(timeRange);
+            if (res.success) {
+                setAnalytics(res.data);
+            }
         } catch (error) {
+            console.error('Analytics error:', error);
             toast.error('Analytics engine failed to synchronize');
         } finally {
             setLoading(false);
@@ -48,11 +53,58 @@ export default function AnalyticsPage() {
     }, [timeRange]);
 
     const stats = [
-        { label: 'System Efficiency', value: '94.8%', icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: '+2.4%' },
-        { label: 'Workforce Active', value: '862', icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: '+12' },
-        { label: 'Average Compliance', value: '91.2%', icon: Target, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: '-0.5%' },
-        { label: 'Operational Uptime', value: '99.9%', icon: Activity, color: 'text-purple-400', bg: 'bg-purple-500/10', trend: 'STABLE' },
+        {
+            label: 'System Efficiency',
+            value: analytics ? `${analytics.summary.systemEfficiency}%` : '0%',
+            icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: '+2.4%'
+        },
+        {
+            label: 'Workforce Active',
+            value: analytics ? analytics.summary.workforceActive : '0',
+            icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: '+12'
+        },
+        {
+            label: 'Average Compliance',
+            value: analytics ? `${analytics.summary.avgCompliance}%` : '0%',
+            icon: Target, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: '-0.5%'
+        },
+        {
+            label: 'Operational Uptime',
+            value: '99.9%',
+            icon: Activity, color: 'text-purple-400', bg: 'bg-purple-500/10', trend: 'STABLE'
+        },
     ];
+
+    const handleDownload = () => {
+        if (!analytics) return toast.error('No data available to export');
+
+        const headers = ['Metric', 'Value', 'Range'];
+        const rows = [
+            ['System Efficiency', `${analytics.summary.systemEfficiency}%`, timeRange],
+            ['Workforce Active', analytics.summary.workforceActive, timeRange],
+            ['Average Compliance', `${analytics.summary.avgCompliance}%`, timeRange],
+            ['Biometric Success Rate', `${analytics.integrity.faceRecognition}%`, timeRange],
+        ];
+
+        analytics.entityPerformance?.forEach((dept: any) => {
+            rows.push([`${dept.name} Compliance`, `${dept.score}%`, timeRange]);
+        });
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(r => r.join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `intel_report_${timeRange}_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('Intelligence report exported');
+    };
+
 
     return (
         <div className="space-y-8 pb-12">
@@ -74,15 +126,18 @@ export default function AnalyticsPage() {
                                 key={range}
                                 onClick={() => setTimeRange(range)}
                                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timeRange === range
-                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                        : 'text-slate-500 hover:text-white hover:bg-white/5'
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                    : 'text-slate-500 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 {range}
                             </button>
                         ))}
                     </div>
-                    <button className="p-3 rounded-2xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all group active:scale-95">
+                    <button
+                        onClick={handleDownload}
+                        className="p-3 rounded-2xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all group active:scale-95"
+                    >
                         <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
                     </button>
                 </div>
@@ -156,19 +211,30 @@ export default function AnalyticsPage() {
                     </div>
 
                     <div className="h-64 flex items-end justify-between gap-3">
-                        {[40, 70, 45, 90, 65, 80, 50, 85, 95, 60, 75, 55].map((val, i) => (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-4 group">
-                                <div className="relative w-full flex flex-col items-center justify-end h-full">
-                                    <motion.div
-                                        initial={{ height: 0 }}
-                                        animate={{ height: `${val}%` }}
-                                        transition={{ duration: 1, delay: 1 + (i * 0.05) }}
-                                        className="w-full bg-gradient-to-t from-blue-600/80 to-blue-400 rounded-t-lg group-hover:to-blue-300 transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)]"
-                                    />
+                        {analytics?.attendanceDelta?.length > 0 ? (
+                            analytics.attendanceDelta.map((d: any, i: number) => (
+                                <div key={i} className="flex-1 flex flex-col items-center gap-4 group">
+                                    <div className="relative w-full flex flex-col items-center justify-end h-full">
+                                        <motion.div
+                                            initial={{ height: 0 }}
+                                            animate={{ height: `${Math.min(100, (d.count / (analytics.summary.workforceActive || 1)) * 100)}%` }}
+                                            transition={{ duration: 1, delay: 0.5 + (i * 0.05) }}
+                                            className="w-full bg-gradient-to-t from-blue-600/80 to-blue-400 rounded-t-lg group-hover:to-blue-300 transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+                                        />
+                                    </div>
+                                    <span className="text-[8px] font-black text-slate-600 group-hover:text-blue-400 transition-colors uppercase">
+                                        {d.date.split('-').slice(1).join('/')}
+                                    </span>
                                 </div>
-                                <span className="text-[8px] font-black text-slate-600 group-hover:text-blue-400 transition-colors uppercase">M{i + 1}</span>
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            [40, 70, 45, 90, 65, 80].map((val, i) => (
+                                <div key={i} className="flex-1 flex flex-col items-center gap-4 group opacity-20">
+                                    <div className="w-full bg-white/10 rounded-t-lg h-full" style={{ height: `${val}%` }} />
+                                    <span className="text-[8px] font-black text-slate-800 uppercase">CALC</span>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </motion.div>
 
@@ -202,21 +268,23 @@ export default function AnalyticsPage() {
                                 fill="transparent"
                                 strokeDasharray={553}
                                 initial={{ strokeDashoffset: 553 }}
-                                animate={{ strokeDashoffset: 553 * (1 - 0.948) }}
+                                animate={{ strokeDashoffset: 553 * (1 - (analytics?.integrity?.faceRecognition / 100 || 0.948)) }}
                                 transition={{ duration: 2, delay: 1 }}
                                 className="text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]"
                             />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-4xl font-black text-white tracking-tighter">94.8%</span>
+                            <span className="text-4xl font-black text-white tracking-tighter">
+                                {analytics ? `${analytics.integrity.faceRecognition}%` : '---'}
+                            </span>
                             <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Optimized</span>
                         </div>
                     </div>
 
                     <div className="space-y-4 w-full px-4">
                         {[
-                            { label: 'Face Recognition', val: '98%', color: 'bg-blue-500' },
-                            { label: 'Manual Override', val: '2%', color: 'bg-white/10' },
+                            { label: 'Face Recognition', val: analytics ? `${analytics.integrity.faceRecognition}%` : '---', color: 'bg-blue-500' },
+                            { label: 'Manual Override', val: analytics ? `${analytics.integrity.manualOverride}%` : '---', color: 'bg-white/10' },
                         ].map((item, i) => (
                             <div key={i} className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -250,16 +318,16 @@ export default function AnalyticsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {[
-                        { name: 'Core Engineering', score: 98, trend: 'up' },
-                        { name: 'Neural Research', score: 92, trend: 'up' },
-                        { name: 'Cyber Security', score: 85, trend: 'down' },
-                        { name: 'Operations', score: 89, trend: 'up' },
-                    ].map((dept, i) => (
+                    {(analytics?.entityPerformance?.length > 0 ? analytics.entityPerformance : [
+                        { name: 'Eng', score: 98, trend: 'up' },
+                        { name: 'Research', score: 92, trend: 'up' },
+                        { name: 'Security', score: 85, trend: 'down' },
+                        { name: 'Ops', score: 89, trend: 'up' },
+                    ]).map((dept: any, i: number) => (
                         <div key={i} className="space-y-4 p-5 rounded-3xl bg-white/[0.02] border border-white/5 group hover:border-white/10 transition-all">
                             <div className="flex justify-between items-start">
                                 <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider italic leading-tight max-w-[100px]">{dept.name}</h3>
-                                {dept.trend === 'up' ? <ArrowUpRight className="w-4 h-4 text-emerald-400" /> : <ArrowDownRight className="w-4 h-4 text-rose-400" />}
+                                {dept.score >= 90 ? <ArrowUpRight className="w-4 h-4 text-emerald-400" /> : <ArrowDownRight className="w-4 h-4 text-rose-400" />}
                             </div>
                             <div className="space-y-2">
                                 <div className="flex items-end justify-between">
@@ -270,7 +338,7 @@ export default function AnalyticsPage() {
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${dept.score}%` }}
-                                        transition={{ duration: 1.5, delay: 1.5 + (i * 0.1) }}
+                                        transition={{ duration: 1.5, delay: 0.8 + (i * 0.1) }}
                                         className={`h-full bg-gradient-to-r ${dept.score >= 90 ? 'from-blue-500 to-emerald-500' : 'from-blue-500 to-amber-500'}`}
                                     />
                                 </div>

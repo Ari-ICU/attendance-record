@@ -157,6 +157,11 @@ class AttendanceService {
             filter.employeeId = user._id;
         }
 
+        // Status Filtering
+        if (query.status) {
+            filter.status = query.status;
+        }
+
         // Special handling for "today" convenience if needed, 
         // but typically frontend passes startDate=today&endDate=today
 
@@ -166,6 +171,13 @@ class AttendanceService {
             .sort({ 'checkIn.time': -1 });
 
         return attendanceList;
+    }
+
+    // Delete attendance record
+    static async deleteRecord(id) {
+        const result = await Attendance.findByIdAndDelete(id);
+        if (!result) throw new Error('Attendance record not found');
+        return result;
     }
 }
 

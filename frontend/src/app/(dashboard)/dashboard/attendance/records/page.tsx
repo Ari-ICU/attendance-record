@@ -80,11 +80,60 @@ export default function AttendanceRecordsPage() {
 
     const handleExport = () => {
         setIsExporting(true);
-        // Simulate export
-        setTimeout(() => {
-            toast.success('Report generated successfully (CSV)');
+        try {
+            const headers = ['Personnel', 'Position', 'Dept', 'Date', 'Check-In', 'CI Method', 'Check-Out', 'CO Method', 'Total Hours', 'Status'];
+
+            const formatCSVRow = (arr: (string | number)[]) => {
+                return arr.map(val => {
+                    const s = String(val ?? '');
+                    return s.includes(',') || s.includes('"') || s.includes('\n')
+                        ? `"${s.replace(/"/g, '""')}"`
+                        : s;
+                }).join(',');
+            };
+
+            const rows = filteredRecords.map(r => [
+                r.employeeId?.fullName || 'N/A',
+                r.employeeId?.position || 'N/A',
+                r.employeeId?.department || 'N/A',
+                new Date(r.date).toLocaleDateString(),
+                r.checkIn?.time ? new Date(r.checkIn.time).toLocaleTimeString() : '---',
+                r.checkIn?.method?.replace('_', ' ') || '---',
+                r.checkOut?.time ? new Date(r.checkOut.time).toLocaleTimeString() : '---',
+                r.checkOut?.method?.replace('_', ' ') || '---',
+                r.totalHours ? r.totalHours.toFixed(2) : '0.00',
+                r.status?.toUpperCase() || 'PRESENT'
+            ]);
+
+            const csvContent = [headers.join(','), ...rows.map(row => formatCSVRow(row))].join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `attendance_records_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success('Attendance report exported');
+        } catch (error) {
+            toast.error('Failed to export report');
+        } finally {
             setIsExporting(false);
-        }, 1500);
+        }
+    };
+
+    const handleDeleteRecord = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this attendance record? This action cannot be undone.')) return;
+
+        try {
+            await AttendanceService.deleteRecord(id);
+            setRecords(prev => prev.filter(r => r._id !== id));
+            toast.success('Record deleted successfully');
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to delete record');
+        }
     };
 
     return (
@@ -185,8 +234,9 @@ export default function AttendanceRecordsPage() {
                             onClick={clearFilters}
                             className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all"
                             title="Reset Filters"
+                            color='white'
                         >
-                            <X className="w-5 h-5" />
+                            <RefreshCw className="w-5 h-5" />
                         </button>
                     </div>
                 </div>
@@ -294,9 +344,15 @@ export default function AttendanceRecordsPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button className="p-2 rounded-lg hover:bg-white/5 text-slate-600 hover:text-white transition-colors">
-                                                <MoreHorizontal className="w-5 h-5" />
-                                            </button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => handleDeleteRecord(record._id)}
+                                                    className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all"
+                                                    title="Delete Record"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

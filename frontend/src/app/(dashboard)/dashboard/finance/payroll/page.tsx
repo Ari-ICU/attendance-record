@@ -117,22 +117,35 @@ export default function PayrollPage() {
     const handleDownloadCSV = () => {
         if (filteredLedger.length === 0) return toast.error('No data to export');
 
-        const headers = ['Employee ID', 'First Name', 'Last Name', 'Position', 'Department', 'Base Salary', 'Net Pay', 'Status', 'Payment Method'];
+        const headers = ['Employee ID', 'Name', 'Position', 'Dept', 'Monthly Base', 'Hourly Rate', 'Hours', 'Net Pay', 'Compliance', 'Status', 'Date', 'TXID'];
+
+        const formatCSVRow = (arr: (string | number)[]) => {
+            return arr.map(val => {
+                const s = String(val ?? '');
+                return s.includes(',') || s.includes('"') || s.includes('\n')
+                    ? `"${s.replace(/"/g, '""')}"`
+                    : s;
+            }).join(',');
+        };
+
         const rows = filteredLedger.map(item => [
             item.employee._id,
-            item.employee.firstName,
-            item.employee.lastName,
-            item.employee.position,
+            `${item.employee.firstName} ${item.employee.lastName}`,
+            item.employee.position || 'N/A',
             item.employee.department || 'N/A',
-            item.payroll.baseAmount,
+            item.payroll.baseAmount || 0,
+            item.employee.hourlyRate || 0,
+            item.payroll.totalHours || 0,
             item.payroll.netAmount,
-            item.payroll.status,
-            item.payroll.paymentMethod
+            `${item.payroll.complianceScore || 0}%`,
+            item.payroll.status?.toUpperCase() || 'PENDING',
+            item.payroll.paymentDate ? new Date(item.payroll.paymentDate).toLocaleDateString() : 'N/A',
+            item.payroll.transactionId || '---'
         ]);
 
         const csvContent = [
             headers.join(','),
-            ...rows.map(row => row.join(','))
+            ...rows.map(row => formatCSVRow(row))
         ].join('\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -144,7 +157,7 @@ export default function PayrollPage() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        toast.success('Ledger exported successfully');
+        toast.success('Financial ledger exported');
     };
 
     const handleDownloadPayslip = (item: any) => {

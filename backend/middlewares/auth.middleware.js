@@ -58,8 +58,20 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
+const adminOnly = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({
+            success: false,
+            message: 'Forbidden: Admin access required'
+        });
+    }
+};
+
 module.exports = {
     authMiddleware,
+    adminOnly,
     generateToken,
     generateRefreshToken,
     TOKEN_EXPIRES_IN,

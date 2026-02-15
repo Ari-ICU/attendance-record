@@ -95,6 +95,16 @@ class AttendanceController {
             return res.status(400).json(ApiResponse.error(err.message || 'Failed to check out', 400));
         }
     }
+    // Delete attendance record
+    static async deleteAttendance(req, res) {
+        try {
+            await AttendanceService.deleteRecord(req.params.id);
+            return res.status(200).json(ApiResponse.success(null, 'Attendance record deleted successfully', 200));
+        } catch (err) {
+            console.error('Error in deleteAttendance:', err);
+            return res.status(400).json(ApiResponse.error('Failed to delete attendance record', 400, err.message));
+        }
+    }
 }
 
 module.exports = AttendanceController;

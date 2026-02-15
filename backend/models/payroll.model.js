@@ -16,6 +16,7 @@ const payrollSchema = new mongoose.Schema({
     paymentDate: { type: Date },
     paymentMethod: { type: String, enum: ['bank_transfer', 'cash', 'cheque'], default: 'bank_transfer' },
     transactionId: { type: String },
+    complianceScore: { type: Number, default: 0 },
     notes: { type: String },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });

@@ -76,7 +76,15 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
 
     // Handle input change
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value, type } = e.target;
+
+        // Handle numeric fields
+        if (type === 'number') {
+            const numValue = value === '' ? 0 : parseFloat(value);
+            setFormData({ ...formData, [name]: numValue });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     // Handle image upload

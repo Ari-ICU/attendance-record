@@ -27,9 +27,19 @@ export const API_URLS = {
         GET_RECORDS: `${BASE_URL}/attendance`,
         CHECK_IN: `${BASE_URL}/attendance/check-in`, // Aligned with attendance.router.js
         CHECK_OUT: `${BASE_URL}/attendance/check-out`, // Aligned with attendance.router.js
+        DELETE: (id: string) => `${BASE_URL}/attendance/${id}`,
         REPORTS: `${BASE_URL}/attendance/reports`, // For future compatibility
         MANAGE: `${BASE_URL}/attendance/manage`, // For future compatibility
     },
+    PAYROLL: {
+        STATS: `${BASE_URL}/payroll/stats`,
+        LEDGER: `${BASE_URL}/payroll/ledger`,
+        DISBURSE: `${BASE_URL}/payroll/disburse`,
+        GENERATE: `${BASE_URL}/payroll/generate`,
+    },
+    REPORTS: {
+        ANALYTICS: `${BASE_URL}/reports/analytics`
+    }
 };
 
 export default API_URLS;

@@ -10,6 +10,7 @@ router.use(authMiddleware);
 router.get('/', AttendanceController.getAttendance);
 router.post('/check-in', AttendanceController.checkIn);
 router.post('/check-out', AttendanceController.checkOut);
+router.delete('/:id', AttendanceController.deleteAttendance);
 
 
 module.exports = router;
