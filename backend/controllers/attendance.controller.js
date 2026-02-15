@@ -46,7 +46,11 @@ class AttendanceController {
             const result = await AttendanceService.checkIn(targetEmployee, req.body, ip, userAgent);
             return res.status(200).json(ApiResponse.success(result, 'Check-in successful', 200));
         } catch (err) {
-            console.error('Error in checkIn:', err);
+            if (err.message && err.message.toLowerCase().includes('already checked')) {
+                console.log(`[Attendance] Info: ${err.message}`);
+            } else {
+                console.error('Error in checkIn:', err);
+            }
             return res.status(400).json(ApiResponse.error(err.message || 'Failed to check in', 400));
         }
     }
@@ -83,7 +87,11 @@ class AttendanceController {
             const result = await AttendanceService.checkOut(targetEmployee, req.body, ip, userAgent);
             return res.status(200).json(ApiResponse.success(result, 'Check-out successful', 200));
         } catch (err) {
-            console.error('Error in checkOut:', err);
+            if (err.message && err.message.toLowerCase().includes('already checked')) {
+                console.log(`[Attendance] Info: ${err.message}`);
+            } else {
+                console.error('Error in checkOut:', err);
+            }
             return res.status(400).json(ApiResponse.error(err.message || 'Failed to check out', 400));
         }
     }

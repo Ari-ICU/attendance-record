@@ -19,7 +19,7 @@ class AttendanceService {
             isActive: true,
         });
 
-        if (attendance && attendance.checkIn.time) throw new Error('Already checked in');
+        if (attendance && attendance.checkIn.time) throw new Error('You have already checked in for today.');
 
         let faceData = null;
         if (value.method === 'face_verification') {
@@ -91,7 +91,7 @@ class AttendanceService {
         });
 
         if (!attendance || !attendance.checkIn.time) throw new Error('No check-in found');
-        if (attendance.checkOut.time) throw new Error('Already checked out');
+        if (attendance.checkOut.time) throw new Error('You have already checked out for today.');
 
         let faceData = null;
         if (value.method === 'face_verification') {

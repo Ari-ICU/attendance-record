@@ -5,22 +5,18 @@ import {
     CreditCard,
     Wallet,
     Banknote,
-    CheckCircle2,
     Clock,
     Search,
     Download,
     ArrowUpRight,
-    ArrowDownRight,
     DollarSign,
-    MoreHorizontal,
     FileText,
     TrendingUp,
     ShieldCheck,
     RefreshCw,
     UserCircle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { EmployeeService } from '@/services/employee.service';
+import { motion } from 'framer-motion';
 import { Employee } from '@/types/employee.types';
 import { getFullImageUrl } from '@/utils/url.utils';
 import { PayrollService } from '@/services/payroll.service';
@@ -28,7 +24,6 @@ import toast from 'react-hot-toast';
 
 
 export default function PayrollPage() {
-    const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -64,11 +59,27 @@ export default function PayrollPage() {
         fetchData();
     }, []);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
     const filteredLedger = ledger.filter(item =>
         item.employee.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.employee.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const totalPages = Math.ceil(filteredLedger.length / itemsPerPage);
+    const paginatedLedger = filteredLedger.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) setCurrentPage(prev => prev - 1);
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+    };
 
     const statCards = [
         { label: 'Total Payroll', value: `$${stats.totalPayroll.toLocaleString()}`, icon: DollarSign, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: '+4.2%' },
@@ -101,6 +112,78 @@ export default function PayrollPage() {
         } finally {
             setRefreshing(false);
         }
+    };
+
+    const handleDownloadCSV = () => {
+        if (filteredLedger.length === 0) return toast.error('No data to export');
+
+        const headers = ['Employee ID', 'First Name', 'Last Name', 'Position', 'Department', 'Base Salary', 'Net Pay', 'Status', 'Payment Method'];
+        const rows = filteredLedger.map(item => [
+            item.employee._id,
+            item.employee.firstName,
+            item.employee.lastName,
+            item.employee.position,
+            item.employee.department || 'N/A',
+            item.payroll.baseAmount,
+            item.payroll.netAmount,
+            item.payroll.status,
+            item.payroll.paymentMethod
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `payroll_ledger_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('Ledger exported successfully');
+    };
+
+    const handleDownloadPayslip = (item: any) => {
+        const content = `
+PAYSLIP RECEIPT
+--------------------------------------------------
+Employee: ${item.employee.firstName} ${item.employee.lastName}
+ID: ${item.employee._id}
+Position: ${item.employee.position}
+Department: ${item.employee.department || 'N/A'}
+Date: ${new Date().toLocaleDateString()}
+
+EARNINGS
+--------------------------------------------------
+Base Salary: $${item.payroll.baseAmount.toFixed(2)}
+Bonus:       $${(item.payroll.bonus || 0).toFixed(2)}
+--------------------------------------------------
+Gross Pay:   $${(item.payroll.baseAmount + (item.payroll.bonus || 0)).toFixed(2)}
+
+DEDUCTIONS
+--------------------------------------------------
+Tax/Deductions: $${(item.payroll.deductions || 0).toFixed(2)}
+
+NET PAY:     $${item.payroll.netAmount.toFixed(2)}
+--------------------------------------------------
+Status: ${item.payroll.status.toUpperCase()}
+Transaction ID: ${item.payroll.transactionId || 'PENDING'}
+        `;
+
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `payslip_${item.employee.firstName}_${item.employee.lastName}.txt`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success(`Payslip for ${item.employee.firstName} downloaded`);
     };
 
 
@@ -195,7 +278,11 @@ export default function PayrollPage() {
                                 className="bg-slate-950/50 border border-white/5 text-white pl-11 pr-4 py-3 rounded-2xl outline-none focus:border-blue-500/50 transition-all w-64 text-[10px] font-black uppercase tracking-[0.2em] placeholder:text-slate-700"
                             />
                         </div>
-                        <button className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                        <button
+                            onClick={handleDownloadCSV}
+                            className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+                            title="Export to CSV"
+                        >
                             <Download className="w-5 h-5" />
                         </button>
                     </div>
@@ -221,7 +308,7 @@ export default function PayrollPage() {
                                         </td>
                                     </tr>
                                 ))
-                            ) : filteredLedger.map((item, index) => (
+                            ) : paginatedLedger.map((item, index) => (
                                 <tr key={item.employee._id} className="hover:bg-white/[0.02] transition-colors group">
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-4">
@@ -272,8 +359,9 @@ export default function PayrollPage() {
                                     </td>
                                     <td className="px-8 py-6 text-right">
                                         <button
-                                            onClick={() => toast('Payslip generation protocol initiated', { icon: '📄' })}
+                                            onClick={() => handleDownloadPayslip(item)}
                                             className="p-2.5 rounded-xl bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+                                            title="Download Payslip"
                                         >
                                             <FileText className="w-5 h-5" />
                                         </button>
@@ -290,10 +378,22 @@ export default function PayrollPage() {
                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Ledger contains {filteredLedger.length} unique financial entities</p>
 
                     <div className="flex items-center gap-4">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">Page 1 of 5</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Page {currentPage} of {Math.max(1, totalPages)}</span>
                         <div className="flex gap-2">
-                            <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-slate-400 text-xs font-black uppercase transition-all">Prev</button>
-                            <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-slate-400 text-xs font-black uppercase transition-all">Next</button>
+                            <button
+                                onClick={handlePrevPage}
+                                disabled={currentPage === 1}
+                                className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-slate-400 text-xs font-black uppercase transition-all"
+                            >
+                                Prev
+                            </button>
+                            <button
+                                onClick={handleNextPage}
+                                disabled={currentPage >= totalPages}
+                                className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-slate-400 text-xs font-black uppercase transition-all"
+                            >
+                                Next
+                            </button>
                         </div>
                     </div>
                 </div>

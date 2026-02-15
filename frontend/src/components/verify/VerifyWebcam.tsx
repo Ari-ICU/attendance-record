@@ -138,10 +138,41 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                         }, 3000);
 
                     } catch (err: any) {
-                        const errorMessage = err.response?.data?.error || err.message || 'Access Denied';
-                        setStatus(errorMessage);
-                        toast.error(errorMessage);
-                        setVerifying(false);
+                        const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Access Denied';
+
+                        // Handle both "Already checked in" and "Already checked out" as success states
+                        const isAlreadyDone = errorMessage.toLowerCase().includes('already checked in') ||
+                            errorMessage.toLowerCase().includes('already checked out');
+
+                        if (isAlreadyDone) {
+                            setIsSuccess(true);
+
+                            const isCheckIn = errorMessage.toLowerCase().includes('checked in');
+                            // Set status based on the specific message
+                            const statusMsg = isCheckIn ? 'Already Checked In Today' : 'Already Checked Out Today';
+                            setStatus(statusMsg);
+
+                            toast.success(errorMessage, {
+                                icon: '✅',
+                                style: {
+                                    borderRadius: '10px',
+                                    background: '#333',
+                                    color: '#fff',
+                                },
+                            });
+
+                            const statusKey = isCheckIn ? 'already_checked_in' : 'already_checked_out';
+                            if (onSuccess) onSuccess({ status: statusKey });
+
+                            setTimeout(() => {
+                                setIsSuccess(false);
+                                setVerifying(false);
+                            }, 3000);
+                        } else {
+                            setStatus(errorMessage);
+                            toast.error(errorMessage);
+                            setVerifying(false);
+                        }
                     }
                 }
             }
@@ -237,8 +268,9 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
 
                 {/* Status Indicator Overlays */}
                 <AnimatePresence>
-                    {verifying && (
+                    {verifying && !isSuccess && (
                         <motion.div
+                            key="verifying"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
@@ -251,6 +283,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
 
                     {isSuccess && (
                         <motion.div
+                            key="success"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
