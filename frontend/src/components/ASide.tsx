@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Sun, Moon, Menu, ChevronDown, ChevronUp } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { Home, Menu, ChevronDown, ChevronUp, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MenuItem {
     name: string;
@@ -18,34 +19,26 @@ interface SidebarProps {
     menuItems: MenuItem[];
     brandName?: string;
     brandIcon?: React.ReactNode;
+    collapsed?: boolean;
 }
 
 export default function Sidebar({
     menuItems,
-    brandName = 'My App',
-    brandIcon = <Home size={24} />,
+    brandName = 'Smart Attendance',
+    brandIcon = <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/20">SA</div>,
+    collapsed = false,
 }: SidebarProps) {
-    const [isOpen, setIsOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const pathname = usePathname();
-    const { theme, setTheme } = useTheme();
+    const { logout } = useAuth();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        const handleResize = () => {
-            if (window.innerWidth >= 1024) {
-                setIsOpen(true);
-            } else {
-                setIsOpen(false);
-            }
-        };
-        handleResize();
         setMounted(true);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     const toggleGroup = (name: string) => {
+        if (collapsed) return;
         setExpandedGroups((prev) =>
             prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
         );
@@ -56,99 +49,118 @@ export default function Sidebar({
     const RenderMenuItem = ({ item, level = 0 }: { item: MenuItem; level?: number }) => {
         const active = item.href && pathname === item.href;
         const isExpanded = expandedGroups.includes(item.name);
+        const hasChildren = item.group && item.items && item.items.length > 0;
 
-        if (item.group && item.items) {
+        // Group (Parent) Item
+        if (hasChildren) {
             return (
-                <div key={item.name} className="space-y-1">
+                <div key={item.name} className="space-y-1 mb-1">
                     <button
                         onClick={() => toggleGroup(item.name)}
-                        className="flex items-center justify-between w-full gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        aria-expanded={isExpanded}
-                        aria-controls={`menu-${item.name}`}
+                        className={`flex items-center justify-between w-full p-3 rounded-xl transition-all duration-200 group relative
+                            ${isExpanded ? 'bg-white/5' : 'hover:bg-white/5'}
+                            ${collapsed ? 'justify-center' : ''}
+                        `}
+                        title={collapsed ? item.name : ''}
                     >
-                        <span className="flex items-center gap-3">
-                            {item.icon}
-                            {item.name}
-                        </span>
-                        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                    </button>
-                    {isExpanded && (
-                        <div id={`menu-${item.name}`} className="flex flex-col space-y-1 ml-4">
-                            {item.items.map((subItem) => (
-                                <RenderMenuItem key={subItem.name} item={subItem} level={level + 1} />
-                            ))}
+                        <div className={`flex items-center gap-3 ${active ? 'text-blue-400' : 'text-slate-400'}`}>
+                            <span className="bg-white/5 p-1 rounded-lg">{item.icon}</span>
+                            {!collapsed && <span className="font-medium text-sm">{item.name}</span>}
                         </div>
-                    )}
+                        {!collapsed && (
+                            <span className={`text-slate-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                                <ChevronDown size={14} />
+                            </span>
+                        )}
+                    </button>
+
+                    {/* Collapsed Sub-menu */}
+                    <AnimatePresence>
+                        {isExpanded && !collapsed && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden ml-4 pl-2 border-l-2 border-white/5"
+                            >
+                                {item.items!.map((subItem) => (
+                                    <RenderMenuItem key={subItem.name} item={subItem} level={level + 1} />
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             );
         }
 
+        // Single Link Item
         return (
-            item.href && (
-                <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 p-2 rounded-lg transition-all ${active
-                            ? 'bg-blue-500 text-white'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                        }`}
-                    onClick={() => setIsOpen(false)}
-                >
-                    {item.icon}
-                    {item.name}
-                </Link>
-            )
+            <Link
+                key={item.name}
+                href={item.href || '#'}
+                className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 mb-1 relative group
+                    ${active ? 'text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}
+                    ${collapsed ? 'justify-center aspect-square' : ''}
+                `}
+                title={collapsed ? item.name : ''}
+            >
+                {active && (
+                    <motion.div
+                        layoutId="active-nav-item"
+                        className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/30 rounded-xl"
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                )}
+
+                <span className={`z-10 ${active ? 'text-white' : ''}`}>{item.icon}</span>
+                {!collapsed && <span className="z-10 font-medium text-sm">{item.name}</span>}
+
+                {/* Hover Glow */}
+                {!active && (
+                    <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+                )}
+            </Link>
         );
     };
 
     return (
-        <>
-            {!isOpen && (
+        <div className="flex flex-col h-full bg-slate-900/40 backdrop-blur-xl border-r border-white/5">
+            {/* Brand Header */}
+            <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-start px-6'} h-20 border-b border-white/5 shrink-0`}>
+                <Link href="/" className="flex items-center gap-3 transition-transform hover:scale-[1.02]">
+                    {brandIcon}
+                    {!collapsed && (
+                        <div className="flex flex-col">
+                            <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                                {brandName}
+                            </span>
+                        </div>
+                    )}
+                </Link>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-hide">
+                {menuItems.map((item) => (
+                    <RenderMenuItem key={item.name} item={item} />
+                ))}
+            </nav>
+
+            {/* Footer / User Controls */}
+            <div className={`p-4 border-t border-white/5 bg-slate-950/20 ${collapsed ? 'items-center' : ''} flex flex-col gap-2`}>
+
+
                 <button
-                    className="lg:hidden fixed top-4 right-4 z-50 w-12 h-12 flex items-center justify-center rounded-full shadow-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onClick={() => setIsOpen(true)}
-                    aria-label="Open sidebar"
+                    onClick={() => logout()}
+                    className={`flex items-center gap-3 p-2.5 rounded-xl hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-all
+                        ${collapsed ? 'justify-center self-center aspect-square' : ''}
+                    `}
+                    title="Logout"
                 >
-                    <Menu size={24} />
+                    <LogOut size={18} />
+                    {!collapsed && <span className="text-sm font-medium">Logout</span>}
                 </button>
-            )}
-
-            {isOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-                    onClick={() => setIsOpen(false)}
-                    aria-hidden="true"
-                />
-            )}
-
-            <aside
-                className={`fixed top-0 left-0 h-full w-64 bg-white/80 dark:bg-gray-900/90 backdrop-blur-xl text-gray-900 dark:text-gray-100 shadow-lg transform transition-all duration-300 z-40
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
-                aria-label="Sidebar navigation"
-            >
-                <div className="flex items-center justify-start p-4 border-b dark:border-gray-700">
-                    <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-                        {brandIcon}
-                        {brandName}
-                    </Link>
-                </div>
-
-                <nav className="flex flex-col p-3 space-y-2">
-                    {menuItems.map((item) => (
-                        <RenderMenuItem key={item.name} item={item} />
-                    ))}
-                </nav>
-
-                <div className="absolute bottom-0 w-full p-4 border-t dark:border-gray-700 flex justify-between items-center">
-                    <span className="text-sm">Theme</span>
-                    <button
-                        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                        className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-                    >
-                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                    </button>
-                </div>
-            </aside>
-        </>
+            </div>
+        </div>
     );
 }

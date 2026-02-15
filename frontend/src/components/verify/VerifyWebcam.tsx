@@ -12,9 +12,13 @@ const VERIFY_DEBOUNCE_MS = 2000;
 
 interface FaceVerifyProps {
     employeeId: string;
+    mode?: 'verify-only' | 'check-in' | 'check-out';
+    onSuccess?: (data: any) => void;
 }
 
-const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId }) => {
+import { AttendanceService } from '@/services/attendance.service';
+
+const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only', onSuccess }) => {
     const webcamRef = useRef<Webcam>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -116,10 +120,31 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId }) => {
                             throw new Error('Invalid face descriptor');
                         }
                         console.log('Sending payload:', { employeeId, faceDescriptor: descriptorArray }); // Debug log
-                        const result = await EmployeeService.verifyFace({ employeeId, faceDescriptor: descriptorArray });
-                        statusMessage = `Face verified! Similarity: ${result.similarity.toFixed(2)}`;
+
+                        let result;
+                        if (mode === 'check-in') {
+                            result = await AttendanceService.checkIn({
+                                employeeId,
+                                method: 'face_verification',
+                                faceDescriptor: descriptorArray
+                            });
+                            statusMessage = `Check-in successful! Time: ${new Date(result.data.checkInTime).toLocaleTimeString()}`;
+                        } else if (mode === 'check-out') {
+                            result = await AttendanceService.checkOut({
+                                employeeId,
+                                method: 'face_verification',
+                                faceDescriptor: descriptorArray
+                            });
+                            statusMessage = `Check-out successful! Time: ${new Date(result.data.checkOutTime).toLocaleTimeString()}`;
+                        } else {
+                            // Default verify-only
+                            result = await EmployeeService.verifyFace({ employeeId, faceDescriptor: descriptorArray });
+                            statusMessage = `Face verified! Similarity: ${result.similarity.toFixed(2)}`;
+                        }
+
                         color = 'lime';
                         toast.success(statusMessage);
+                        if (onSuccess) onSuccess(result);
                     } catch (err: unknown) {
                         // Extract server error message
                         const errorMessage = err instanceof Error ? err.message : 'Face verification failed';

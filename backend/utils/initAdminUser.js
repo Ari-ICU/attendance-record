@@ -8,7 +8,8 @@ const adminUserData = {
     email: 'admin@system.com',
     password: 'SecurePassword123!',
     loginAttempts: 0,
-    isLocked: false
+    isLocked: false,
+    role: 'admin'
 };
 
 

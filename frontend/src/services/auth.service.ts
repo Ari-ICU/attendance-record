@@ -10,12 +10,17 @@ interface ApiResponse<T> {
 
 export class AuthService {
     static async login(payload: LoginPayload): Promise<AuthResponse> {
-        const { data } = await api.post<ApiResponse<AuthResponse>>(API_URLS.AUTH.LOGIN, payload);
-        if (!data.success) throw new Error(data.message || 'Login failed');
+        try {
+            const { data } = await api.post<ApiResponse<AuthResponse>>(API_URLS.AUTH.LOGIN, payload);
+            if (!data.success) throw new Error(data.message || 'Login failed');
 
-        // Save token in Axios instance
-        setAccessToken(data.data.token);
-        return data.data;
+            // Save token in Axios instance
+            setAccessToken(data.data.token);
+            return data.data;
+        } catch (error: any) {
+            const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Login failed';
+            throw new Error(message);
+        }
     }
 
     static async refreshToken(): Promise<string> {

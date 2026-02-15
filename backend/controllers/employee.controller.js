@@ -1,7 +1,9 @@
 const EmployeeService = require('../services/employee.service');
-const { getFaceDescriptor } = require('../utils/fast-face-api');
+const { getDescriptor } = require('../utils/fast-face-api');
 const { ApiResponse } = require('../utils/apiResponse');
 const { Types } = require('mongoose');
+
+const { v4: uuidv4 } = require('uuid');
 
 class EmployeeController {
     // Create employee (optional image for face descriptor)
@@ -9,18 +11,30 @@ class EmployeeController {
         try {
             const { image, ...data } = req.body;
 
-            // If base64 image is provided, extract face descriptor
+            // If base64 image is provided, extract face descriptor AND save image
             if (image) {
-                const descriptor = await getFaceDescriptor(Buffer.from(image, 'base64'));
+                const buffer = Buffer.from(image, 'base64');
+                const descriptor = await getDescriptor(buffer);
                 if (!descriptor) throw new Error('No face detected in the provided image');
-                data.faceDescriptor = descriptor;
+                data.faceDescriptor = Array.from(descriptor);
+                data.faceVerificationEnabled = true;
+                data.faceVerifiedAt = new Date();
+
+                // Store image as Data URI
+                data.photoUrl = `data:image/jpeg;base64,${image}`;
             }
 
             const employee = await EmployeeService.createEmployee(data);
             return res.status(201).json(ApiResponse.success(employee, 'Employee created successfully', 201));
         } catch (err) {
-            const status = err.message.includes('Validation failed') ? 400 : 500;
-            return res.status(status).json(ApiResponse.error('Failed to create employee', status, err.message));
+            console.error('Error in createEmployee:', err);
+
+            // Check if it's a validation error (Joi or Mongoose) or face recognition error
+            const isValidationError = /validation/i.test(err.message);
+            const isFaceError = /(face|descriptor)/i.test(err.message);
+
+            const status = (isValidationError || isFaceError) ? 400 : 500;
+            return res.status(status).json(ApiResponse.error(err.message || 'Failed to create employee', status));
         }
     }
 
@@ -61,9 +75,16 @@ class EmployeeController {
 
             const { image, ...data } = req.body;
             if (image) {
-                const descriptor = await getFaceDescriptor(Buffer.from(image, 'base64'));
+                const buffer = Buffer.from(image, 'base64');
+                const descriptor = await getDescriptor(buffer);
                 if (!descriptor) throw new Error('No face detected in the provided image');
-                data.faceDescriptor = descriptor;
+
+                data.faceDescriptor = Array.from(descriptor);
+                data.faceVerificationEnabled = true;
+                data.faceVerifiedAt = new Date();
+
+                // Store image as Data URI
+                data.photoUrl = `data:image/jpeg;base64,${image}`;
             }
 
             const employee = await EmployeeService.updateEmployee(id, data);

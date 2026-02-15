@@ -6,23 +6,20 @@ import EmployeeDetail from '@/components/employee/EmployeeDetail';
 import { Employee } from '@/types/employee.types';
 import toast from 'react-hot-toast';
 
+import { EmployeeService } from '@/services/employee.service';
+
 export default function EmployeeDetailPage() {
     const router = useRouter();
     const params = useParams();
     const [employee, setEmployee] = useState<Employee | null>(null);
-    const { id } = params;
+    const { id } = params as { id: string };
 
     useEffect(() => {
         async function fetchEmployee() {
             try {
-                // Replace this with your real API call
-                const response = await fetch(`/api/employees/${id}`);
-                if (!response.ok) throw new Error('Employee not found');
-
-                const data: Employee = await response.json();
+                const data = await EmployeeService.getEmployeeById(id);
                 setEmployee(data);
             } catch (error: unknown) {
-                // Narrow unknown to Error
                 if (error instanceof Error) {
                     toast.error(error.message);
                 } else {
@@ -32,7 +29,7 @@ export default function EmployeeDetailPage() {
             }
         }
 
-        fetchEmployee();
+        if (id) fetchEmployee();
     }, [id, router]);
 
 

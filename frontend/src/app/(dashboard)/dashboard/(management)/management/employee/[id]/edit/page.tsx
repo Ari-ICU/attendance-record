@@ -5,48 +5,69 @@ import { useState, useEffect } from 'react';
 import EmployeeForm from '@/components/employee/EmployeeForm';
 import { Employee, EmployeeUpdateData } from '@/types/employee.types';
 
+import { EmployeeService } from '@/services/employee.service';
+import toast from 'react-hot-toast';
+
 export default function EditEmployeePage() {
     const router = useRouter();
     const params = useParams();
     const { id } = params as { id: string };
 
     const [employee, setEmployee] = useState<Employee | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submissionError, setSubmissionError] = useState<string | null>(null);
 
     useEffect(() => {
-        // TODO: replace with API call to fetch employee by ID
-        const mockEmployee: Employee = {
-            _id: id,
-            firstName: 'John',
-            lastName: 'Doe',
-            fullName: 'John Doe',
-            email: 'john@example.com',
-            phone: '123456789',
-            position: 'Developer',
-            department: 'Engineering',
-            dateOfJoining: '2025-09-15',
-            faceVerificationEnabled: false,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+        const fetchEmployee = async () => {
+            try {
+                const data = await EmployeeService.getEmployeeById(id);
+                setEmployee(data);
+            } catch (error) {
+                toast.error('Failed to fetch employee details');
+                router.push('/dashboard/management/employee');
+            }
         };
-        setEmployee(mockEmployee);
-    }, [id]);
 
-    const handleSubmit = (updated: EmployeeUpdateData) => {
-        console.log('Update employee:', updated);
-        // TODO: call API to update employee
-        router.push('/dashboard/management/employee');
+        if (id) fetchEmployee();
+    }, [id, router]);
+
+    const handleSubmit = async (updated: any) => {
+        try {
+            setIsSubmitting(true);
+            setSubmissionError(null);
+            await EmployeeService.updateEmployee(id, updated);
+            toast.success(`${updated.type === 'student' ? 'Student' : 'Employee'} updated successfully!`);
+            router.push(`/dashboard/management/employee/${id}`);
+        } catch (error: any) {
+            console.error('Update error:', error);
+            let message = 'Failed to update. Please try again.';
+            if (error.response?.data) {
+                const responseData = error.response.data;
+                message = responseData.error || responseData.message || message;
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
+            setSubmissionError(message);
+            toast.error(message);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    if (!employee) return <p>Loading...</p>;
+    if (!employee) return (
+        <div className="flex items-center justify-center min-h-[400px]">
+            <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+        </div>
+    );
 
     return (
-        <div className="p-6 bg-gray-800">
-            <h1 className="text-2xl text-gray-200 font-bold mb-6">Edit Employee</h1>
+        <div className="">
             <EmployeeForm
                 initialData={employee}
                 onSubmit={handleSubmit}
-                onCancel={() => router.push('/dashboard/management/employee')}
+                onCancel={() => router.push(`/dashboard/management/employee/${id}`)}
+                error={submissionError}
+                isSubmitting={isSubmitting}
             />
         </div>
     );

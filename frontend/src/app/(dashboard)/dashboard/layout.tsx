@@ -1,10 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/ASide';
-import { Home, User, Settings } from 'lucide-react';
+import AHeader from '@/components/AHeader';
+import {
+    Home,
+    User,
+    Settings,
+    Calendar,
+    BarChart3,
+    CreditCard,
+    Clock,
+    ShieldCheck,
+    Users
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardLayoutProps {
@@ -13,26 +23,50 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const { theme } = useTheme();
     const { user, loading, initializing } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     const menuItems = [
-        { name: 'Dashboard', href: '/dashboard', icon: <Home size={20} /> },
+        {
+            name: 'Overview',
+            href: '/dashboard',
+            icon: <Home size={20} />,
+        },
+        {
+            name: 'Attendance',
+            icon: <ShieldCheck size={20} />,
+            group: true,
+            items: [
+                { name: 'Live Monitor', href: '/dashboard/attendance/monitor', icon: <Clock size={20} /> },
+                { name: 'Records', href: '/dashboard/attendance/records', icon: <Calendar size={20} /> },
+            ],
+        },
         {
             name: 'Management',
+            icon: <Users size={20} />,
+            group: true,
+            items: [
+                { name: 'Employees', href: '/dashboard/management/employee?type=employee', icon: <User size={20} /> },
+                { name: 'Students', href: '/dashboard/management/employee?type=student', icon: <Users size={20} /> },
+                { name: 'Departments', href: '/dashboard/management/departments', icon: <Users size={20} /> },
+            ],
+        },
+        {
+            name: 'Organization',
+            icon: <BarChart3 size={20} />,
+            group: true,
+            items: [
+                { name: 'Payroll', href: '/dashboard/finance/payroll', icon: <CreditCard size={20} /> },
+                { name: 'Reports', href: '/dashboard/reports/analytics', icon: <BarChart3 size={20} /> },
+            ],
+        },
+        {
+            name: 'System',
             icon: <Settings size={20} />,
             group: true,
             items: [
-                { name: 'Employee', href: '/dashboard/management/employee', icon: <User size={20} /> },
-                // {
-                //     name: 'Advanced',
-                //     icon: <Settings size={20} />,
-                //     group: true,
-                //     items: [
-                //         { name: 'Permissions', href: '/management/advanced/permissions', icon: <User size={20} /> },
-                //     ],
-                // },
+                { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={20} /> },
             ],
         },
     ];
@@ -44,6 +78,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // Close sidebar on route change on mobile
+    useEffect(() => {
+        if (window.innerWidth < 1024) {
+            setSidebarCollapsed(true);
+        }
+    }, [pathname]);
+
     useEffect(() => {
         if (!initializing && !user) {
             router.push('/login');
@@ -53,10 +94,31 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     if (loading || initializing || !user) return null;
 
     return (
-        <div className={`flex min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900'}`}>
-            <Sidebar menuItems={menuItems} />
-            <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-                <main className="">{children}</main>
+        <div className="flex min-h-screen font-sans text-slate-100">
+            {/* Sidebar */}
+            <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-2xl`}>
+                <Sidebar menuItems={menuItems} collapsed={sidebarCollapsed} />
+            </div>
+
+            {/* Mobile Overlay */}
+            {!sidebarCollapsed && (
+                <div
+                    className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+                    onClick={() => setSidebarCollapsed(true)}
+                />
+            )}
+
+            {/* Main Content */}
+            <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} relative min-h-screen`}>
+                {/* Header */}
+                <AHeader sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
+
+                {/* Background ambient glow */}
+                <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-transparent pointer-events-none opacity-50 blur-3xl z-0" />
+
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto">
+                    {children}
+                </main>
             </div>
         </div>
     );

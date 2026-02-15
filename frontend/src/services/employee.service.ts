@@ -23,14 +23,8 @@ export class EmployeeService {
         return res.data;
     }
 
-    static async getAllEmployees(query?: { page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<EmployeeListResponse> {
-        const url = new URL(API_URLS.EMPLOYEE.GET_ALL, window.location.origin);
-        if (query?.page) url.searchParams.append('page', query.page.toString());
-        if (query?.limit) url.searchParams.append('limit', query.limit.toString());
-        if (query?.sortBy) url.searchParams.append('sortBy', query.sortBy);
-        if (query?.sortOrder) url.searchParams.append('sortOrder', query.sortOrder);
-
-        const { data: res } = await api.get<ApiResponse<EmployeeListResponse>>(url.toString());
+    static async getAllEmployees(query?: { page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc'; type?: 'employee' | 'student' }): Promise<EmployeeListResponse> {
+        const { data: res } = await api.get<ApiResponse<EmployeeListResponse>>(API_URLS.EMPLOYEE.GET_ALL, { params: query });
         if (!res.success) throw new Error(res.message || 'Failed to fetch employees');
         return res.data;
     }

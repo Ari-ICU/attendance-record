@@ -1,96 +1,205 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import VerifyWebcam from '@/components/verify/VerifyWebcam';
 import VerifyCard from '@/components/verify/VerifyCard';
+import { EmployeeService } from '@/services/employee.service';
+import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Clock, Fingerprint, ShieldCheck, UserCheck } from 'lucide-react';
 
 export default function VerifyPage() {
-
     const params = useParams();
-    const employeeId =
-        typeof params?.employeeId === 'string'
-            ? params.employeeId
-            : Array.isArray(params?.employeeId)
-                ? params.employeeId[0] // take first if array
-                : '';
+    const searchParams = useSearchParams();
 
+    // Get employeeId from params or search query
+    const employeeId = (params?.employeeId as string) || searchParams.get('id') || '';
+
+    const [mode, setMode] = useState<'check-in' | 'check-out'>('check-in');
+    const [loading, setLoading] = useState(true);
     const [idData, setIdData] = useState({
-        name: 'John Doe',
-        idNumber: '123456789',
-        dob: '01/01/1990',
-        expiry: '01/01/2030',
-        nationality: 'USA',
-        photoUrl: '/example-photo.jpg',
-        position: 'Software Engineer',
-        manager: 'Jane Smith',
+        name: 'Loading...',
+        idNumber: '...',
+        dob: '...',
+        expiry: '...',
+        nationality: '...',
+        photoUrl: '',
+        position: '...',
+        manager: '...',
     });
 
-    // Simulate real-time update (replace with API fetch)
     useEffect(() => {
-        const interval = setInterval(() => {
-            // Example: change status randomly
-            // In real use-case, fetch verification results from API
-            setIdData((prev) => ({ ...prev }));
-        }, 1000);
+        const fetchEmployee = async () => {
+            if (!employeeId) {
+                setLoading(false);
+                return;
+            }
+            try {
+                const employee = await EmployeeService.getEmployeeById(employeeId);
+                setIdData({
+                    name: `${employee.firstName} ${employee.lastName}`,
+                    idNumber: employee._id,
+                    dob: 'N/A',
+                    expiry: 'N/A',
+                    nationality: 'Cambodian',
+                    photoUrl: employee.photoUrl || '',
+                    position: employee.position,
+                    manager: 'N/A',
+                });
+            } catch (err) {
+                console.error(err);
+                toast.error('Failed to load employee details');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        return () => clearInterval(interval);
-    }, []);
+        fetchEmployee();
+    }, [employeeId]);
 
     return (
-        <main className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-            <div className="w-full max-w-7xl mx-auto">
-                {/* Main Header */}
-                <header className="text-center mb-8 sm:mb-12">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">
-                        Identity Verification
+        <main className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+            {/* Background Decorations */}
+            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full -translate-y-1/2 pointer-events-none" />
+            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full translate-y-1/2 pointer-events-none" />
+
+            <div className="max-w-7xl mx-auto relative z-10">
+                {/* Header Section */}
+                <motion.header
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center mb-12"
+                >
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 mb-6 group">
+                        <ShieldCheck className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Secure Authentication</span>
+                    </div>
+                    <h1 className="text-4xl sm:text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-slate-500 tracking-tight leading-tight">
+                        Smart Attendance
                     </h1>
-                    <p className="mt-3 text-base sm:text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                        Verify your identity by aligning your face in the webcam and reviewing your ID details below.
+                    <p className="mt-4 text-xl text-slate-400 max-w-2xl mx-auto font-medium tracking-tight">
+                        Place your face within the frame to <span className="text-white">{mode === 'check-in' ? 'check in' : 'check out'}</span> and record your attendance.
                     </p>
-                </header>
+                </motion.header>
 
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                    {/* Webcam Section */}
-                    <div className="flex flex-col items-center justify-center text-center p-4 bg-white rounded-xl shadow-md">
-                        <h2 className="text-xl font-semibold text-gray-700 mb-3">
-                            Face Verification
-                        </h2>
-                        <p className="text-gray-500 text-sm sm:text-base max-w-md mx-auto mb-6">
-                            Position your face within the frame on the webcam to verify your identity. Ensure good lighting and only one face is visible.
-                        </p>
-                        <div className="w-full max-w-xs sm:max-w-md bg-gray-200 rounded-lg overflow-hidden shadow-inner">
-                            <VerifyWebcam employeeId={employeeId} />
-
-                        </div>
+                {/* Mode Selector */}
+                <div className="flex justify-center mb-12">
+                    <div className="p-1 px-1.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl flex gap-1">
+                        <button
+                            onClick={() => setMode('check-in')}
+                            className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all text-sm uppercase tracking-widest ${mode === 'check-in'
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
+                        >
+                            <Clock className="w-4 h-4" />
+                            Check In
+                        </button>
+                        <button
+                            onClick={() => setMode('check-out')}
+                            className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all text-sm uppercase tracking-widest ${mode === 'check-out'
+                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
+                        >
+                            <UserCheck className="w-4 h-4" />
+                            Check Out
+                        </button>
                     </div>
+                </div>
 
-                    {/* ID Card Section */}
-                    <div className="flex flex-col items-center justify-start text-center p-4 bg-white rounded-xl shadow-md">
-                        <h2 className="text-xl font-semibold text-gray-700 mb-3">
-                            ID Card Details
-                        </h2>
-                        <p className="text-gray-500 text-sm sm:text-base max-w-md mx-auto">
-                            Review your ID information below to ensure it matches your official documents.
-                        </p>
-                        <div className="w-full">
-                            <VerifyCard
-                                name={idData.name}
-                                idNumber={idData.idNumber}
-                                dob={idData.dob}
-                                expiry={idData.expiry}
-                                nationality={idData.nationality}
-                                photoUrl={idData.photoUrl}
-                                position={idData.position}
-                                manager={idData.manager}
-                            />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12 items-start">
+                    {/* Identification Card Section */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="order-2 lg:order-1"
+                    >
+                        <div className="glass-pane rounded-3xl p-8 border border-white/10 shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <ShieldCheck className="w-24 h-24 text-white" />
+                            </div>
+
+                            <div className="relative z-10 space-y-6">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="p-3 bg-blue-500/10 rounded-2xl">
+                                        <Fingerprint className="w-6 h-6 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-black text-white tracking-tight">Employee Identity</h2>
+                                        <p className="text-slate-400 text-sm font-medium">Official biometric record</p>
+                                    </div>
+                                </div>
+
+                                {loading ? (
+                                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                        <div className="w-12 h-12 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                                        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs animate-pulse">Syncing profile...</p>
+                                    </div>
+                                ) : (
+                                    <VerifyCard
+                                        name={idData.name}
+                                        idNumber={idData.idNumber}
+                                        photoUrl={idData.photoUrl}
+                                        dob={idData.dob}
+                                        expiry={idData.expiry}
+                                        nationality={idData.nationality}
+                                        position={idData.position}
+                                        manager={idData.manager}
+                                    />
+                                )}
+                            </div>
                         </div>
-                        {/* Additional text */}
-                        <p className="text-gray-600 text-sm sm:text-base max-w-md">
-                            Please double-check that all details are correct. If there are any discrepancies, contact your HR department immediately.
-                        </p>
-                    </div>
+                    </motion.div>
 
+                    {/* Biometric Scanner Section */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="order-1 lg:order-2"
+                    >
+                        <div className="glass-pane rounded-3xl p-8 border border-white/10 shadow-2xl relative overflow-hidden bg-white/[0.02]">
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-full max-w-md bg-slate-950/50 rounded-2xl overflow-hidden border border-white/5 shadow-inner relative group">
+                                    {employeeId ? (
+                                        <VerifyWebcam employeeId={employeeId} mode={mode} />
+                                    ) : (
+                                        <div className="aspect-[4/3] flex flex-col items-center justify-center p-12 bg-slate-950/50">
+                                            <div className="w-20 h-20 rounded-full bg-rose-500/10 flex items-center justify-center mb-6">
+                                                <ShieldCheck className="w-10 h-10 text-rose-500/50" />
+                                            </div>
+                                            <h3 className="text-white font-black text-lg mb-2">Access Restricted</h3>
+                                            <p className="text-slate-500 text-sm font-medium max-w-[240px]">Please provide a valid employee ID to initiate the biometric scan.</p>
+                                        </div>
+                                    )}
+
+                                    {/* Scanning Animation Overlays */}
+                                    {employeeId && (
+                                        <div className="absolute inset-0 pointer-events-none">
+                                            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-blue-500 m-4 rounded-tl-xl opacity-50" />
+                                            <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-blue-500 m-4 rounded-tr-xl opacity-50" />
+                                            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-blue-500 m-4 rounded-bl-xl opacity-50" />
+                                            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-blue-500 m-4 rounded-br-xl opacity-50" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mt-8 space-y-4 w-full">
+                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Scanner Status</span>
+                                        <span className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            Operational
+                                        </span>
+                                    </div>
+                                    <p className="text-slate-500 text-xs font-medium px-4 leading-relaxed">
+                                        By using this scanner, you consent to biometric processing for the purpose of attendance tracking and identification security.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
                 </div>
             </div>
         </main>

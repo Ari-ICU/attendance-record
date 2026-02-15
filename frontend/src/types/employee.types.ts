@@ -10,6 +10,7 @@ export interface Employee {
     phone: string;
     position: string;
     department: string;
+    type: 'employee' | 'student';
     dateOfJoining: string; // ISO date string (e.g., "2025-09-15")
     photoUrl?: string | null; // URL of employee photo
     faceDescriptor?: number[]; // Optional 128-length array for face recognition
@@ -28,6 +29,7 @@ export interface EmployeeCreateData {
     phone: string;
     position: string;
     department: string;
+    type?: 'employee' | 'student';
     dateOfJoining?: string;
     image?: string; // Optional base64-encoded image for face descriptor
     photoUrl?: string; // Optional photo URL (if already uploaded)
@@ -41,6 +43,7 @@ export interface EmployeeUpdateData {
     phone?: string;
     position?: string;
     department?: string;
+    type?: 'employee' | 'student';
     dateOfJoining?: string; // ISO date string
     image?: string; // Optional base64-encoded image for face descriptor
     photoUrl?: string; // Optional photo URL (if already uploaded)

@@ -8,6 +8,8 @@ router.use(authMiddleware);
 
 // Get attendance records
 router.get('/', AttendanceController.getAttendance);
+router.post('/check-in', AttendanceController.checkIn);
+router.post('/check-out', AttendanceController.checkOut);
 
 
 module.exports = router;

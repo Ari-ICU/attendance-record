@@ -1,13 +1,25 @@
 require('dotenv').config();
+const util = require('util');
+// Shim for deprecated util functions removed in newer Node versions, required by tfjs-node
+if (!util.isNullOrUndefined) {
+    util.isNullOrUndefined = (arg) => arg === null || arg === undefined;
+}
+if (!util.isNumber) {
+    util.isNumber = (arg) => typeof arg === 'number';
+}
+if (!util.isString) {
+    util.isString = (arg) => typeof arg === 'string';
+}
+
 const express = require('express');
-const helmet = require('helmet'); 
+const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
-const compression = require('compression'); 
-const morgan = require('morgan'); 
+const compression = require('compression');
+const morgan = require('morgan');
 const requestIp = require('request-ip');
-const { v4: uuidv4 } = require('uuid'); 
-const timeout = require('express-timeout-handler'); 
-const responseTime = require('response-time'); 
+const { v4: uuidv4 } = require('uuid');
+const timeout = require('express-timeout-handler');
+const responseTime = require('response-time');
 const { corsMiddleware, handleCorsError } = require('./middlewares/cors.middleware');
 const { generalLimiter, getRateLimitStatus } = require('./middlewares/rateLimits.middleware');
 const { connectToMongoDB, checkMongoDBHealth } = require('./config/mongo.config');
@@ -21,7 +33,7 @@ const attendanceRoutes = require('./routes/attendance.routes');
 const workScheduleRoutes = require('./routes/workSchedule.routes');
 const employeeRoutes = require('./routes/employee.route');
 
-const { initializeAdminAndPermissions } = require('./utils/initAdminUser'); 
+const { initializeAdminAndPermissions } = require('./utils/initAdminUser');
 
 
 
@@ -85,7 +97,7 @@ app.use(apiResponseMiddleware);
 // CORS middleware - must be before other middleware
 app.use(corsMiddleware);
 
-app.use(cookieParser()); 
+app.use(cookieParser());
 // General rate limiting - apply to all routes
 app.use(generalLimiter);
 

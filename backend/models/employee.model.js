@@ -4,11 +4,12 @@ const employeeSchema = new mongoose.Schema({
     firstName: { type: String, required: true, trim: true, maxlength: 50 },
     lastName: { type: String, required: true, trim: true, maxlength: 50 },
     email: { type: String, required: true, unique: true, trim: true, lowercase: true, match: [/^\S+@\S+\.\S+$/, 'Invalid email'] },
-    phone: { type: String, required: true, trim: true, match: [/^\+?[1-9]\d{1,14}$/, 'Invalid phone'] },
+    phone: { type: String, required: true, trim: true, match: [/^\+?[0-9\s\-()]{7,20}$/, 'Invalid phone'] },
     position: { type: String, required: true, trim: true },
-    department: { type: String, required: true, trim: true },
+    department: { type: String, trim: true },
+    type: { type: String, enum: ['employee', 'student'], default: 'employee' },
     dateOfJoining: { type: Date, required: true },
-    
+
     // New photo field
     photoUrl: {
         type: String,
@@ -29,7 +30,9 @@ const employeeSchema = new mongoose.Schema({
     },
     isActive: { type: Boolean, default: true }
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
 // Virtual for full name

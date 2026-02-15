@@ -42,10 +42,15 @@ const checkInSchema = Joi.object({
         'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification'
     }),
     deviceInfo: deviceInfoSchema.optional(),
+    faceDescriptor: Joi.array().items(Joi.number()).optional(),
     faceImage: Joi.string().when('method', {
         is: 'face_verification',
-        then: Joi.string().required().messages({
-            'any.required': 'Face image is required for face_verification method'
+        then: Joi.when('faceDescriptor', {
+            is: Joi.exist(),
+            then: Joi.optional(),
+            otherwise: Joi.required()
+        }).messages({
+            'any.required': 'Face image or descriptor is required for face_verification method'
         }),
         otherwise: Joi.forbidden()
     })
@@ -57,10 +62,15 @@ const checkOutSchema = Joi.object({
         'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification'
     }),
     deviceInfo: deviceInfoSchema.optional(),
+    faceDescriptor: Joi.array().items(Joi.number()).optional(),
     faceImage: Joi.string().when('method', {
         is: 'face_verification',
-        then: Joi.string().required().messages({
-            'any.required': 'Face image is required for face_verification method'
+        then: Joi.when('faceDescriptor', {
+            is: Joi.exist(),
+            then: Joi.optional(),
+            otherwise: Joi.required()
+        }).messages({
+            'any.required': 'Face image or descriptor is required for face_verification method'
         }),
         otherwise: Joi.forbidden()
     })

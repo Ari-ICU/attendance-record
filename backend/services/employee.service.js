@@ -23,8 +23,8 @@ class EmployeeService {
         const employee = new Employee(value);
         await employee.save();
 
-        // Extract face descriptor from photoUrl if available
-        if (employee.photoUrl) {
+        // Extract face descriptor from photoUrl if available and descriptor not provided
+        if (employee.photoUrl && (!employee.faceDescriptor || employee.faceDescriptor.length === 0)) {
             await this.extractFaceDescriptorFromPhoto(employee);
         }
 
@@ -39,8 +39,8 @@ class EmployeeService {
         const employee = await Employee.findByIdAndUpdate(id, value, { new: true, runValidators: true });
         if (!employee) throw new Error('Employee not found');
 
-        // Update face descriptor if photoUrl or faceDescriptor provided
-        if (data.photoUrl || data.faceDescriptor) {
+        // Update face descriptor if photoUrl provided but no descriptor
+        if (employee.photoUrl && (!employee.faceDescriptor || employee.faceDescriptor.length === 0)) {
             await this.extractFaceDescriptorFromPhoto(employee);
         }
 
@@ -59,6 +59,7 @@ class EmployeeService {
             await employee.save();
         } catch (err) {
             console.warn(`Failed to extract face descriptor for employee ${employee._id}: ${err.message}`);
+            throw err; // Bubble up the error
         }
     }
 
@@ -114,7 +115,13 @@ class EmployeeService {
             await this.extractFaceDescriptorFromPhoto(employee);
         }
 
-        const liveDescriptor = await getDescriptor(liveImage);
+        let liveDescriptor;
+        if (Array.isArray(liveImage)) {
+            liveDescriptor = liveImage;
+        } else {
+            liveDescriptor = await getDescriptor(liveImage);
+        }
+
         if (!liveDescriptor) throw new Error('No face detected in live image');
 
         const similarity = cosineSimilarity(employee.faceDescriptor, liveDescriptor);

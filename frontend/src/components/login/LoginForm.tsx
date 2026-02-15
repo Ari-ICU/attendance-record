@@ -7,7 +7,7 @@ import Button from '../button/Button';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginForm() {
-    const [identifier, setIdentifier] = useState(''); // Changed from email to identifier
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
@@ -38,72 +38,85 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#1A1F2E] text-gray-900 dark:text-gray-100 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 w-full max-w-md">
-                <h2 className="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-gray-100">Login to My App</h2>
+        <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="glass-pane rounded-3xl shadow-2xl p-8 w-full max-w-md border border-white/10 relative overflow-hidden group">
+                {/* Decorative glow */}
+                <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-500/20 blur-[100px] rounded-full group-hover:bg-blue-500/30 transition-all duration-500" />
+                <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/20 blur-[100px] rounded-full group-hover:bg-indigo-500/30 transition-all duration-500" />
 
-                {error && (
-                    <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded-lg text-sm">
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="relative">
-                        <label htmlFor="identifier" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                            Email or Username
-                        </label>
-                        <div className="flex items-center border rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-600 focus-within:ring-2 focus-within:ring-blue-400 dark:focus-within:ring-blue-600 transition-all duration-200 shadow-sm">
-                            <Mail size={20} className="ml-3 text-gray-400 dark:text-gray-500" />
-                            <input
-                                id="identifier"
-                                type="text"
-                                value={identifier}
-                                onChange={(e) => setIdentifier(e.target.value)}
-                                className="w-full p-3 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none autofill:bg-transparent autofill:shadow-[0_0_0px_1000px_theme(colors.gray.700)_inset] dark:autofill:shadow-[0_0_0px_1000px_theme(colors.gray.700)_inset]"
-                                placeholder="Enter your email or username"
-                                aria-describedby={error ? 'identifier-error' : undefined}
-                            />
+                <div className="relative z-10">
+                    <div className="text-center mb-10">
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20 rotate-3 group-hover:rotate-6 transition-all duration-300">
+                            <span className="text-white font-black text-2xl">SA</span>
                         </div>
+                        <h2 className="text-3xl font-black text-white tracking-tight">Welcome Back</h2>
+                        <p className="text-slate-400 mt-2 font-medium">Elevating attendance management</p>
                     </div>
 
-                    <div className="relative">
-                        <label htmlFor="password" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                            Password
-                        </label>
-                        <div className="flex items-center dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-600 focus-within:ring-2 focus-within:ring-blue-400 dark:focus-within:ring-blue-600 transition-all duration-200 shadow-sm">
-                            <Lock size={20} className="ml-3 text-gray-400 dark:text-gray-500" />
-                            <input
-                                id="password"
-                                type={showPassword ? 'text' : 'password'}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full p-3 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:outline-none"
-                                placeholder="Enter your password"
-                                aria-describedby={error ? 'password-error' : undefined}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="pr-3 text-gray-400 dark:text-gray-500"
-                            >
-                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                            </button>
+                    {error && (
+                        <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300">
+                            {error}
                         </div>
-                    </div>
+                    )}
 
-                    <div className="flex justify-center">
-                        <Button
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div className="space-y-2">
+                            <label htmlFor="identifier" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                Email or Username
+                            </label>
+                            <div className="flex items-center bg-slate-950/50 border border-white/5 rounded-2xl focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all duration-300 group/input hover:bg-slate-950/80">
+                                <Mail size={20} className="ml-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                                <input
+                                    id="identifier"
+                                    type="text"
+                                    value={identifier}
+                                    onChange={(e) => setIdentifier(e.target.value)}
+                                    className="w-full p-4 bg-transparent text-white placeholder-slate-600 focus:outline-none autofill:shadow-[0_0_0px_1000px_#020617_inset] autofill:text-fill-white"
+                                    placeholder="your@email.com"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                Password
+                            </label>
+                            <div className="flex items-center bg-slate-950/50 border border-white/5 rounded-2xl focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all duration-300 group/input hover:bg-slate-950/80">
+                                <Lock size={20} className="ml-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                                <input
+                                    id="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full p-4 bg-transparent text-white placeholder-slate-600 focus:outline-none autofill:shadow-[0_0_0px_1000px_#020617_inset] autofill:text-fill-white"
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="pr-4 text-slate-500 hover:text-white transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
                             type="submit"
-                            variant="primary"
-                            size="lg"
-                            isLoading={isLoading}
-                            icon={<LogIn size={20} />}
+                            disabled={isLoading}
+                            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 active:scale-[0.98] mt-4"
                         >
-                            Login
-                        </Button>
-                    </div>
-                </form>
+                            {isLoading ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <>
+                                    <span>Sign In</span>
+                                    <LogIn size={20} />
+                                </>
+                            )}
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     );

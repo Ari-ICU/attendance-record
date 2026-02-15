@@ -1,17 +1,14 @@
 'use client';
 
-import DashboardLayout from '@/app/(dashboard)/dashboard/layout'; // reuse your layout
-// or if you want, you can move DashboardLayout to `@/components/DashboardLayout`
+import ComingSoon from '@/components/dashboard/ComingSoon';
+import { ShieldCheck } from 'lucide-react';
 
 export default function ManagementPage() {
     return (
-        <DashboardLayout>
-            <div>
-                <h1 className="text-3xl font-bold">Management</h1>
-                <p className="text-gray-600 mt-2">
-                    Welcome to the management section! 🚀
-                </p>
-            </div>
-        </DashboardLayout>
+        <ComingSoon
+            title="Entity Management"
+            description="Access administrative tools to manage your organization's core entities and user permissions."
+            icon={ShieldCheck}
+        />
     );
 }

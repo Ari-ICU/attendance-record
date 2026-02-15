@@ -18,7 +18,7 @@ class AuthController {
 
             // For debugging - log cookie setting
             console.log('Setting refresh token cookie with options:', cookieOptions);
-            
+
             res.cookie('refreshToken', refreshToken, cookieOptions);
 
             // Don't expose refresh token in response body
@@ -34,9 +34,9 @@ class AuthController {
             // Debug: Log all cookies received
             console.log('All cookies received:', req.cookies);
             console.log('Headers:', req.headers.cookie);
-            
+
             const refreshToken = req.cookies.refreshToken;
-            
+
             if (!refreshToken) {
                 console.log('No refresh token found in cookies');
                 return res.status(401).json(ApiResponse.error('Refresh token required', 401));
@@ -88,15 +88,15 @@ class AuthController {
             if (refreshToken) {
                 await AuthService.logoutUser(req.user._id, refreshToken);
             }
-            
+
             // Clear cookie with same options used to set it
-            res.clearCookie('refreshToken', { 
+            res.clearCookie('refreshToken', {
                 path: '/',
                 httpOnly: true,
                 secure: false,
                 sameSite: 'lax'
             });
-            
+
             return res.status(200).json(ApiResponse.success(null, 'Logout successful'));
         } catch (err) {
             res.clearCookie('refreshToken', { path: '/' });

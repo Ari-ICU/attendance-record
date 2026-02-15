@@ -3,6 +3,9 @@ export interface User {
     email: string;
     username?: string; // Changed from employeeId to match backend
     role?: string;
+    firstName?: string;
+    lastName?: string;
+    photoUrl?: string | null;
     isLocked?: boolean;
     createdAt?: string;
     updatedAt?: string;

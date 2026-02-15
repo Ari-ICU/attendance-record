@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-const phonePattern = /^\+?[1-9]\d{1,14}$/;
+const phonePattern = /^\+?[0-9\s\-()]{7,20}$/;
 
 const employeeCreateSchema = Joi.object({
     firstName: Joi.string().trim().max(50).required(),
@@ -8,7 +8,8 @@ const employeeCreateSchema = Joi.object({
     email: Joi.string().email({ tlds: { allow: false } }).trim().lowercase().required(),
     phone: Joi.string().trim().pattern(phonePattern).required(),
     position: Joi.string().trim().required(),
-    department: Joi.string().trim().required(),
+    department: Joi.string().trim().optional().allow('', null),
+    type: Joi.string().valid('employee', 'student').default('employee'),
     dateOfJoining: Joi.date().required(),
     photoUrl: Joi.string().optional().allow(null, ''), // New field
     faceDescriptor: Joi.array().items(Joi.number()).optional().allow(null), // Optional 128-d face descriptor
@@ -23,7 +24,8 @@ const employeeUpdateSchema = Joi.object({
     email: Joi.string().email({ tlds: { allow: false } }).trim().lowercase(),
     phone: Joi.string().trim().pattern(phonePattern),
     position: Joi.string().trim(),
-    department: Joi.string().trim(),
+    department: Joi.string().trim().optional().allow('', null),
+    type: Joi.string().valid('employee', 'student'),
     dateOfJoining: Joi.date(),
     photoUrl: Joi.string().optional().allow(null, ''),
     faceDescriptor: Joi.array().items(Joi.number()).optional().allow(null),
@@ -38,8 +40,9 @@ const employeeQuerySchema = Joi.object({
     department: Joi.string().optional(),
     position: Joi.string().optional(),
     isActive: Joi.boolean().optional(),
+    type: Joi.string().valid('employee', 'student').optional(),
     sortBy: Joi.string().valid('firstName', 'lastName', 'email', 'createdAt').default('createdAt'),
-    sortOrder: Joi.string().valid('asc','desc').default('desc')
+    sortOrder: Joi.string().valid('asc', 'desc').default('desc')
 });
 
 module.exports = {
