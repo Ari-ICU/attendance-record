@@ -128,123 +128,124 @@ export default function DailyAttendance() {
             {/* List */}
             <div className="overflow-hidden">
                 <div className="overflow-x-auto max-h-[450px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
-                    {loading && !refreshing && records.length === 0 ? (
-                        <div className="p-12 text-center text-slate-500 animate-pulse">
-                            Loading attendance data...
-                        </div>
-                    ) : records.length === 0 ? (
-                        <div className="p-16 text-center flex flex-col items-center text-slate-400 bg-white/5">
-                            <div className="p-6 bg-slate-900 rounded-full shadow-sm mb-4 ring-8 ring-white/5">
-                                <UserX size={40} className="text-slate-600" />
+                    <div className="min-w-[800px] md:min-w-full">
+                        {loading && !refreshing && records.length === 0 ? (
+                            <div className="p-12 text-center text-slate-500 animate-pulse">
+                                Loading attendance data...
                             </div>
-                            <p className="text-lg font-semibold text-white">No records found today</p>
-                            <p className="text-sm mt-1 opacity-70">Wait for employees to check in</p>
-                        </div>
-                    ) : (
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 border-y border-white/5">
-                                <tr>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Check In</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:table-cell">Check Out</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5 bg-transparent">
-                                {records.map((record) => (
-                                    <tr key={record._id} className="group hover:bg-blue-500/5 transition-colors duration-150">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-4">
-                                                <div className="relative">
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 p-[2px] shadow-sm group-hover:shadow-md transition-shadow">
-                                                        <div className="w-full h-full rounded-full bg-slate-900 overflow-hidden text-[10px]">
-                                                            {record.employeeId?.photoUrl ? (
-                                                                <img
-                                                                    src={getFullImageUrl(record.employeeId.photoUrl) || ''}
-                                                                    alt=""
-                                                                    className="w-full h-full object-cover"
-                                                                />
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-500 bg-slate-800">
-                                                                    {record.employeeId?.firstName?.[0]}{record.employeeId?.lastName?.[0]}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    {record.checkIn?.method === 'face_verification' && (
-                                                        <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-0.5 rounded-full border border-slate-900" title="Verified by Face">
-                                                            <UserCheck size={10} />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <div className="text-sm font-semibold text-slate-200 group-hover:text-blue-400 transition-colors">
-                                                        {record.employeeId?.firstName} {record.employeeId?.lastName}
-                                                    </div>
-                                                    <div className="text-xs text-slate-500">{record.employeeId?.position} · {record.employeeId?.department}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {record.checkIn?.time ? (
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-200">
-                                                        {new Date(record.checkIn.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Phnom_Penh' })}
-                                                    </span>
-                                                    <span className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5 bg-white/5 px-2 py-0.5 rounded-full w-fit">
-                                                        {record.checkIn.method === 'face_verification' && <UserCheck size={10} />}
-                                                        {record.checkIn.method === 'face_verification' ? 'Face Verified' : record.checkIn.method}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-sm text-slate-600">--</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
-                                            {record.checkOut?.time ? (
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-200">
-                                                        {new Date(record.checkOut.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Phnom_Penh' })}
-                                                    </span>
-                                                    {record.checkOut.totalHours && (
-                                                        <span className="text-xs text-emerald-400 font-medium">
-                                                            {record.checkOut.totalHours.toFixed(1)} hrs
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ) : record.checkIn?.time ? (
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 animate-pulse">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                                    Working
-                                                </span>
-                                            ) : (
-                                                <span className="text-sm text-slate-600">--</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm
-                                                ${record.status === 'present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                                                    record.status === 'late' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                                                        record.status === 'absent' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
-                                                            'bg-slate-800 text-slate-400 border-slate-700'
-                                                }
-                                            `}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${record.status === 'present' ? 'bg-emerald-500' :
-                                                    record.status === 'late' ? 'bg-amber-500' :
-                                                        record.status === 'absent' ? 'bg-rose-500' :
-                                                            'bg-slate-500'
-                                                    }`}></span>
-                                                {record.status.replace('_', ' ').charAt(0).toUpperCase() + record.status.slice(1)}
-                                            </span>
-                                        </td>
+                        ) : records.length === 0 ? (
+                            <div className="p-16 text-center flex flex-col items-center text-slate-400 bg-white/5">
+                                <div className="p-6 bg-slate-900 rounded-full shadow-sm mb-4 ring-8 ring-white/5">
+                                    <UserX size={40} className="text-slate-600" />
+                                </div>
+                                <p className="text-lg font-semibold text-white">No records found today</p>
+                                <p className="text-sm mt-1 opacity-70">Wait for employees to check in</p>
+                            </div>
+                        ) : (
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 border-y border-white/5">
+                                    <tr>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Check In</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:table-cell">Check Out</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
+                                </thead>
+                                <tbody className="divide-y divide-white/5 bg-transparent">
+                                    {records.map((record) => (
+                                        <tr key={record._id} className="group hover:bg-blue-500/5 transition-colors duration-150">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="relative">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 p-[2px] shadow-sm group-hover:shadow-md transition-shadow">
+                                                            <div className="w-full h-full rounded-full bg-slate-900 overflow-hidden text-[10px]">
+                                                                {record.employeeId?.photoUrl ? (
+                                                                    <img
+                                                                        src={getFullImageUrl(record.employeeId.photoUrl) || ''}
+                                                                        alt=""
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-500 bg-slate-800">
+                                                                        {record.employeeId?.firstName?.[0]}{record.employeeId?.lastName?.[0]}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {record.checkIn?.method === 'face_verification' && (
+                                                            <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-0.5 rounded-full border border-slate-900" title="Verified by Face">
+                                                                <UserCheck size={10} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-semibold text-slate-200 group-hover:text-blue-400 transition-colors">
+                                                            {record.employeeId?.firstName} {record.employeeId?.lastName}
+                                                        </div>
+                                                        <div className="text-xs text-slate-500">{record.employeeId?.position} · {record.employeeId?.department}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {record.checkIn?.time ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-slate-200">
+                                                            {new Date(record.checkIn.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Phnom_Penh' })}
+                                                        </span>
+                                                        <span className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5 bg-white/5 px-2 py-0.5 rounded-full w-fit">
+                                                            {record.checkIn.method === 'face_verification' && <UserCheck size={10} />}
+                                                            {record.checkIn.method === 'face_verification' ? 'Face Verified' : record.checkIn.method}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm text-slate-600">--</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                                                {record.checkOut?.time ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-slate-200">
+                                                            {new Date(record.checkOut.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Phnom_Penh' })}
+                                                        </span>
+                                                        {record.checkOut.totalHours && (
+                                                            <span className="text-xs text-emerald-400 font-medium">
+                                                                {record.checkOut.totalHours.toFixed(1)} hrs
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : record.checkIn?.time ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 animate-pulse">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                                        Working
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-sm text-slate-600">--</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm
+                                                ${record.status === 'present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                        record.status === 'late' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                                            record.status === 'absent' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
+                                                                'bg-slate-800 text-slate-400 border-slate-700'
+                                                    }
+                                            `}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${record.status === 'present' ? 'bg-emerald-500' :
+                                                        record.status === 'late' ? 'bg-amber-500' :
+                                                            record.status === 'absent' ? 'bg-rose-500' :
+                                                                'bg-slate-500'
+                                                        }`}></span>
+                                                    {record.status.replace('_', ' ').charAt(0).toUpperCase() + record.status.slice(1)}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
-

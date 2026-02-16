@@ -270,7 +270,7 @@ export default function AttendanceRecordsPage() {
                 className="glass-pane rounded-3xl border border-white/10 overflow-hidden"
             >
                 <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full min-w-[1000px] lg:min-w-full">
                         <thead>
                             <tr className="bg-white/5 border-b border-white/5">
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Subject Information</th>

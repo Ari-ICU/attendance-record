@@ -185,7 +185,16 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                 color = 'rgba(244, 63, 94, 0.5)';
             } else {
                 const detection = detections[0];
+                if (!detection || !detection.detection || !detection.detection.box) return;
+
                 const box = detection.detection.box;
+
+                // Safety check for invalid box dimensions
+                if (!box || typeof box.x !== 'number' || typeof box.y !== 'number' ||
+                    typeof box.width !== 'number' || typeof box.height !== 'number') {
+                    return;
+                }
+
                 const landmarks = detection.landmarks;
                 const leftEye = landmarks.getLeftEye();
                 const rightEye = landmarks.getRightEye();
@@ -196,7 +205,12 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                 ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([5, 5]);
-                ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+                // Ensure values are finite numbers
+                if (Number.isFinite(box.x) && Number.isFinite(box.y) &&
+                    Number.isFinite(box.width) && Number.isFinite(box.height)) {
+                    ctx.strokeRect(box.x, box.y, box.width, box.height);
+                }
                 ctx.setLineDash([]);
 
                 // Draw subtle points for landmarks

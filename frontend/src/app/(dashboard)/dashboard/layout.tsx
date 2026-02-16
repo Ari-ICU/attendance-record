@@ -99,13 +99,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex min-h-screen font-sans text-slate-100">
             {/* Sidebar */}
             <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-2xl`}>
-                <Sidebar menuItems={menuItems} collapsed={sidebarCollapsed} />
+                <Sidebar menuItems={menuItems} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
             </div>
 
             {/* Mobile Overlay */}
             {!sidebarCollapsed && (
                 <div
-                    className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+                    className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity duration-300"
                     onClick={() => setSidebarCollapsed(true)}
                 />
             )}

@@ -303,7 +303,7 @@ export default function PayrollPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full min-w-[1000px] lg:min-w-full">
                         <thead>
                             <tr className="bg-white/[0.01]">
                                 <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Personnel Agent</th>

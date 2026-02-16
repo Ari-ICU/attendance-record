@@ -31,8 +31,11 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { SettingsService } from '@/services/settings.service';
+import { BackupService, Backup } from '@/services/backup.service';
 
-type TabType = 'general' | 'attendance' | 'personnel' | 'security' | 'system';
+
+type TabType = 'general' | 'attendance' | 'personnel' | 'security' | 'system' | 'backup';
+
 
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState<TabType>('general');
@@ -49,11 +52,22 @@ export default function SettingsPage() {
         domain: 'khmerwork.com',
         office_latitude: 11.5564,
         office_longitude: 104.9282,
-        geofence_range_meters: 50
+        geofence_range_meters: 50,
+        master_api_key: ''
     });
+
 
     // Users state
     const [users, setUsers] = useState<any[]>([]);
+    const [backups, setBackups] = useState<Backup[]>([]);
+    const [isBackingUp, setIsBackingUp] = useState(false);
+    const [systemStats, setSystemStats] = useState<any>(null);
+    const [latency, setLatency] = useState<string>('Unknown');
+    const [isRotating, setIsRotating] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+
+
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -78,7 +92,27 @@ export default function SettingsPage() {
                     console.warn('Personnel access list suppressed (insufficient clearance)');
                     // We don't toast error here to keep the UI clean if they aren't an admin
                 }
+
+                try {
+                    const backupsData = await BackupService.listBackups();
+                    setBackups(backupsData);
+                } catch (err) {
+                    console.warn('Backup access restricted');
+                }
+
+                try {
+                    const start = performance.now();
+                    const stats = await SettingsService.getSystemStats();
+                    const end = performance.now();
+                    setLatency(`${(end - start).toFixed(0)}ms`);
+                    setSystemStats(stats);
+                } catch (err) {
+                    console.warn('System stats restricted');
+                }
+
             } catch (err) {
+
+
                 console.error(err);
                 toast.error('Failed to load system configuration');
             } finally {
@@ -110,6 +144,43 @@ export default function SettingsPage() {
         }
     };
 
+    const handleCreateBackup = async () => {
+        try {
+            setIsBackingUp(true);
+            const newBackup = await BackupService.createBackup();
+            setBackups([newBackup, ...backups]);
+            toast.success('System state archived successfully');
+        } catch (err) {
+            toast.error('Archive operation failed');
+        } finally {
+            setIsBackingUp(false);
+        }
+    };
+
+    const handleDeleteBackup = async (filename: string) => {
+        if (!confirm('Are you sure you want to delete this backup archive?')) return;
+        try {
+            await BackupService.deleteBackup(filename);
+            setBackups(backups.filter(b => b.filename !== filename));
+            toast.success('Archive purged from storage');
+        } catch (err) {
+            toast.error('Failed to purge archive');
+        }
+    };
+
+    const handleRestoreBackup = async (filename: string) => {
+        if (!confirm('WARNING: Restoring will overwrite current system state. Proceed with caution. Continue?')) return;
+        try {
+            toast.loading('Synchronizing system state...', { id: 'restore' });
+            await BackupService.restoreBackup(filename);
+            toast.success('System state restored successfully', { id: 'restore' });
+            setTimeout(() => window.location.reload(), 2000);
+        } catch (err) {
+            toast.error('Restoration protocol failed', { id: 'restore' });
+        }
+    };
+
+
     const [selectedTheme, setSelectedTheme] = useState<'cyber' | 'solar'>('cyber');
 
     const handleThemeChange = (theme: 'cyber' | 'solar') => {
@@ -136,13 +207,44 @@ export default function SettingsPage() {
         { id: 'personnel', label: 'Personnel Access', icon: Users },
         { id: 'security', label: 'Security Protocols', icon: Shield },
         { id: 'system', label: 'Environment', icon: Cpu },
+        { id: 'backup', label: 'Backup & Recovery', icon: Database },
     ];
+
+
+    const handleRotateKey = async () => {
+        if (!confirm('WARNING: Rotating the Master API Key will invalidate all existing integrations. Continue?')) return;
+        try {
+            setIsRotating(true);
+            const data = await SettingsService.rotateApiKey();
+            setSettings(prev => ({ ...prev, master_api_key: data.master_api_key }));
+            toast.success('Security seed rotated successfully');
+        } catch (err) {
+            toast.error('Failed to rotate security seed');
+        } finally {
+            setIsRotating(false);
+        }
+    };
+
+    const handleExportLog = async () => {
+        try {
+            setIsExporting(true);
+            toast.loading('Compiling system logs...', { id: 'export-log' });
+            await SettingsService.exportSystemLog();
+            toast.success('System log exported', { id: 'export-log' });
+        } catch (err) {
+            toast.error('Failed to export system log', { id: 'export-log' });
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
 
     if (loading) return (
         <div className="h-96 flex items-center justify-center">
             <RotateCcw className="w-8 h-8 text-blue-500 animate-spin" />
         </div>
     );
+
 
     return (
         <div className="space-y-8 pb-12">
@@ -157,8 +259,17 @@ export default function SettingsPage() {
                     disabled={isSaving}
                     className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-blue-600 text-white font-black text-sm tracking-[0.1em] hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 active:scale-95 disabled:opacity-50 uppercase italic"
                 >
-                    {isSaving ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Sync State
+                    {isSaving ? (
+                        <>
+                            <RotateCcw className="w-4 h-4 animate-spin" />
+                            Syncing...
+                        </>
+                    ) : (
+                        <>
+                            <Save className="w-4 h-4" />
+                            Sync State
+                        </>
+                    )}
                 </button>
             </div>
 
@@ -433,10 +544,11 @@ export default function SettingsPage() {
                                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"><Key className="w-4 h-4" /></div>
                                                 <input
                                                     type={showApiKey ? 'text' : 'password'}
-                                                    value="sk_live_v2_982kjs92m0x81ms72bca91ms"
+                                                    value={settings.master_api_key || 'Loading secure key...'}
                                                     readOnly
                                                     className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-sm font-mono text-blue-400/80 outline-none"
                                                 />
+
                                                 <button
                                                     onClick={() => setShowApiKey(!showApiKey)}
                                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
@@ -447,15 +559,24 @@ export default function SettingsPage() {
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <button className="flex items-center justify-center gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] hover:bg-white/10 hover:text-blue-400 transition-all shadow-xl">
-                                                <RotateCcw className="w-4 h-4" />
-                                                Rotate Security Seed
+                                            <button
+                                                onClick={handleRotateKey}
+                                                disabled={isRotating}
+                                                className="flex items-center justify-center gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] hover:bg-white/10 hover:text-blue-400 transition-all shadow-xl disabled:opacity-50 disabled:cursor-wait"
+                                            >
+                                                {isRotating ? <RotateCcw className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                                                {isRotating ? 'Rotating Seed...' : 'Rotate Security Seed'}
                                             </button>
-                                            <button className="flex items-center justify-center gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] hover:bg-white/10 hover:text-rose-400 transition-all shadow-xl">
-                                                <Download className="w-4 h-4" />
-                                                Export System Log
+                                            <button
+                                                onClick={handleExportLog}
+                                                disabled={isExporting}
+                                                className="flex items-center justify-center gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] hover:bg-white/10 hover:text-rose-400 transition-all shadow-xl disabled:opacity-50 disabled:cursor-wait"
+                                            >
+                                                {isExporting ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                                {isExporting ? 'Exporting Log...' : 'Export System Log'}
                                             </button>
                                         </div>
+
                                     </div>
                                 </div>
                             )}
@@ -474,18 +595,20 @@ export default function SettingsPage() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         {[
-                                            { label: 'Latency', value: '14ms', status: 'Healthy' },
-                                            { label: 'Storage', value: '82.4 GB', status: 'Optimal' },
-                                            { label: 'Active Nodes', value: '42', status: 'Cluster' },
+                                            { label: 'Latency', value: latency, status: parseInt(latency) > 100 ? 'Degraded' : 'Healthy', color: parseInt(latency) > 100 ? 'text-amber-400' : 'text-emerald-400', dot: parseInt(latency) > 100 ? 'bg-amber-500' : 'bg-emerald-500' },
+                                            { label: 'Storage', value: systemStats?.storage || '---', status: systemStats?.storage_status || 'Checking', color: systemStats?.storage_status === 'Warning' ? 'text-amber-400' : 'text-emerald-400', dot: systemStats?.storage_status === 'Warning' ? 'bg-amber-500' : 'bg-emerald-500' },
+                                            { label: 'Active Nodes', value: systemStats?.active_nodes?.toString() || '1', status: systemStats?.node_status || 'Cluster', color: 'text-emerald-400', dot: 'bg-emerald-500' },
                                         ].map((stat, i) => (
+
                                             <div key={i} className="p-6 rounded-3xl bg-slate-950/40 border border-white/5 space-y-1 group hover:border-amber-500/30 transition-all hover:scale-[1.05]">
                                                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">{stat.label}</p>
                                                 <p className="text-3xl font-black text-white tracking-tighter font-mono">{stat.value}</p>
                                                 <div className="flex items-center gap-1.5 pt-1">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
-                                                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">{stat.status}</span>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${stat.dot} animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]`} />
+                                                    <span className={`text-[9px] font-black ${stat.color} uppercase tracking-widest`}>{stat.status}</span>
                                                 </div>
                                             </div>
+
                                         ))}
                                     </div>
 
@@ -498,16 +621,119 @@ export default function SettingsPage() {
                                         </div>
                                         <div className="bg-slate-950 font-mono text-[10px] p-6 rounded-2xl text-indigo-400/80 leading-relaxed border border-white/5 shadow-inner">
                                             <div className="text-slate-600 mb-1">// System state re-indexing...</div>
-                                            <div>$ systemctl restart biometric-hub --force</div>
-                                            <div>&gt; Halting neural weight processor... [OK]</div>
-                                            <div>&gt; Flushing Redis L3 cache... [DONE]</div>
-                                            <div>&gt; Re-initializing SHA-256 fingerprint nodes... [OK]</div>
-                                            <div>&gt; <span className="text-emerald-400">BIOMETRIC_HUB_SECURE_BOOT_SUCCESS</span></div>
+                                            <div>$ systemctl check-status --unit=attendance-core</div>
+                                            <div>&gt; MongoDB Connection... <span className="text-emerald-400">[ESTABLISHED]</span> v{systemStats?.mongo_version || '?.?.?'}</div>
+                                            <div>&gt; Memory Allocation... <span className="text-blue-400">[{systemStats?.memory || '---'}]</span></div>
+                                            <div>&gt; System Uptime... <span className="text-amber-400">[{Math.floor((systemStats?.uptime || 0) / 60)}m {(Math.floor(systemStats?.uptime || 0) % 60)}s]</span></div>
+                                            <div>&gt; <span className="text-emerald-400">SYSTEM_OPERATIONAL_STATUS_CODE_200</span></div>
                                         </div>
+
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'backup' && (
+                                <div className="space-y-8">
+                                    <div className="flex items-center justify-between gap-4 mb-2">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20">
+                                                <Database className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Backup Ledger</h2>
+                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">System state archives & snapshots</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={handleCreateBackup}
+                                            disabled={isBackingUp}
+                                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 text-white font-black text-[10px] tracking-widest hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20 active:scale-95 disabled:opacity-50 uppercase italic"
+                                        >
+                                            {isBackingUp ? (
+                                                <>
+                                                    <RotateCcw className="w-3 h-3 animate-spin" />
+                                                    Creating Snapshot...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Database className="w-3 h-3" />
+                                                    Create Snapshot
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    <div className="overflow-hidden border border-white/5 rounded-3xl bg-slate-950/30">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="border-b border-white/5 bg-white/5">
+                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Archive Identifier</th>
+                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Temporal Stamp</th>
+                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Payload Size</th>
+                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Protocol</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5">
+                                                {backups.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">No archives detected in current cluster</td>
+                                                    </tr>
+                                                ) : (
+                                                    backups.map(backup => (
+                                                        <tr key={backup.filename} className="group hover:bg-white/[0.02] transition-colors">
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+                                                                        <Database className="w-3 h-3" />
+                                                                    </div>
+                                                                    <div className="text-[10px] font-mono font-bold text-white uppercase tracking-tight">{backup.filename}</div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                                                    {new Date(backup.createdAt).toLocaleString()}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="text-[10px] font-mono font-bold text-slate-500">
+                                                                    {(backup.size / (1024 * 1024)).toFixed(2)} MB
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                <div className="flex justify-end gap-2">
+                                                                    <button
+                                                                        onClick={() => BackupService.downloadBackup(backup.filename)}
+                                                                        className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+                                                                        title="Download Archive"
+                                                                    >
+                                                                        <Download className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleRestoreBackup(backup.filename)}
+                                                                        className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all"
+                                                                        title="Restore System State"
+                                                                    >
+                                                                        <RotateCcw className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteBackup(backup.filename)}
+                                                                        className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all"
+                                                                        title="Purge Archive"
+                                                                    >
+                                                                        <Lock className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             )}
                         </motion.div>
+
                     </AnimatePresence>
                 </div>
             </div>

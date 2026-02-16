@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
                 // Only log if it's NOT a 401 (which is expected for logged out users)
                 if (err instanceof Error) {
-                    // @ts-ignore
+                    // @ts-expect-error
                     if (err.response?.status !== 401 && !err.message.includes('401')) {
                         console.error('Auth error:', err.message);
                     }

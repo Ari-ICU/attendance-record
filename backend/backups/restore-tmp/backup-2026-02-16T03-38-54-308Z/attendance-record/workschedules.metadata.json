@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"date":{"$numberInt":"1"},"shift":{"$numberInt":"1"}},"name":"date_1_shift_1","background":true}],"uuid":"d9b8c4de1c874a00b7de554570860c02","collectionName":"workschedules","type":"collection"}

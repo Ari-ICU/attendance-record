@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Menu, ChevronDown, ChevronUp, LogOut } from 'lucide-react';
+import { Home, Menu, ChevronDown, ChevronLeft, ChevronRight, LogOut, User } from 'lucide-react';
+import { getFullImageUrl } from '@/utils/url.utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,6 +21,7 @@ interface SidebarProps {
     brandName?: string;
     brandIcon?: React.ReactNode;
     collapsed?: boolean;
+    setCollapsed?: (collapsed: boolean) => void;
 }
 
 export default function Sidebar({
@@ -27,10 +29,11 @@ export default function Sidebar({
     brandName = 'Smart Attendance',
     brandIcon = <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/20">SA</div>,
     collapsed = false,
+    setCollapsed = () => { },
 }: SidebarProps) {
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const pathname = usePathname();
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -147,8 +150,44 @@ export default function Sidebar({
             </nav>
 
             {/* Footer / User Controls */}
-            <div className={`p-4 border-t border-white/5 bg-slate-950/20 ${collapsed ? 'items-center' : ''} flex flex-col gap-2`}>
+            <div className={`p-4 border-t border-white/5 bg-slate-950/20 flex flex-col gap-2`}>
 
+                {/* Collapse Toggle (Desktop only) */}
+                <button
+                    onClick={() => setCollapsed(!collapsed)}
+                    className="hidden lg:flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-all justify-center mb-2"
+                    title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                >
+                    {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                    {!collapsed && <span className="text-sm font-medium">Collapse</span>}
+                </button>
+
+                {/* User Profile Snippet */}
+                {!collapsed && user && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 mb-2 border border-white/5">
+                        <div className="h-9 w-9 rounded-lg bg-slate-800 overflow-hidden shrink-0">
+                            {user?.photoUrl ? (
+                                <img
+                                    src={getFullImageUrl(user.photoUrl) || ''}
+                                    alt="Profile"
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                <div className="h-full w-full flex items-center justify-center text-slate-400 font-bold bg-slate-800">
+                                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex flex-col overflow-hidden">
+                            <span className="text-sm font-semibold text-slate-200 truncate leading-tight">
+                                {user?.firstName} {user?.lastName}
+                            </span>
+                            <span className="text-[10px] text-slate-500 truncate uppercase tracking-wider font-bold">
+                                {user?.role || 'User'}
+                            </span>
+                        </div>
+                    </div>
+                )}
 
                 <button
                     onClick={() => logout()}
@@ -160,6 +199,13 @@ export default function Sidebar({
                     <LogOut size={18} />
                     {!collapsed && <span className="text-sm font-medium">Logout</span>}
                 </button>
+
+                {/* Version Footer */}
+                {!collapsed && (
+                    <div className="mt-2 text-center">
+                        <p className="text-[10px] text-slate-600 font-mono">v1.2.0-beta</p>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -9,6 +9,7 @@ export interface User {
     isLocked?: boolean;
     createdAt?: string;
     updatedAt?: string;
+    department?: string;
 }
 
 export interface Permission {

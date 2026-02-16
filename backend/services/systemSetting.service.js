@@ -33,7 +33,8 @@ class SystemSettingService {
             { key: 'grace_period_minutes', value: 15, description: 'Minutes allowed after start time before being marked late' },
             { key: 'office_latitude', value: 11.5564, description: 'Office center latitude' },
             { key: 'office_longitude', value: 104.9282, description: 'Office center longitude' },
-            { key: 'geofence_range_meters', value: 50, description: 'Authorized scanning radius in meters' }
+            { key: 'geofence_range_meters', value: 50, description: 'Authorized scanning radius in meters' },
+            { key: 'master_api_key', value: `sk_live_${require('crypto').randomBytes(12).toString('hex')}`, description: 'Master API Key for external integrations' }
         ];
 
         for (const def of defaults) {

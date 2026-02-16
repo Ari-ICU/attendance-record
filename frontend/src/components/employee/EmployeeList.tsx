@@ -59,7 +59,7 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
             {/* Table */}
             <div className="glass-pane rounded-3xl shadow-xl overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[800px] lg:min-w-full">
                         <thead>
                             <tr className="border-b border-white/5 bg-white/5">
                                 <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
