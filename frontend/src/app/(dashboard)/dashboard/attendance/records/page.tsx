@@ -13,7 +13,14 @@ import {
     ArrowUpDown,
     FileSpreadsheet,
     X,
-    MoreHorizontal
+    MoreHorizontal,
+    Eye,
+    MapPin,
+    Monitor,
+    Globe,
+    Cpu,
+    Calendar,
+    Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AttendanceService } from '@/services/attendance.service';
@@ -36,6 +43,8 @@ export default function AttendanceRecordsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isExporting, setIsExporting] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -379,13 +388,23 @@ export default function AttendanceRecordsPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-end gap-2.5">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedRecord(record);
+                                                        setIsDetailModalOpen(true);
+                                                    }}
+                                                    className="p-2 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all border border-blue-500/20 shadow-lg shadow-blue-500/5 group/btn"
+                                                    title="View Details"
+                                                >
+                                                    <Eye className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                                                </button>
                                                 <button
                                                     onClick={() => handleDeleteRecord(record._id)}
-                                                    className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all"
+                                                    className="p-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20 shadow-lg shadow-rose-500/5 group/btn"
                                                     title="Delete Record"
                                                 >
-                                                    <X className="w-4 h-4" />
+                                                    <X className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                                                 </button>
                                             </div>
                                         </td>
@@ -406,6 +425,152 @@ export default function AttendanceRecordsPage() {
                     </div>
                 </div>
             </motion.div>
+            {/* Detail Modal */}
+            <AnimatePresence>
+                {isDetailModalOpen && selectedRecord && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className="bg-slate-900 border border-white/10 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl relative"
+                        >
+                            {/* Modal Header */}
+                            <div className="bg-white/5 border-b border-white/5 p-6 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                                        <Activity className="w-5 h-5 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-white italic tracking-tight">Record Telemetry</h3>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Log ID: {selectedRecord._id.toUpperCase()}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setIsDetailModalOpen(false)}
+                                    className="p-2.5 rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                                {/* Personnel Overview */}
+                                <div className="flex items-center gap-6 mb-8 p-4 bg-white/[0.02] border border-white/5 rounded-3xl">
+                                    <div className="w-20 h-20 rounded-2xl bg-slate-800 border border-white/10 overflow-hidden shadow-2xl">
+                                        {selectedRecord.employeeId?.photoUrl ? (
+                                            <img
+                                                src={getFullImageUrl(selectedRecord.employeeId.photoUrl) || ''}
+                                                alt=""
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-slate-700">
+                                                <User className="w-8 h-8" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h4 className="text-2xl font-black text-white">{selectedRecord.employeeId?.fullName}</h4>
+                                        <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">{selectedRecord.employeeId?.position} • {selectedRecord.employeeId?.department}</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className={`px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${getStatusStyles(selectedRecord.status)}`}>
+                                                {selectedRecord.status}
+                                            </span>
+                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                                ID: {selectedRecord.employeeId?._id.slice(-8).toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Entry Log */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 px-1">
+                                            <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
+                                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Entry Vector (Check-In)</h5>
+                                        </div>
+                                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
+                                            <div className="flex justify-between items-center text-[10px]">
+                                                <span className="font-bold text-slate-500 uppercase">Timestamp</span>
+                                                <span className="font-black text-white italic">
+                                                    {selectedRecord.checkIn?.time ? new Date(selectedRecord.checkIn.time).toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : 'Pending'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px]">
+                                                <span className="font-bold text-slate-500 uppercase">Protocol</span>
+                                                <span className="font-black text-blue-400 uppercase tracking-wider">{selectedRecord.checkIn?.method || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px]">
+                                                <span className="font-bold text-slate-500 uppercase">GPS Node</span>
+                                                <span className="font-black text-slate-300">
+                                                    {selectedRecord.checkIn?.location?.latitude?.toFixed(4) || '---'}, {selectedRecord.checkIn?.location?.longitude?.toFixed(4) || '---'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px]">
+                                                <span className="font-bold text-slate-500 uppercase">IP Source</span>
+                                                <span className="font-black text-slate-300">{selectedRecord.checkIn?.ipAddress || 'Internal Network'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Exit Log */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 px-1">
+                                            <div className="w-1.5 h-4 bg-rose-500 rounded-full" />
+                                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Exit Vector (Check-Out)</h5>
+                                        </div>
+                                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
+                                            <div className="flex justify-between items-center text-[10px]">
+                                                <span className="font-bold text-slate-500 uppercase">Timestamp</span>
+                                                <span className="font-black text-white italic">
+                                                    {selectedRecord.checkOut?.time ? new Date(selectedRecord.checkOut.time).toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : 'Active Session'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px]">
+                                                <span className="font-bold text-slate-500 uppercase">Work Hours</span>
+                                                <span className="font-black text-emerald-400 uppercase tracking-wider">{selectedRecord.totalHours ? `${selectedRecord.totalHours.toFixed(1)} Hours` : 'In Progress'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px]">
+                                                <span className="font-bold text-slate-500 uppercase">GPS Exit Node</span>
+                                                <span className="font-black text-slate-300">
+                                                    {selectedRecord.checkOut?.location?.latitude?.toFixed(4) || '---'}, {selectedRecord.checkOut?.location?.longitude?.toFixed(4) || '---'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px]">
+                                                <span className="font-bold text-slate-500 uppercase">Exit Device</span>
+                                                <span className="font-black text-slate-300">Biometric Terminal</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="bg-white/5 border-t border-white/5 p-6 flex items-center justify-between">
+                                <div className="flex gap-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Network Authority</span>
+                                        <span className="text-[9px] font-bold text-slate-400">Authenticated Biometric Access</span>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setIsDetailModalOpen(false)}
+                                    className="px-8 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                                >
+                                    Dismiss
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

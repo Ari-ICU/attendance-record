@@ -49,6 +49,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
     const lastIdentifyRef = useRef<number>(0);
     const identifyInProgressRef = useRef<boolean>(false);
     const identifiedIdRef = useRef<string | null>(null);
+    const isDetectingRef = useRef(false);
 
     // Fetch office settings on mount
     useEffect(() => {
@@ -152,22 +153,28 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
         if (!modelsLoaded) return;
 
         const detectFace = async () => {
+            if (isDetectingRef.current) return;
+
             const video = webcamRef.current?.video;
             const canvas = canvasRef.current;
-            if (!video || !canvas || video.readyState !== 4 || video.videoWidth === 0) return;
+            if (!video || !canvas || video.readyState !== 4 || video.videoWidth === 0 || video.videoHeight === 0) return;
 
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
 
+            isDetectingRef.current = true;
             let detections: any = [];
             try {
+                // Performing the detection with a chained task.
+                // If it fails internally (e.g., the "Box.constructor" error), it will be caught by the catch block.
                 detections = await faceapi
-                    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512 }))
+                    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 }))
                     .withFaceLandmarks()
                     .withFaceDescriptors();
             } catch (err) {
                 console.debug('Biometric processing interrupted', err);
-                return;
+            } finally {
+                isDetectingRef.current = false;
             }
 
             if (!detections) return;
@@ -413,7 +420,9 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
             ctx.stroke();
         };
 
-        const interval = setInterval(detectFace, 80); // Reduced from 150ms for faster detection
+        const interval = setInterval(() => {
+            detectFace().catch(err => console.debug('Detection loop error:', err));
+        }, 80);
         return () => clearInterval(interval);
     }, [modelsLoaded, framePulse, employeeId, verifying, isSuccess]);
 
