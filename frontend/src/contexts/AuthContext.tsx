@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthService } from '@/services/auth.service';
+import { setAccessToken } from '@/api/axiosInstance';
 import { AuthResponse, AuthState, LoginPayload, UpdateProfilePayload, User } from '@/types/Auth';
 
 interface AuthContextProps extends AuthState {
@@ -22,6 +23,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [initializing, setInitializing] = useState(true);
+
+    // Sync token with axios instance
+    useEffect(() => {
+        setAccessToken(token);
+    }, [token]);
 
     // 🔑 initialize auth on app start
     useEffect(() => {

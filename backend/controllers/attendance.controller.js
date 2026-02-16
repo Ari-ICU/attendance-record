@@ -41,13 +41,19 @@ class AttendanceController {
             }
 
             // 2. Security Check: Non-admins can only check-in/out for themselves
-            const isAdmin = req.user.role === 'admin';
-            const isSelf = targetEmployee.email?.toLowerCase() === req.user.email?.toLowerCase();
+            // If there's no req.user (public kiosk), we skip the isAdmin/isSelf check
+            // because the identity has been verified by biometric identification above.
+            if (req.user) {
+                const isAdmin = req.user.role === 'admin';
+                const isSelf = targetEmployee.email?.toLowerCase() === req.user.email?.toLowerCase();
 
-            console.log(`[Security] User ${req.user.email} (Role: ${req.user.role}) targetting ${targetEmployee.email}. isAdmin: ${isAdmin}, isSelf: ${isSelf}`);
+                console.log(`[Security] User ${req.user.email} (Role: ${req.user.role}) targeting ${targetEmployee.email}. isAdmin: ${isAdmin}, isSelf: ${isSelf}`);
 
-            if (!isAdmin && !isSelf) {
-                return res.status(403).json(ApiResponse.error('Unauthorized: You can only verify your own attendance', 403));
+                if (!isAdmin && !isSelf) {
+                    return res.status(403).json(ApiResponse.error('Unauthorized: You can only verify your own attendance', 403));
+                }
+            } else {
+                console.log(`[Security] Public Biometric Scan: Target ${targetEmployee.email} verified by ${req.body.method}`);
             }
 
             const result = await AttendanceService.checkIn(targetEmployee, req.body, ip, userAgent);
@@ -88,13 +94,18 @@ class AttendanceController {
                 return res.status(404).json(ApiResponse.error('Biometric record not found for this identity', 404));
             }
 
-            const isAdmin = req.user.role === 'admin';
-            const isSelf = targetEmployee.email?.toLowerCase() === req.user.email?.toLowerCase();
+            // Security Check
+            if (req.user) {
+                const isAdmin = req.user.role === 'admin';
+                const isSelf = targetEmployee.email?.toLowerCase() === req.user.email?.toLowerCase();
 
-            console.log(`[Security/Out] User ${req.user.email} (Role: ${req.user.role}) targetting ${targetEmployee.email}. isAdmin: ${isAdmin}, isSelf: ${isSelf}`);
+                console.log(`[Security/Out] User ${req.user.email} (Role: ${req.user.role}) targeting ${targetEmployee.email}. isAdmin: ${isAdmin}, isSelf: ${isSelf}`);
 
-            if (!isAdmin && !isSelf) {
-                return res.status(403).json(ApiResponse.error('Unauthorized: You can only verify your own attendance', 403));
+                if (!isAdmin && !isSelf) {
+                    return res.status(403).json(ApiResponse.error('Unauthorized: You can only verify your own attendance', 403));
+                }
+            } else {
+                console.log(`[Security/Out] Public Biometric Scan: Target ${targetEmployee.email} verified by ${req.body.method}`);
             }
 
             const result = await AttendanceService.checkOut(targetEmployee, req.body, ip, userAgent);

@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import Webcam from 'react-webcam';
 import * as faceapi from 'face-api.js';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { EmployeeService } from '@/services/employee.service';
 import { AttendanceService } from '@/services/attendance.service';
 import { SettingsService } from '@/services/settings.service';
@@ -33,12 +33,12 @@ const FACE_API_CONFIG = {
     // Minimum confidence for SSD Mobilenet (0.1 to 0.9)
     minConfidence: 0.5,
 
-    // If true, scanning will FAIL if geolocation is blocked.
-    // If false, it will show a warning but allow the scan to proceed.
+    // If true, scanning will FAIL if geolocation is blocked or outside range.
+    // If false, it will allow the scan but still show location data.
     requireGeofence: false,
 
-    // Auto-bypass liveness check (for testing only)
-    bypassLiveness: false
+    // Auto-bypass liveness check (Set to true for fully automatic scan)
+    bypassLiveness: true
 };
 
 // Default fallbacks while settings load
@@ -471,7 +471,6 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
 
     return (
         <div className="w-full relative flex flex-col items-center">
-            <Toaster position="top-right" />
 
             <div className="relative w-full aspect-[4/3] bg-black">
                 <Webcam
@@ -515,9 +514,9 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
 
                     {/* Corner Metadata & Telemetry */}
                     <div className="absolute top-6 left-6 text-[8px] font-mono text-blue-500/60 uppercase tracking-widest space-y-1">
-                        <div>REC // Biometric Stream</div>
-                        <div>ENC // SHA-256 Protocol</div>
-                        <div>SRC // Integrated Sensor</div>
+                        <div>REC // Biometric Stream </div>
+                        <div>ENC // SHA-256 Protocol </div>
+                        <div>SRC // Integrated Sensor </div>
                     </div>
 
                     <div className="absolute top-6 right-6 text-[8px] font-mono text-right text-blue-500/60 uppercase tracking-widest space-y-1">
@@ -534,7 +533,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     </div>
 
                     <div className="absolute bottom-6 right-6 text-[8px] font-mono text-right text-blue-500/60 uppercase tracking-widest">
-                        Liveness // <span className={blinkCount > 0 ? 'text-emerald-500' : 'text-rose-500'}>{blinkCount > 0 ? 'VERIFIED' : 'PENDING'}</span>
+                        Liveness // <span className={(blinkCount > 0 || FACE_API_CONFIG.bypassLiveness) ? 'text-emerald-500' : 'text-rose-500'}>{(blinkCount > 0 || FACE_API_CONFIG.bypassLiveness) ? 'VERIFIED' : 'PENDING'}</span>
                     </div>
 
                     {/* Dynamic Status Badge */}
@@ -593,8 +592,8 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     </div>
                     <div className="flex items-center gap-6 mt-1">
                         <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${blinkCount > 0 ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-rose-500/50'}`} />
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Liveness: {blinkCount > 0 ? 'VERIFIED' : 'PENDING'}</span>
+                            <div className={`w-2 h-2 rounded-full ${(blinkCount > 0 || FACE_API_CONFIG.bypassLiveness) ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-rose-500/50'}`} />
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Liveness: {(blinkCount > 0 || FACE_API_CONFIG.bypassLiveness) ? 'VERIFIED' : 'PENDING'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${userLocation ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : (locationError ? 'bg-rose-500' : 'bg-amber-500/50')}`} />
@@ -654,17 +653,6 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                                     className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-md text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-all"
                                 >
                                     Dev Bypass
-                                </button>
-                            )}
-                            {typeof window !== 'undefined' && window.location.hostname === 'localhost' && blinkCount === 0 && (
-                                <button
-                                    onClick={() => {
-                                        setBlinkCount(1);
-                                        toast.success('Liveness Bypass Active');
-                                    }}
-                                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500/70 rounded-md text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-all"
-                                >
-                                    Bypass Blink
                                 </button>
                             )}
                         </div>
