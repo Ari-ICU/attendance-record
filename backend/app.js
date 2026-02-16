@@ -39,6 +39,7 @@ const payrollRoutes = require('./routes/payroll.routes');
 const reportRoutes = require('./routes/report.routes');
 const backupRoutes = require('./routes/backup.routes');
 const securityRoutes = require('./routes/security.routes');
+const notificationRoutes = require('./routes/notification.routes');
 
 
 
@@ -176,6 +177,7 @@ app.use('/api/payroll', payrollRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/backups', backupRoutes);
 app.use('/api/security', securityRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 
