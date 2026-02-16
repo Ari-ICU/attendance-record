@@ -6,10 +6,14 @@ export interface User {
     firstName?: string;
     lastName?: string;
     photoUrl?: string | null;
+    bio?: string;
+    position?: string;
+    department?: string;
+    phoneNumber?: string;
+    location?: string;
     isLocked?: boolean;
     createdAt?: string;
     updatedAt?: string;
-    department?: string;
 }
 
 export interface Permission {
@@ -45,6 +49,11 @@ export interface UpdateProfilePayload {
     username?: string; // Changed from employeeId
     firstName?: string;
     lastName?: string;
+    bio?: string;
+    position?: string;
+    department?: string;
+    phoneNumber?: string;
+    location?: string;
 }
 
 export interface AuthState {

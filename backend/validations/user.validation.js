@@ -34,6 +34,14 @@ const userUpdateSchema = Joi.object({
     email: Joi.string().email({ tlds: { allow: false } }).trim().lowercase(),
     password: Joi.string().min(8).max(128)
         .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
+    firstName: Joi.string().trim().max(50).allow('', null),
+    lastName: Joi.string().trim().max(50).allow('', null),
+    photoUrl: Joi.string().trim().allow('', null),
+    bio: Joi.string().trim().max(1000).allow('', null),
+    position: Joi.string().trim().max(100).allow('', null),
+    department: Joi.string().trim().max(100).allow('', null),
+    phoneNumber: Joi.string().trim().max(20).allow('', null),
+    location: Joi.string().trim().max(100).allow('', null),
     loginAttempts: Joi.number().integer().min(0),
     isLocked: Joi.boolean(),
     lastLogin: Joi.date()

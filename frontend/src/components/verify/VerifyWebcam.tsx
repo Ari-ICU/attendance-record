@@ -154,15 +154,23 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
         const detectFace = async () => {
             const video = webcamRef.current?.video;
             const canvas = canvasRef.current;
-            if (!video || !canvas || video.readyState !== 4) return;
+            if (!video || !canvas || video.readyState !== 4 || video.videoWidth === 0) return;
 
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
 
-            const detections = await faceapi
-                .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512 }))
-                .withFaceLandmarks()
-                .withFaceDescriptors();
+            let detections: any = [];
+            try {
+                detections = await faceapi
+                    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512 }))
+                    .withFaceLandmarks()
+                    .withFaceDescriptors();
+            } catch (err) {
+                console.debug('Biometric processing interrupted', err);
+                return;
+            }
+
+            if (!detections) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -215,7 +223,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
 
                 // Draw subtle points for landmarks
                 ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
-                landmarks.positions.forEach(p => ctx.fillRect(p.x, p.y, 2, 2));
+                landmarks.positions.forEach((p: any) => ctx.fillRect(p.x, p.y, 2, 2));
 
                 // Simple blink logic
                 if (ear < EAR_THRESHOLD) {
@@ -251,7 +259,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
 
                 // Periodic identification (if not already verified or verifying)
                 if (insideFrame && !verifying && !isSuccess && Date.now() - lastIdentifyRef.current > 3000 && !identifyInProgressRef.current) {
-                    const descriptorArray = Array.from(detection.descriptor);
+                    const descriptorArray = Array.from(detection.descriptor) as number[];
 
                     // Only identify if we don't have an ID or if the detected person changed
                     // Actually, let's just do it if we are "Awaiting"
@@ -295,7 +303,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     setStatus('Extracting descriptors...');
 
                     try {
-                        const descriptorArray = Array.from(detection.descriptor);
+                        const descriptorArray = Array.from(detection.descriptor) as number[];
                         let result;
 
                         if (mode === 'check-in') {

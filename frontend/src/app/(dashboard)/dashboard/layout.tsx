@@ -14,7 +14,8 @@ import {
     Clock,
     ShieldCheck,
     Users,
-    Aperture
+    Aperture,
+    Bell
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -41,7 +42,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             items: [
                 { name: 'Live Monitor', href: '/dashboard/attendance/monitor', icon: <Clock size={20} /> },
                 { name: 'Records', href: '/dashboard/attendance/records', icon: <Calendar size={20} /> },
-                { name: 'Scan Station', href: '/verify', icon: <Aperture size={20} /> },
             ],
         },
         {
@@ -69,6 +69,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             group: true,
             items: [
                 { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={20} /> },
+                { name: 'Notifications', href: '/dashboard/notifications', icon: <Bell size={20} /> },
             ],
         },
     ];
