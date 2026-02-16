@@ -119,9 +119,11 @@ const corsMiddleware = cors(corsOptions);
 
 // Custom CORS middleware with additional logging and error handling
 const customCorsMiddleware = (req, res, next) => {
+    const origin = req.get('Origin');
+
     // Log CORS requests in development
     if (isDevelopment) {
-        console.log(`CORS Request: ${req.method} ${req.path} from ${req.get('Origin') || 'No Origin'}`);
+        console.log(`CORS Request: ${req.method} ${req.path} from ${origin || 'No Origin'}`);
     }
 
     // Apply CORS middleware
@@ -129,7 +131,7 @@ const customCorsMiddleware = (req, res, next) => {
         if (err) {
             // Log CORS errors
             console.error('CORS Error:', {
-                origin: req.get('Origin'),
+                origin: origin,
                 method: req.method,
                 path: req.path,
                 error: err.message
@@ -143,9 +145,8 @@ const customCorsMiddleware = (req, res, next) => {
             });
         }
 
-        // Add CORS headers manually if needed
-        res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
-        res.header('Access-Control-Allow-Credentials', 'true');
+        // Headers are already set by the cors package based on corsOptions
+        // Manually setting them again can cause double headers which browsers reject
 
         next();
     });

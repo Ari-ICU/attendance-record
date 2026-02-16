@@ -263,6 +263,12 @@ export default function VerifyPage() {
                                     <VerifyWebcam
                                         employeeId={selectedEmployeeId}
                                         mode={mode}
+                                        onIdentify={(employee) => {
+                                            if (employee && employee._id !== selectedEmployeeId) {
+                                                handleEmployeeSelect(employee._id);
+                                                toast.success(`Identified: ${employee.firstName}`, { icon: '👤', duration: 2000 });
+                                            }
+                                        }}
                                         onSuccess={(data) => {
                                             if (data.employee) {
                                                 handleEmployeeSelect(data.employee._id);

@@ -35,6 +35,12 @@ export default function AttendanceRecordsPage() {
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [isExporting, setIsExporting] = useState(false);
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     const fetchData = async () => {
         setLoading(true);
@@ -96,10 +102,10 @@ export default function AttendanceRecordsPage() {
                 r.employeeId?.fullName || 'N/A',
                 r.employeeId?.position || 'N/A',
                 r.employeeId?.department || 'N/A',
-                new Date(r.date).toLocaleDateString(),
-                r.checkIn?.time ? new Date(r.checkIn.time).toLocaleTimeString() : '---',
+                new Date(r.date).toLocaleDateString('en-US', { timeZone: 'Asia/Phnom_Penh' }),
+                r.checkIn?.time ? new Date(r.checkIn.time).toLocaleTimeString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : '---',
                 r.checkIn?.method?.replace('_', ' ') || '---',
-                r.checkOut?.time ? new Date(r.checkOut.time).toLocaleTimeString() : '---',
+                r.checkOut?.time ? new Date(r.checkOut.time).toLocaleTimeString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : '---',
                 r.checkOut?.method?.replace('_', ' ') || '---',
                 r.totalHours ? r.totalHours.toFixed(2) : '0.00',
                 r.status?.toUpperCase() || 'PRESENT'
@@ -142,7 +148,21 @@ export default function AttendanceRecordsPage() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-black text-white tracking-tight italic">Attendance Vault</h1>
-                    <p className="text-slate-400 font-medium tracking-tight">Review historical biometric logs and performance records</p>
+                    <div className="flex items-center gap-3">
+                        <p className="text-slate-400 font-medium tracking-tight">Review historical biometric logs and performance records</p>
+                        <span className="text-slate-700 font-black">•</span>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                            <Clock className="w-3.5 h-3.5 text-blue-400" />
+                            <span className="text-[10px] font-black text-blue-400 tracking-widest uppercase">
+                                System Time: {currentTime.toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    timeZone: 'Asia/Phnom_Penh'
+                                })}
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -310,7 +330,12 @@ export default function AttendanceRecordsPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="text-xs font-black text-slate-300">
-                                                {new Date(record.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                {new Date(record.date).toLocaleDateString('en-US', {
+                                                    day: '2-digit',
+                                                    month: 'short',
+                                                    year: 'numeric',
+                                                    timeZone: 'Asia/Phnom_Penh'
+                                                })}
                                             </p>
                                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">Day Log</p>
                                         </td>
@@ -319,22 +344,32 @@ export default function AttendanceRecordsPage() {
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                                                     <span className="text-xs font-black text-slate-200">
-                                                        {record.checkIn ? new Date(record.checkIn.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---'}
+                                                        {record.checkIn ? new Date(record.checkIn.time).toLocaleTimeString('en-US', {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                            timeZone: 'Asia/Phnom_Penh'
+                                                        }) : '---'}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
                                                     <span className="text-xs font-black text-slate-200">
-                                                        {record.checkOut ? new Date(record.checkOut.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---'}
+                                                        {record.checkOut ? new Date(record.checkOut.time).toLocaleTimeString('en-US', {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                            timeZone: 'Asia/Phnom_Penh'
+                                                        }) : '---'}
                                                     </span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                <Clock className="w-4 h-4 text-slate-600" />
-                                                <span className="text-xs font-black text-white">
-                                                    {record.checkOut?.totalHours ? `${record.checkOut.totalHours.toFixed(1)}h` : 'Active'}
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${record.totalHours ? 'bg-slate-800' : 'bg-blue-500/10 border border-blue-500/20'}`}>
+                                                    <Clock className={`w-4 h-4 ${record.totalHours ? 'text-slate-600' : 'text-blue-400 animate-pulse'}`} />
+                                                </div>
+                                                <span className={`text-xs font-black ${record.totalHours ? 'text-white' : 'text-blue-400'}`}>
+                                                    {record.totalHours ? `${record.totalHours.toFixed(1)}h` : 'ACTIVE'}
                                                 </span>
                                             </div>
                                         </td>

@@ -13,7 +13,8 @@ import { Aperture, Camera, CheckCircle2, Loader2, Scan, ShieldAlert } from 'luci
 const FRAME_WIDTH = 280;
 const FRAME_HEIGHT = 340;
 const VERIFY_DEBOUNCE_MS = 2000;
-const EAR_THRESHOLD = 0.22; // Threshold for eye blink detection
+const EAR_THRESHOLD = 0.30; // Further increased for very lenient detection
+const EAR_DELTA = 0.03; // Reduced for easier detection
 
 // Default fallbacks while settings load
 const DEFAULT_OFFICE_COORDS = { lat: 11.5564, lng: 104.9282 };
@@ -23,9 +24,10 @@ interface FaceVerifyProps {
     employeeId?: string;
     mode?: 'verify-only' | 'check-in' | 'check-out';
     onSuccess?: (data: any) => void;
+    onIdentify?: (employee: any) => void;
 }
 
-const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only', onSuccess }) => {
+const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only', onSuccess, onIdentify }) => {
     const webcamRef = useRef<Webcam>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -42,6 +44,11 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
         lng: DEFAULT_OFFICE_COORDS.lng,
         range: DEFAULT_MAX_RANGE
     });
+    const [showBlinkEffect, setShowBlinkEffect] = useState(false);
+    const [currentEAR, setCurrentEAR] = useState(0);
+    const lastIdentifyRef = useRef<number>(0);
+    const identifyInProgressRef = useRef<boolean>(false);
+    const identifiedIdRef = useRef<string | null>(null);
 
     // Fetch office settings on mount
     useEffect(() => {
@@ -62,15 +69,37 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
         loadSettings();
     }, []);
 
+    const [locationError, setLocationError] = useState<string | null>(null);
+
+    const requestLocation = () => {
+        if (!('geolocation' in navigator)) {
+            setLocationError('Geolocation Not Supported');
+            return;
+        }
+
+        setStatus('Requesting geolocation...');
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                setLocationError(null);
+                toast.success('Geofence Secured');
+            },
+            (err) => {
+                console.warn('Location access denied or unavailable', err);
+                let msg = 'Location Unavailable';
+                if (err.code === 1) msg = 'Location Access Denied';
+                if (err.code === 2) msg = 'Position Unavailable';
+                if (err.code === 3) msg = 'Location Timeout';
+                setLocationError(msg);
+                toast.error(`${msg}: Please enable location in browser settings.`);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
+
     // Get location on mount
     useEffect(() => {
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                (err) => console.warn('Location access denied or unavailable', err),
-                { enableHighAccuracy: true }
-            );
-        }
+        requestLocation();
     }, []);
 
     const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -155,29 +184,82 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                 statusMessage = 'Multiple subjects detected';
                 color = 'rgba(244, 63, 94, 0.5)';
             } else {
-                const box = detections[0].detection.box;
-                const landmarks = detections[0].landmarks;
+                const detection = detections[0];
+                const box = detection.detection.box;
+                const landmarks = detection.landmarks;
                 const leftEye = landmarks.getLeftEye();
                 const rightEye = landmarks.getRightEye();
                 const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
+                setCurrentEAR(ear);
+
+                // Draw detection feedback on canvas
+                ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(box.x, box.y, box.width, box.height);
+                ctx.setLineDash([]);
+
+                // Draw subtle points for landmarks
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+                landmarks.positions.forEach(p => ctx.fillRect(p.x, p.y, 2, 2));
 
                 // Simple blink logic
                 if (ear < EAR_THRESHOLD) {
                     wasClosedRef.current = true;
-                } else if (wasClosedRef.current && ear > EAR_THRESHOLD + 0.05) {
+                } else if (wasClosedRef.current && ear > EAR_THRESHOLD + EAR_DELTA) {
                     setBlinkCount(prev => prev + 1);
                     wasClosedRef.current = false;
+                    setShowBlinkEffect(true);
+                    setTimeout(() => setShowBlinkEffect(false), 400);
                 }
 
+                // More lenient frame check - allow significant padding
+                const padding = 40;
                 const insideFrame =
-                    box.x >= frameX &&
-                    box.y >= frameY &&
-                    box.x + box.width <= frameX + FRAME_WIDTH &&
-                    box.y + box.height <= frameY + FRAME_HEIGHT;
+                    box.x >= frameX - padding &&
+                    box.y >= frameY - padding &&
+                    box.x + box.width <= frameX + FRAME_WIDTH + padding &&
+                    box.y + box.height <= frameY + FRAME_HEIGHT + padding;
 
                 let livenessMessage = blinkCount > 0 ? 'Liveness: OK' : 'Blink to prove identity';
-                statusMessage = insideFrame ? `${livenessMessage} - Link Establishing...` : 'Recenter for optimal scan';
-                color = insideFrame ? (blinkCount > 0 ? 'rgba(59, 130, 246, 0.8)' : 'rgba(245, 158, 11, 0.8)') : 'rgba(245, 158, 11, 0.4)';
+
+                if (!insideFrame) {
+                    statusMessage = 'Subject out of frame';
+                } else if (blinkCount === 0) {
+                    statusMessage = 'Blink to verify liveness';
+                } else if (!userLocation) {
+                    statusMessage = 'Syncing geofence...';
+                } else {
+                    statusMessage = 'Identity verification active';
+                }
+
+                color = insideFrame ? (blinkCount > 0 ? 'rgba(59, 130, 246, 0.8)' : 'rgba(245, 158, 11, 0.8)') : 'rgba(244, 63, 94, 0.5)';
+
+                // Periodic identification (if not already verified or verifying)
+                if (insideFrame && !verifying && !isSuccess && Date.now() - lastIdentifyRef.current > 3000 && !identifyInProgressRef.current) {
+                    const descriptorArray = Array.from(detection.descriptor);
+
+                    // Only identify if we don't have an ID or if the detected person changed
+                    // Actually, let's just do it if we are "Awaiting"
+                    if (!employeeId || identifiedIdRef.current !== employeeId) {
+                        lastIdentifyRef.current = Date.now();
+                        identifyInProgressRef.current = true;
+
+                        EmployeeService.verifyFace({
+                            faceDescriptor: descriptorArray
+                        }).then(result => {
+                            if (result.employee && result.employee._id !== identifiedIdRef.current) {
+                                identifiedIdRef.current = result.employee._id;
+                                if (onIdentify) onIdentify(result.employee);
+                            }
+                        }).catch(err => {
+                            // Silently fail identification in background
+                            console.debug('Auto-identification failed:', err.message);
+                        }).finally(() => {
+                            identifyInProgressRef.current = false;
+                        });
+                    }
+                }
 
                 if (insideFrame && blinkCount > 0 && Date.now() - lastVerifiedRef.current > VERIFY_DEBOUNCE_MS && !verifying) {
                     // Check Geofencing
@@ -186,10 +268,11 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                         if (dist > officeSettings.range) {
                             setStatus('OUTSIDE AUTH RANGE');
                             toast.error(`Scan denied: Device is ${Math.round(dist - officeSettings.range)}m outside authorized zone.`);
+                            setVerifying(false); // Ensure we don't get stuck
                             return;
                         }
                     } else {
-                        setStatus('Awaiting Secure Geofence...');
+                        // We handled this in statusMessage above, but still need to return here
                         return;
                     }
 
@@ -198,7 +281,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     setStatus('Extracting descriptors...');
 
                     try {
-                        const descriptorArray = Array.from(detections[0].descriptor);
+                        const descriptorArray = Array.from(detection.descriptor);
                         let result;
 
                         if (mode === 'check-in') {
@@ -215,12 +298,11 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                             });
                         } else {
                             result = await EmployeeService.verifyFace({
-                                employeeId: employeeId || '', // verifyFace might still need an ID or we should handle it
+                                employeeId: employeeId || '',
                                 faceDescriptor: descriptorArray
                             });
                         }
 
-                        // If it was identification (no employeeId initially), result should contain the employee info
                         const identifiedName = result.employee ? `${result.employee.firstName} ${result.employee.lastName}` : '';
 
                         setIsSuccess(true);
@@ -231,38 +313,26 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                         setTimeout(() => {
                             setIsSuccess(false);
                             setVerifying(false);
+                            setBlinkCount(0); // Reset for next scan
                         }, 3000);
 
                     } catch (err: any) {
                         const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Access Denied';
-
-                        // Handle both "Already checked in" and "Already checked out" as success states
                         const isAlreadyDone = errorMessage.toLowerCase().includes('already checked in') ||
                             errorMessage.toLowerCase().includes('already checked out');
 
                         if (isAlreadyDone) {
                             setIsSuccess(true);
-
                             const isCheckIn = errorMessage.toLowerCase().includes('checked in');
-                            // Set status based on the specific message
                             const statusMsg = isCheckIn ? 'Already Checked In Today' : 'Already Checked Out Today';
                             setStatus(statusMsg);
-
-                            toast.success(errorMessage, {
-                                icon: '✅',
-                                style: {
-                                    borderRadius: '10px',
-                                    background: '#333',
-                                    color: '#fff',
-                                },
-                            });
-
-                            const statusKey = isCheckIn ? 'already_checked_in' : 'already_checked_out';
-                            if (onSuccess) onSuccess({ status: statusKey });
+                            toast.success(errorMessage);
+                            if (onSuccess) onSuccess({ status: isCheckIn ? 'already_checked_in' : 'already_checked_out' });
 
                             setTimeout(() => {
                                 setIsSuccess(false);
                                 setVerifying(false);
+                                setBlinkCount(0);
                             }, 3000);
                         } else {
                             setStatus(errorMessage);
@@ -321,7 +391,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
             ctx.stroke();
         };
 
-        const interval = setInterval(detectFace, 150);
+        const interval = setInterval(detectFace, 80); // Reduced from 150ms for faster detection
         return () => clearInterval(interval);
     }, [modelsLoaded, framePulse, employeeId, verifying, isSuccess]);
 
@@ -344,21 +414,62 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     className="absolute inset-0 w-full h-full pointer-events-none z-10"
                 />
 
+                <AnimatePresence>
+                    {showBlinkEffect && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.3 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-white pointer-events-none z-15"
+                        />
+                    )}
+                </AnimatePresence>
+
                 {/* HUD Overlays */}
                 <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
-                    {/* Scanning Line */}
+                    {/* Scanning Line with Text */}
                     <motion.div
                         initial={{ top: '10%' }}
                         animate={{ top: '90%' }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                        className="absolute inset-x-0 h-px bg-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,1)]"
-                    />
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-x-0 h-px bg-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,1)] flex items-center justify-end pr-4"
+                    >
+                        <span className="text-[8px] font-black text-blue-400 translate-y-[-8px] tracking-[0.3em] uppercase opacity-50">
+                            Scanning Surface...
+                        </span>
+                    </motion.div>
 
-                    {/* Corner Metadata */}
+                    {/* Corner Metadata & Telemetry */}
                     <div className="absolute top-6 left-6 text-[8px] font-mono text-blue-500/60 uppercase tracking-widest space-y-1">
                         <div>REC // Biometric Stream</div>
                         <div>ENC // SHA-256 Protocol</div>
                         <div>SRC // Integrated Sensor</div>
+                    </div>
+
+                    <div className="absolute top-6 right-6 text-[8px] font-mono text-right text-blue-500/60 uppercase tracking-widest space-y-1">
+                        <div>FRAME // {modelsLoaded ? '640x480' : '0x0'}</div>
+                        <div>LAT // {userLocation ? userLocation.lat.toFixed(4) : '---'}</div>
+                        <div>LNG // {userLocation ? userLocation.lng.toFixed(4) : '---'}</div>
+                        <div className={currentEAR < EAR_THRESHOLD ? 'text-emerald-400' : 'text-blue-500/60'}>EAR // {currentEAR.toFixed(3)}</div>
+                    </div>
+
+                    <div className="absolute bottom-6 left-6 text-[8px] font-mono text-blue-500/60 uppercase tracking-widest">
+                        Status: <span className={status.includes('No') ? 'text-rose-500' : 'text-blue-400'}>{status}</span>
+                    </div>
+
+                    <div className="absolute bottom-6 right-6 text-[8px] font-mono text-right text-blue-500/60 uppercase tracking-widest">
+                        Liveness // <span className={blinkCount > 0 ? 'text-emerald-500' : 'text-rose-500'}>{blinkCount > 0 ? 'VERIFIED' : 'PENDING'}</span>
+                    </div>
+
+                    {/* Dynamic Status Badge */}
+                    <div className="absolute top-1/4 right-10 flex flex-col items-center gap-2 opacity-40">
+                        <div className="w-1 h-32 bg-slate-800 rounded-full overflow-hidden">
+                            <motion.div
+                                animate={{ height: blinkCount > 0 ? '100%' : '20%' }}
+                                className="w-full bg-blue-500 transition-all duration-700"
+                            />
+                        </div>
+                        <div className="text-[6px] font-bold text-blue-500 vertical-text uppercase tracking-tighter">Bio-Sig</div>
                     </div>
                 </div>
 
@@ -396,30 +507,94 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
             </div>
 
             {/* Bottom Status Bar */}
-            <div className="w-full p-4 bg-slate-900 border-t border-white/5 flex items-center justify-between">
-                <div className="flex flex-col gap-1">
+            <div className="w-full p-5 bg-slate-900/90 border-t border-white/10 flex items-center justify-between backdrop-blur-md">
+                <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${isSuccess ? 'bg-emerald-500' : 'bg-blue-500'} animate-pulse`} />
-                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                        <div className={`w-2.5 h-2.5 rounded-full ${isSuccess ? 'bg-emerald-500' : (status.includes('No') || status.includes('Multiple') ? 'bg-rose-500' : 'bg-blue-500')} animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]`} />
+                        <span className={`text-xs font-black uppercase tracking-[0.15em] ${isSuccess ? 'text-emerald-400' : (status.includes('No') || status.includes('Multiple') ? 'text-rose-400' : 'text-blue-400')}`}>
                             {status}
                         </span>
                     </div>
-                    <div className="flex items-center gap-4 mt-1">
-                        <div className="flex items-center gap-1.5">
-                            <div className={`w-1.5 h-1.5 rounded-full ${blinkCount > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                            <span className="text-[8px] font-bold text-slate-500 uppercase">Liveness: {blinkCount > 0 ? 'PROVEN' : 'REQUIRED'}</span>
+                    <div className="flex items-center gap-6 mt-1">
+                        <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${blinkCount > 0 ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-rose-500/50'}`} />
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Liveness: {blinkCount > 0 ? 'VERIFIED' : 'PENDING'}</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className={`w-1.5 h-1.5 rounded-full ${userLocation ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                            <span className="text-[8px] font-bold text-slate-500 uppercase">Geofence: {userLocation ? 'SECURED' : 'SYNCING'}</span>
+                        <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${userLocation ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : (locationError ? 'bg-rose-500' : 'bg-amber-500/50')}`} />
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pr-2">
+                                Geofence: {userLocation ? 'SECURED' : (locationError || 'SYNCING')}
+                            </span>
+                            {!userLocation && (
+                                <button
+                                    onClick={requestLocation}
+                                    className="px-2 py-0.5 bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 rounded text-[7px] font-black text-blue-400 uppercase transition-all"
+                                >
+                                    Retry
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Scan className="w-3 h-3 text-slate-500" />
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter italic">Biometric-V1</span>
+                <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-2">
+                        <Scan className="w-4 h-4 text-slate-600" />
+                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Biometric-V1.2</span>
+                    </div>
+                    <div className="text-[8px] font-mono text-slate-700 uppercase">Secure Auth Protocol</div>
                 </div>
             </div>
+
+            {/* Location Access Denied Alert */}
+            <AnimatePresence>
+                {locationError && !userLocation && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg flex items-center justify-between w-full"
+                    >
+                        <div className="flex items-center gap-3">
+                            <ShieldAlert className="w-5 h-5 text-rose-400" />
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest leading-none">Access Restricted</span>
+                                <span className="text-[9px] font-medium text-rose-400/60 mt-0.5">{locationError === 'Location Access Denied' ? 'Geolocation permission is blocked. Reset site permissions in browser.' : locationError}</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={requestLocation}
+                                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-rose-500/25"
+                            >
+                                Retry Link
+                            </button>
+                            {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
+                                <button
+                                    onClick={() => {
+                                        setUserLocation(DEFAULT_OFFICE_COORDS);
+                                        setLocationError(null);
+                                        toast.success('Developer Bypass Active');
+                                    }}
+                                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-md text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-all"
+                                >
+                                    Dev Bypass
+                                </button>
+                            )}
+                            {typeof window !== 'undefined' && window.location.hostname === 'localhost' && blinkCount === 0 && (
+                                <button
+                                    onClick={() => {
+                                        setBlinkCount(1);
+                                        toast.success('Liveness Bypass Active');
+                                    }}
+                                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500/70 rounded-md text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-all"
+                                >
+                                    Bypass Blink
+                                </button>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

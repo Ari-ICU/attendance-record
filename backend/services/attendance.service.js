@@ -13,13 +13,43 @@ class AttendanceService {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // 1. Check for any unclosed sessions from PREVIOUS days
+        const unclosedSession = await Attendance.findOne({
+            employeeId: employee._id,
+            date: { $lt: today },
+            'checkIn.time': { $ne: null },
+            'checkOut.time': null,
+            isActive: true
+        });
+
+        if (unclosedSession) {
+            console.log(`[Attendance] Closing stale session from ${unclosedSession.date} for ${employee.email}`);
+            // Auto-checkout at end of its day or a standard time? 
+            // Let's use 23:59:59 of that day or just 8 hours after check-in.
+            // For simplicity, let's close it at 23:59:59 of that day.
+            const checkoutTime = new Date(unclosedSession.date);
+            checkoutTime.setHours(23, 59, 59, 999);
+
+            unclosedSession.checkOut = {
+                time: checkoutTime,
+                method: 'system_auto',
+                ipAddress: '127.0.0.1',
+                deviceInfo: { userAgent: 'System Auto-Checkout', platform: 'server', browser: 'none' }
+            };
+            unclosedSession.status = unclosedSession.status || 'present';
+            await unclosedSession.save();
+        }
+
+        // 2. Now check for today's record
         let attendance = await Attendance.findOne({
             employeeId: employee._id,
             date: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) },
             isActive: true,
         });
 
-        if (attendance && attendance.checkIn.time) throw new Error('You have already checked in for today.');
+        if (attendance && attendance.checkIn && attendance.checkIn.time) {
+            throw new Error('You have already checked in for today.');
+        }
 
         let faceData = null;
         if (value.method === 'face_verification') {
@@ -81,14 +111,14 @@ class AttendanceService {
         const { error, value } = checkOutSchema.validate(body);
         if (error) throw new Error(`Validation failed: ${error.details[0].message}`);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
+        // Look for the most recent check-in that doesn't have a check-out
+        // This supports night shifts (e.g., check-in at 11PM, check-out at 2AM)
         const attendance = await Attendance.findOne({
             employeeId: employee._id,
-            date: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) },
+            'checkIn.time': { $ne: null },
+            'checkOut.time': null,
             isActive: true,
-        });
+        }).sort({ 'checkIn.time': -1 });
 
         if (!attendance || !attendance.checkIn.time) throw new Error('No check-in found');
         if (attendance.checkOut.time) throw new Error('You have already checked out for today.');

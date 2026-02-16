@@ -139,7 +139,7 @@ export default function PayrollPage() {
             item.payroll.netAmount,
             `${item.payroll.complianceScore || 0}%`,
             item.payroll.status?.toUpperCase() || 'PENDING',
-            item.payroll.paymentDate ? new Date(item.payroll.paymentDate).toLocaleDateString() : 'N/A',
+            item.payroll.paymentDate ? new Date(item.payroll.paymentDate).toLocaleDateString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : 'N/A',
             item.payroll.transactionId || '---'
         ]);
 
@@ -152,7 +152,8 @@ export default function PayrollPage() {
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', `payroll_ledger_${new Date().toISOString().split('T')[0]}.csv`);
+        const dateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Phnom_Penh' });
+        link.setAttribute('download', `payroll_ledger_${dateStr}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -168,7 +169,7 @@ export default function PayrollPage() {
             ID: ${item.employee._id}
             Position: ${item.employee.position}
             Department: ${item.employee.department || 'N/A'}
-            Date: ${new Date().toLocaleDateString()}
+            Date: ${new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Phnom_Penh' })}
 
             EARNINGS
             --------------------------------------------------

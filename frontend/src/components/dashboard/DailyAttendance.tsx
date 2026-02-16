@@ -73,14 +73,14 @@ export default function DailyAttendance() {
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                         </span>
                         <p className="text-sm font-medium text-slate-400">
-                            Live updates for {format(new Date(), 'MMMM d, yyyy')}
+                            Live updates for {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'Asia/Phnom_Penh' })}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3 bg-slate-950/40 p-1.5 rounded-xl border border-white/5">
                     <span className="text-xs font-medium text-slate-500 px-2 hidden sm:inline-block">
-                        Updated: {format(lastUpdated, 'h:mm:ss a')}
+                        Updated: {lastUpdated.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'Asia/Phnom_Penh' })}
                     </span>
                     <button
                         onClick={() => fetchTodaysAttendance(false)}
@@ -189,7 +189,7 @@ export default function DailyAttendance() {
                                             {record.checkIn?.time ? (
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold text-slate-200">
-                                                        {format(new Date(record.checkIn.time), 'h:mm a')}
+                                                        {new Date(record.checkIn.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Phnom_Penh' })}
                                                     </span>
                                                     <span className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5 bg-white/5 px-2 py-0.5 rounded-full w-fit">
                                                         {record.checkIn.method === 'face_verification' && <UserCheck size={10} />}
@@ -204,7 +204,7 @@ export default function DailyAttendance() {
                                             {record.checkOut?.time ? (
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold text-slate-200">
-                                                        {format(new Date(record.checkOut.time), 'h:mm a')}
+                                                        {new Date(record.checkOut.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Phnom_Penh' })}
                                                     </span>
                                                     {record.checkOut.totalHours && (
                                                         <span className="text-xs text-emerald-400 font-medium">

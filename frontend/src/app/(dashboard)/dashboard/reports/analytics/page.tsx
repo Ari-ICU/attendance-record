@@ -98,7 +98,8 @@ export default function AnalyticsPage() {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.setAttribute('download', `intel_report_${timeRange}_${new Date().toISOString().split('T')[0]}.csv`);
+        const dateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Phnom_Penh' });
+        link.setAttribute('download', `intel_report_${timeRange}_${dateStr}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

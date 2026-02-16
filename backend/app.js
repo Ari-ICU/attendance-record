@@ -1,3 +1,4 @@
+process.env.TZ = 'Asia/Phnom_Penh';
 require('dotenv').config();
 const util = require('util');
 // Shim for deprecated util functions removed in newer Node versions, required by tfjs-node
@@ -102,10 +103,11 @@ app.use(responseTime());
 // API response middleware
 app.use(apiResponseMiddleware);
 
-// CORS middleware - must be before other middleware
+app.use(cookieParser());
+
+// CORS middleware - must be before other route middleware
 app.use(corsMiddleware);
 
-app.use(cookieParser());
 // General rate limiting - apply to all routes
 app.use(generalLimiter);
 
