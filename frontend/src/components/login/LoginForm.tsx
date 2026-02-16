@@ -71,7 +71,7 @@ export default function LoginForm() {
                                     type="text"
                                     value={identifier}
                                     onChange={(e) => setIdentifier(e.target.value)}
-                                    className="w-full p-4 bg-transparent text-white placeholder-slate-600 focus:outline-none autofill:shadow-[0_0_0px_1000px_#020617_inset] autofill:text-fill-white"
+                                    className="w-full p-4 bg-transparent text-white placeholder-slate-600 focus:outline-none [-webkit-autofill]:bg-transparent [-webkit-autofill]:shadow-[0_0_0px_1000px_transparent_inset] [-webkit-autofill]:[-webkit-text-fill-color:white]"
                                     placeholder="your@email.com"
                                 />
                             </div>
@@ -88,7 +88,7 @@ export default function LoginForm() {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full p-4 bg-transparent text-white placeholder-slate-600 focus:outline-none autofill:shadow-[0_0_0px_1000px_#020617_inset] autofill:text-fill-white"
+                                    className="w-full p-4 bg-transparent text-white placeholder-slate-600 focus:outline-none [-webkit-autofill]:bg-transparent [-webkit-autofill]:shadow-[0_0_0px_1000px_transparent_inset] [-webkit-autofill]:[-webkit-text-fill-color:white]"
                                     placeholder="••••••••"
                                 />
                                 <button
