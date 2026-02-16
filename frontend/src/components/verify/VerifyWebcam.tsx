@@ -13,8 +13,8 @@ import { Aperture, Camera, CheckCircle2, Loader2, Scan, ShieldAlert } from 'luci
 const FRAME_WIDTH = 280;
 const FRAME_HEIGHT = 340;
 const VERIFY_DEBOUNCE_MS = 2000;
-const EAR_THRESHOLD = 0.30; // Further increased for very lenient detection
-const EAR_DELTA = 0.03; // Reduced for easier detection
+const EAR_THRESHOLD = 0.30; 
+const EAR_DELTA = 0.55; 
 
 // Default fallbacks while settings load
 const DEFAULT_OFFICE_COORDS = { lat: 11.5564, lng: 104.9282 };
@@ -481,7 +481,9 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                         <div>FRAME // {modelsLoaded ? '640x480' : '0x0'}</div>
                         <div>LAT // {userLocation ? userLocation.lat.toFixed(4) : '---'}</div>
                         <div>LNG // {userLocation ? userLocation.lng.toFixed(4) : '---'}</div>
-                        <div className={currentEAR < EAR_THRESHOLD ? 'text-emerald-400' : 'text-blue-500/60'}>EAR // {currentEAR.toFixed(3)}</div>
+                        <div className={currentEAR < EAR_THRESHOLD ? 'text-emerald-400 font-black scale-110' : 'text-blue-500/60'}>
+                            EAR // {currentEAR.toFixed(3)} {currentEAR < EAR_THRESHOLD && '• [CLOSED]'}
+                        </div>
                     </div>
 
                     <div className="absolute bottom-6 left-6 text-[8px] font-mono text-blue-500/60 uppercase tracking-widest">
