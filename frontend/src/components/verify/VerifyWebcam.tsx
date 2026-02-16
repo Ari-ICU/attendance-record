@@ -13,8 +13,33 @@ import { Aperture, Camera, CheckCircle2, Loader2, Scan, ShieldAlert } from 'luci
 const FRAME_WIDTH = 280;
 const FRAME_HEIGHT = 340;
 const VERIFY_DEBOUNCE_MS = 2000;
-const EAR_THRESHOLD = 0.30; 
-const EAR_DELTA = 0.55; 
+const EAR_THRESHOLD = 0.30;
+const EAR_DELTA = 0.55;
+
+/**
+ * BIOMETRIC MODEL CONFIGURATION
+ * Adjust these values to balance performance and accuracy.
+ */
+const FACE_API_CONFIG = {
+    // model: 'tinyFaceDetector' (Fast, 1.8MB) or 'ssdMobilenetv1' (Accurate, 5.4MB)
+    detector: 'tinyFaceDetector' as 'tinyFaceDetector' | 'ssdMobilenetv1',
+
+    // For TinyFaceDetector: Higher = more accurate but slower. Standard: 160, 224, 320, 416, 512, 608
+    inputSize: 416,
+
+    // Confidence threshold (0.1 to 0.9). Higher = stricter detection.
+    scoreThreshold: 0.5,
+
+    // Minimum confidence for SSD Mobilenet (0.1 to 0.9)
+    minConfidence: 0.5,
+
+    // If true, scanning will FAIL if geolocation is blocked.
+    // If false, it will show a warning but allow the scan to proceed.
+    requireGeofence: false,
+
+    // Auto-bypass liveness check (for testing only)
+    bypassLiveness: false
+};
 
 // Default fallbacks while settings load
 const DEFAULT_OFFICE_COORDS = { lat: 11.5564, lng: 104.9282 };
@@ -128,7 +153,14 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
         const loadModels = async () => {
             try {
                 const modelPath = '/models';
-                await faceapi.nets.tinyFaceDetector.loadFromUri(`${modelPath}/tiny_face_detector/`);
+
+                // Load the configured detector
+                if (FACE_API_CONFIG.detector === 'tinyFaceDetector') {
+                    await faceapi.nets.tinyFaceDetector.loadFromUri(`${modelPath}/tiny_face_detector/`);
+                } else {
+                    await faceapi.nets.ssdMobilenetv1.loadFromUri(`${modelPath}/ssd_mobilenetv1/`);
+                }
+
                 await faceapi.nets.faceLandmark68Net.loadFromUri(`${modelPath}/face_landmark_68_model/`);
                 await faceapi.nets.faceRecognitionNet.loadFromUri(`${modelPath}/face_recognition_model/`);
                 setModelsLoaded(true);
@@ -167,8 +199,18 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
             try {
                 // Performing the detection with a chained task.
                 // If it fails internally (e.g., the "Box.constructor" error), it will be caught by the catch block.
+                // Performing the detection with a chained task using centralized config
+                const detectorOptions = FACE_API_CONFIG.detector === 'tinyFaceDetector'
+                    ? new faceapi.TinyFaceDetectorOptions({
+                        inputSize: FACE_API_CONFIG.inputSize,
+                        scoreThreshold: FACE_API_CONFIG.scoreThreshold
+                    })
+                    : new faceapi.SsdMobilenetv1Options({
+                        minConfidence: FACE_API_CONFIG.minConfidence
+                    });
+
                 detections = await faceapi
-                    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 }))
+                    .detectAllFaces(video, detectorOptions)
                     .withFaceLandmarks()
                     .withFaceDescriptors();
             } catch (err) {
@@ -256,13 +298,13 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     statusMessage = 'Subject out of frame';
                 } else if (blinkCount === 0) {
                     statusMessage = 'Blink to verify liveness';
-                } else if (!userLocation) {
+                } else if (!userLocation && FACE_API_CONFIG.requireGeofence) {
                     statusMessage = 'Syncing geofence...';
                 } else {
                     statusMessage = 'Identity verification active';
                 }
 
-                color = insideFrame ? (blinkCount > 0 ? 'rgba(59, 130, 246, 0.8)' : 'rgba(245, 158, 11, 0.8)') : 'rgba(244, 63, 94, 0.5)';
+                color = insideFrame ? (blinkCount > 0 || FACE_API_CONFIG.bypassLiveness ? 'rgba(59, 130, 246, 0.8)' : 'rgba(245, 158, 11, 0.8)') : 'rgba(244, 63, 94, 0.5)';
 
                 // Periodic identification (if not already verified or verifying)
                 if (insideFrame && !verifying && !isSuccess && Date.now() - lastIdentifyRef.current > 3000 && !identifyInProgressRef.current) {
@@ -290,19 +332,20 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     }
                 }
 
-                if (insideFrame && blinkCount > 0 && Date.now() - lastVerifiedRef.current > VERIFY_DEBOUNCE_MS && !verifying) {
+                if (insideFrame && (blinkCount > 0 || FACE_API_CONFIG.bypassLiveness) && Date.now() - lastVerifiedRef.current > VERIFY_DEBOUNCE_MS && !verifying) {
                     // Check Geofencing
-                    if (userLocation) {
-                        const dist = calculateDistance(userLocation.lat, userLocation.lng, officeSettings.lat, officeSettings.lng);
-                        if (dist > officeSettings.range) {
-                            setStatus('OUTSIDE AUTH RANGE');
-                            toast.error(`Scan denied: Device is ${Math.round(dist - officeSettings.range)}m outside authorized zone.`);
-                            setVerifying(false); // Ensure we don't get stuck
-                            return;
+                    if (FACE_API_CONFIG.requireGeofence) {
+                        if (userLocation) {
+                            const dist = calculateDistance(userLocation.lat, userLocation.lng, officeSettings.lat, officeSettings.lng);
+                            if (dist > officeSettings.range) {
+                                setStatus('OUTSIDE AUTH RANGE');
+                                toast.error(`Scan denied: Device is ${Math.round(dist - officeSettings.range)}m outside authorized zone.`);
+                                setVerifying(false);
+                                return;
+                            }
+                        } else {
+                            return; // Wait for location if required
                         }
-                    } else {
-                        // We handled this in statusMessage above, but still need to return here
-                        return;
                     }
 
                     lastVerifiedRef.current = Date.now();
