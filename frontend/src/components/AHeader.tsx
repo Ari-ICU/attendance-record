@@ -13,6 +13,8 @@ interface AHeaderProps {
     setSidebarCollapsed: (collapsed: boolean) => void;
 }
 
+import { searchablePages } from '@/config/menuItems';
+
 export default function AHeader({ sidebarCollapsed, setSidebarCollapsed }: AHeaderProps) {
     const { user, logout } = useAuth();
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useSocket();
@@ -22,26 +24,13 @@ export default function AHeader({ sidebarCollapsed, setSidebarCollapsed }: AHead
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-    const searchablePages = [
-        { name: 'Dashboard Overview', href: '/dashboard', category: 'General' },
-        { name: 'Live Link Monitor', href: '/dashboard/attendance/monitor', category: 'Attendance' },
-        { name: 'Attendance Records', href: '/dashboard/attendance/records', category: 'Attendance' },
-        { name: 'Scan Station', href: '/verify', category: 'Attendance' },
-        { name: 'Employees Management', href: '/dashboard/management/employee?type=employee', category: 'Management' },
-        { name: 'Students Management', href: '/dashboard/management/employee?type=student', category: 'Management' },
-        { name: 'Departments', href: '/dashboard/management/departments', category: 'Management' },
-        { name: 'Payroll', href: '/dashboard/finance/payroll', category: 'Finance' },
-        { name: 'Analytics Reports', href: '/dashboard/reports/analytics', category: 'Reports' },
-        { name: 'System Settings', href: '/dashboard/settings', category: 'System' },
-        { name: 'My Profile', href: '/dashboard/profile', category: 'User' },
-    ];
-
     const filteredResults = searchQuery
         ? searchablePages.filter(page =>
             page.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             page.category.toLowerCase().includes(searchQuery.toLowerCase())
         )
         : [];
+
 
     const handleSearchSelect = (href: string) => {
         router.push(href);

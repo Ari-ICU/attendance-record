@@ -59,6 +59,8 @@ body {
   opacity: 0.3;
   pointer-events: none;
   animation-iteration-count: infinite;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .star-1 {

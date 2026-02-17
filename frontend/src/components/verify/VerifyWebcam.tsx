@@ -8,42 +8,17 @@ import { EmployeeService } from '@/services/employee.service';
 import { AttendanceService } from '@/services/attendance.service';
 import { SettingsService } from '@/services/settings.service';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Aperture, Camera, CheckCircle2, Loader2, Scan, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, Loader2, Scan, ShieldAlert } from 'lucide-react';
 
 const FRAME_WIDTH = 280;
 const FRAME_HEIGHT = 340;
-const VERIFY_DEBOUNCE_MS = 2000;
-const EAR_THRESHOLD = 0.30;
-const EAR_DELTA = 0.55;
-
-/**
- * BIOMETRIC MODEL CONFIGURATION
- * Adjust these values to balance performance and accuracy.
- */
-const FACE_API_CONFIG = {
-    // model: 'tinyFaceDetector' (Fast, 1.8MB) or 'ssdMobilenetv1' (Accurate, 5.4MB)
-    detector: 'tinyFaceDetector' as 'tinyFaceDetector' | 'ssdMobilenetv1',
-
-    // For TinyFaceDetector: Higher = more accurate but slower. Standard: 160, 224, 320, 416, 512, 608
-    inputSize: 416,
-
-    // Confidence threshold (0.1 to 0.9). Higher = stricter detection.
-    scoreThreshold: 0.5,
-
-    // Minimum confidence for SSD Mobilenet (0.1 to 0.9)
-    minConfidence: 0.5,
-
-    // If true, scanning will FAIL if geolocation is blocked or outside range.
-    // If false, it will allow the scan but still show location data.
-    requireGeofence: true,
-
-    // Auto-bypass liveness check (Set to true for fully automatic scan)
-    bypassLiveness: false
-};
+import { BIOMETRIC_CONFIG, DEFAULT_OFFICE_LOCATION } from '@/config/biometric.config';
 
 // Default fallbacks while settings load
-const DEFAULT_OFFICE_COORDS = { lat: 11.5564, lng: 104.9282 };
-const DEFAULT_MAX_RANGE = 50;
+const DEFAULT_OFFICE_COORDS = { lat: DEFAULT_OFFICE_LOCATION.lat, lng: DEFAULT_OFFICE_LOCATION.lng };
+const DEFAULT_MAX_RANGE = DEFAULT_OFFICE_LOCATION.range;
+const EAR_THRESHOLD = 0.30;
+const EAR_DELTA = 0.55;
 
 interface FaceVerifyProps {
     employeeId?: string;
@@ -178,7 +153,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                 const modelPath = '/models';
 
                 // Load the configured detector
-                if (FACE_API_CONFIG.detector === 'tinyFaceDetector') {
+                if (BIOMETRIC_CONFIG.detector === 'tinyFaceDetector') {
                     await faceapi.nets.tinyFaceDetector.loadFromUri(`${modelPath}/tiny_face_detector/`);
                 } else {
                     await faceapi.nets.ssdMobilenetv1.loadFromUri(`${modelPath}/ssd_mobilenetv1/`);
@@ -207,42 +182,67 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
     useEffect(() => {
         if (!modelsLoaded) return;
 
+        let animationFrameId: number;
+        let lastTimestamp = 0;
+        const FPS_LIMIT = 15; // Limit to 15 FPS for processing to save CPU
+        const frameInterval = 1000 / FPS_LIMIT;
+
+        const loop = async (timestamp: number) => {
+            if (timestamp - lastTimestamp >= frameInterval) {
+                lastTimestamp = timestamp;
+                await detectFace();
+            }
+            animationFrameId = requestAnimationFrame(loop);
+        };
+
         const detectFace = async () => {
-            if (isDetectingRef.current) return;
+            if (isDetectingRef.current || verifying || isSuccess) return;
 
             const video = webcamRef.current?.video;
             const canvas = canvasRef.current;
             if (!video || !canvas || video.readyState !== 4 || video.videoWidth === 0 || video.videoHeight === 0) return;
 
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { alpha: false }); // Optimization: disable alpha if not needed
             if (!ctx) return;
 
             isDetectingRef.current = true;
-            let detections: any = [];
+            let detections: any = null;
             try {
-                // Performing the detection with a chained task.
-                // If it fails internally (e.g., the "Box.constructor" error), it will be caught by the catch block.
-                // Performing the detection with a chained task using centralized config
-                const detectorOptions = FACE_API_CONFIG.detector === 'tinyFaceDetector'
+                const detectorOptions = BIOMETRIC_CONFIG.detector === 'tinyFaceDetector'
                     ? new faceapi.TinyFaceDetectorOptions({
-                        inputSize: FACE_API_CONFIG.inputSize,
-                        scoreThreshold: FACE_API_CONFIG.scoreThreshold
+                        inputSize: BIOMETRIC_CONFIG.inputSize,
+                        scoreThreshold: BIOMETRIC_CONFIG.scoreThreshold
                     })
                     : new faceapi.SsdMobilenetv1Options({
-                        minConfidence: FACE_API_CONFIG.minConfidence
+                        minConfidence: BIOMETRIC_CONFIG.minConfidence
                     });
 
-                detections = await faceapi
-                    .detectAllFaces(video, detectorOptions)
-                    .withFaceLandmarks()
-                    .withFaceDescriptors();
+                // Optimization: Only get descriptors if liveness is confirmed or if identification is needed
+                const needDescriptor = (blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness) || (!employeeId && Date.now() - lastIdentifyRef.current > 3000);
+
+                const task = faceapi.detectSingleFace(video, detectorOptions).withFaceLandmarks();
+
+                detections = needDescriptor
+                    ? await task.withFaceDescriptor()
+                    : await task;
+
             } catch (err) {
                 console.debug('Biometric processing interrupted', err);
             } finally {
                 isDetectingRef.current = false;
             }
 
-            if (!detections) return;
+            if (!detections) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (!verifying && !isSuccess) setStatus('No biometric target detected');
+                setCurrentEAR(0);
+                return;
+            }
+
+            // ... (rest of the drawing logic is similar, but adapted for single detection)
+            const detection = detections;
+            const box = detection.detection.box;
+            const landmarks = detection.landmarks;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -254,201 +254,96 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
 
             if (!employeeId) {
                 statusMessage = 'Awaiting Biometric Data...';
-                // Don't return, allow detection for identification
             }
 
-            if (detections.length === 0) {
-                statusMessage = 'No biometric target detected';
-                color = 'rgba(244, 63, 94, 0.5)';
-            } else if (detections.length > 1) {
-                statusMessage = 'Multiple subjects detected';
-                color = 'rgba(244, 63, 94, 0.5)';
+            const leftEye = landmarks.getLeftEye();
+            const rightEye = landmarks.getRightEye();
+            const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
+            setCurrentEAR(ear);
+
+            // Draw detection feedback
+            ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(box.x, box.y, box.width, box.height);
+            ctx.setLineDash([]);
+
+            // Draw subtle points for landmarks
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+            landmarks.positions.forEach((p: any) => ctx.fillRect(p.x, p.y, 2, 2));
+
+            // Simple blink logic
+            if (ear < EAR_THRESHOLD) {
+                wasClosedRef.current = true;
+            } else if (wasClosedRef.current && ear > EAR_THRESHOLD + EAR_DELTA) {
+                setBlinkCount(prev => prev + 1);
+                wasClosedRef.current = false;
+                setShowBlinkEffect(true);
+                setTimeout(() => setShowBlinkEffect(false), 400);
+            }
+
+            const padding = 40;
+            const insideFrame =
+                box.x >= frameX - padding &&
+                box.y >= frameY - padding &&
+                box.x + box.width <= frameX + FRAME_WIDTH + padding &&
+                box.y + box.height <= frameY + FRAME_HEIGHT + padding;
+
+            if (!insideFrame) {
+                statusMessage = 'Subject out of frame';
+            } else if (blinkCount === 0 && !BIOMETRIC_CONFIG.bypassLiveness) {
+                statusMessage = 'Blink to verify liveness';
+            } else if (!userLocation) {
+                statusMessage = 'Securing GPS Anchor...';
+                color = 'rgba(245, 158, 11, 0.8)';
             } else {
-                const detection = detections[0];
-                if (!detection || !detection.detection || !detection.detection.box) return;
+                statusMessage = 'Identity verification active';
+            }
 
-                const box = detection.detection.box;
+            color = insideFrame ? (blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness ? 'rgba(59, 130, 246, 0.8)' : 'rgba(245, 158, 11, 0.8)') : 'rgba(244, 63, 94, 0.5)';
 
-                // Safety check for invalid box dimensions
-                if (!box || typeof box.x !== 'number' || typeof box.y !== 'number' ||
-                    typeof box.width !== 'number' || typeof box.height !== 'number') {
-                    return;
+            // Periodic identification (if not already verified or verifying)
+            if (insideFrame && !verifying && !isSuccess && detection.descriptor && Date.now() - lastIdentifyRef.current > 3000 && !identifyInProgressRef.current) {
+                const descriptorArray = Array.from(detection.descriptor) as number[];
+
+                if (!employeeId || identifiedIdRef.current !== employeeId) {
+                    lastIdentifyRef.current = Date.now();
+                    identifyInProgressRef.current = true;
+
+                    EmployeeService.verifyFace({
+                        faceDescriptor: descriptorArray
+                    }).then(result => {
+                        if (result.employee && result.employee._id !== identifiedIdRef.current) {
+                            identifiedIdRef.current = result.employee._id;
+                            if (onIdentify) onIdentify(result.employee);
+                        }
+                    }).catch(err => {
+                        console.debug('Auto-identification failed:', err.message);
+                    }).finally(() => {
+                        identifyInProgressRef.current = false;
+                    });
                 }
+            }
 
-                const landmarks = detection.landmarks;
-                const leftEye = landmarks.getLeftEye();
-                const rightEye = landmarks.getRightEye();
-                const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
-                setCurrentEAR(ear);
-
-                // Draw detection feedback on canvas
-                ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-
-                // Ensure values are finite numbers
-                if (Number.isFinite(box.x) && Number.isFinite(box.y) &&
-                    Number.isFinite(box.width) && Number.isFinite(box.height)) {
-                    ctx.strokeRect(box.x, box.y, box.width, box.height);
-                }
-                ctx.setLineDash([]);
-
-                // Draw subtle points for landmarks
-                ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
-                landmarks.positions.forEach((p: any) => ctx.fillRect(p.x, p.y, 2, 2));
-
-                // Simple blink logic
-                if (ear < EAR_THRESHOLD) {
-                    wasClosedRef.current = true;
-                } else if (wasClosedRef.current && ear > EAR_THRESHOLD + EAR_DELTA) {
-                    setBlinkCount(prev => prev + 1);
-                    wasClosedRef.current = false;
-                    setShowBlinkEffect(true);
-                    setTimeout(() => setShowBlinkEffect(false), 400);
-                }
-
-                // More lenient frame check - allow significant padding
-                const padding = 40;
-                const insideFrame =
-                    box.x >= frameX - padding &&
-                    box.y >= frameY - padding &&
-                    box.x + box.width <= frameX + FRAME_WIDTH + padding &&
-                    box.y + box.height <= frameY + FRAME_HEIGHT + padding;
-
-                let livenessMessage = blinkCount > 0 ? 'Liveness: OK' : 'Blink to prove identity';
-
-                if (!insideFrame) {
-                    statusMessage = 'Subject out of frame';
-                } else if (blinkCount === 0) {
-                    statusMessage = 'Blink to verify liveness';
-                } else if (!userLocation) {
-                    statusMessage = 'Securing GPS Anchor...';
-                    color = 'rgba(245, 158, 11, 0.8)';
-                } else {
-                    statusMessage = 'Identity verification active';
-                }
-
-                color = insideFrame ? (blinkCount > 0 || FACE_API_CONFIG.bypassLiveness ? 'rgba(59, 130, 246, 0.8)' : 'rgba(245, 158, 11, 0.8)') : 'rgba(244, 63, 94, 0.5)';
-
-                // Periodic identification (if not already verified or verifying)
-                if (insideFrame && !verifying && !isSuccess && Date.now() - lastIdentifyRef.current > 3000 && !identifyInProgressRef.current) {
-                    const descriptorArray = Array.from(detection.descriptor) as number[];
-
-                    // Only identify if we don't have an ID or if the detected person changed
-                    // Actually, let's just do it if we are "Awaiting"
-                    if (!employeeId || identifiedIdRef.current !== employeeId) {
-                        lastIdentifyRef.current = Date.now();
-                        identifyInProgressRef.current = true;
-
-                        EmployeeService.verifyFace({
-                            faceDescriptor: descriptorArray
-                        }).then(result => {
-                            if (result.employee && result.employee._id !== identifiedIdRef.current) {
-                                identifiedIdRef.current = result.employee._id;
-                                if (onIdentify) onIdentify(result.employee);
-                            }
-                        }).catch(err => {
-                            // Silently fail identification in background
-                            console.debug('Auto-identification failed:', err.message);
-                        }).finally(() => {
-                            identifyInProgressRef.current = false;
-                        });
+            if (insideFrame && (blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness) && Date.now() - lastVerifiedRef.current > BIOMETRIC_CONFIG.verifyDebounceMs && !verifying && detection.descriptor) {
+                // Check Geofencing
+                if (BIOMETRIC_CONFIG.requireGeofence) {
+                    if (userLocation) {
+                        const dist = calculateDistance(userLocation.lat, userLocation.lng, officeSettings.lat, officeSettings.lng);
+                        if (dist > officeSettings.range) {
+                            setStatus('OUTSIDE AUTH RANGE');
+                            toast.error(`Scan denied: Device is ${Math.round(dist - officeSettings.range)}m outside authorized zone.`);
+                            return;
+                        }
+                    } else {
+                        return; // Wait for location if required
                     }
                 }
 
-                if (insideFrame && (blinkCount > 0 || FACE_API_CONFIG.bypassLiveness) && Date.now() - lastVerifiedRef.current > VERIFY_DEBOUNCE_MS && !verifying) {
-                    // Check Geofencing
-                    if (FACE_API_CONFIG.requireGeofence) {
-                        if (userLocation) {
-                            const dist = calculateDistance(userLocation.lat, userLocation.lng, officeSettings.lat, officeSettings.lng);
-                            if (dist > officeSettings.range) {
-                                setStatus('OUTSIDE AUTH RANGE');
-                                toast.error(`Scan denied: Device is ${Math.round(dist - officeSettings.range)}m outside authorized zone.`);
-                                setVerifying(false);
-                                return;
-                            }
-                        } else {
-                            return; // Wait for location if required
-                        }
-                    }
-
-                    lastVerifiedRef.current = Date.now();
-                    setVerifying(true);
-                    setStatus('Extracting descriptors...');
-
-                    try {
-                        const descriptorArray = Array.from(detection.descriptor) as number[];
-                        let result;
-
-                        if (mode === 'check-in') {
-                            result = await AttendanceService.checkIn({
-                                employeeId: employeeId || undefined,
-                                method: 'face_verification',
-                                faceDescriptor: descriptorArray,
-                                location: userLocation ? {
-                                    latitude: userLocation.lat,
-                                    longitude: userLocation.lng
-                                } : undefined,
-                                platform: navigator.platform,
-                                browser: navigator.userAgent
-                            });
-                        } else if (mode === 'check-out') {
-                            result = await AttendanceService.checkOut({
-                                employeeId: employeeId || undefined,
-                                method: 'face_verification',
-                                faceDescriptor: descriptorArray,
-                                location: userLocation ? {
-                                    latitude: userLocation.lat,
-                                    longitude: userLocation.lng
-                                } : undefined,
-                                platform: navigator.platform,
-                                browser: navigator.userAgent
-                            });
-                        } else {
-                            result = await EmployeeService.verifyFace({
-                                employeeId: employeeId || '',
-                                faceDescriptor: descriptorArray
-                            });
-                        }
-
-                        const identifiedName = result.employee ? `${result.employee.firstName} ${result.employee.lastName}` : '';
-
-                        setIsSuccess(true);
-                        setStatus(identifiedName ? `Welcome, ${identifiedName}` : 'Authentication Confirmed');
-                        toast.success(identifiedName ? `Identified: ${identifiedName}` : 'Check-point passed.');
-                        if (onSuccess) onSuccess(result);
-
-                        setTimeout(() => {
-                            setIsSuccess(false);
-                            setVerifying(false);
-                            setBlinkCount(0); // Reset for next scan
-                        }, 3000);
-
-                    } catch (err: any) {
-                        const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Access Denied';
-                        const isAlreadyDone = errorMessage.toLowerCase().includes('already checked in') ||
-                            errorMessage.toLowerCase().includes('already checked out');
-
-                        if (isAlreadyDone) {
-                            setIsSuccess(true);
-                            const isCheckIn = errorMessage.toLowerCase().includes('checked in');
-                            const statusMsg = isCheckIn ? 'Already Checked In Today' : 'Already Checked Out Today';
-                            setStatus(statusMsg);
-                            toast.success(errorMessage);
-                            if (onSuccess) onSuccess({ status: isCheckIn ? 'already_checked_in' : 'already_checked_out' });
-
-                            setTimeout(() => {
-                                setIsSuccess(false);
-                                setVerifying(false);
-                                setBlinkCount(0);
-                            }, 3000);
-                        } else {
-                            setStatus(errorMessage);
-                            toast.error(errorMessage);
-                            setVerifying(false);
-                        }
-                    }
-                }
+                lastVerifiedRef.current = Date.now();
+                setVerifying(true);
+                const descriptorArray = Array.from(detection.descriptor) as number[];
+                handleVerification(descriptorArray);
             }
 
             if (!verifying && !isSuccess) setStatus(statusMessage);
@@ -459,37 +354,31 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
             ctx.strokeStyle = color;
             ctx.lineWidth = 4;
 
-            // Draw corners
             const cornerSize = 40;
-            // Top Left
             ctx.beginPath();
             ctx.moveTo(frameX, frameY + cornerSize);
             ctx.lineTo(frameX, frameY);
             ctx.lineTo(frameX + cornerSize, frameY);
             ctx.stroke();
 
-            // Top Right
             ctx.beginPath();
             ctx.moveTo(frameX + FRAME_WIDTH - cornerSize, frameY);
             ctx.lineTo(frameX + FRAME_WIDTH, frameY);
             ctx.lineTo(frameX + FRAME_WIDTH, frameY + cornerSize);
             ctx.stroke();
 
-            // Bottom Right
             ctx.beginPath();
             ctx.moveTo(frameX + FRAME_WIDTH, frameY + FRAME_HEIGHT - cornerSize);
             ctx.lineTo(frameX + FRAME_WIDTH, frameY + FRAME_HEIGHT);
             ctx.lineTo(frameX + FRAME_WIDTH - cornerSize, frameY + FRAME_HEIGHT);
             ctx.stroke();
 
-            // Bottom Left
             ctx.beginPath();
             ctx.moveTo(frameX + cornerSize, frameY + FRAME_HEIGHT);
             ctx.lineTo(frameX, frameY + FRAME_HEIGHT);
             ctx.lineTo(frameX, frameY + FRAME_HEIGHT - cornerSize);
             ctx.stroke();
 
-            // Draw center crosshair
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(canvas.width / 2 - 10, canvas.height / 2);
@@ -497,13 +386,85 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
             ctx.moveTo(canvas.width / 2, canvas.height / 2 - 10);
             ctx.lineTo(canvas.width / 2, canvas.height / 2 + 10);
             ctx.stroke();
+            ctx.shadowBlur = 0; // Reset shadow for next frame
         };
 
-        const interval = setInterval(() => {
-            detectFace().catch(err => console.debug('Detection loop error:', err));
-        }, 80);
-        return () => clearInterval(interval);
-    }, [modelsLoaded, framePulse, employeeId, verifying, isSuccess]);
+        const handleVerification = async (descriptorArray: number[]) => {
+            setStatus('Extracting descriptors...');
+            try {
+                let result;
+                if (mode === 'check-in') {
+                    result = await AttendanceService.checkIn({
+                        employeeId: employeeId || undefined,
+                        method: 'face_verification',
+                        faceDescriptor: descriptorArray,
+                        location: userLocation ? {
+                            latitude: userLocation.lat,
+                            longitude: userLocation.lng
+                        } : undefined,
+                        platform: navigator.platform,
+                        browser: navigator.userAgent
+                    });
+                } else if (mode === 'check-out') {
+                    result = await AttendanceService.checkOut({
+                        employeeId: employeeId || undefined,
+                        method: 'face_verification',
+                        faceDescriptor: descriptorArray,
+                        location: userLocation ? {
+                            latitude: userLocation.lat,
+                            longitude: userLocation.lng
+                        } : undefined,
+                        platform: navigator.platform,
+                        browser: navigator.userAgent
+                    });
+                } else {
+                    result = await EmployeeService.verifyFace({
+                        employeeId: employeeId || '',
+                        faceDescriptor: descriptorArray
+                    });
+                }
+
+                const identifiedName = result.employee ? `${result.employee.firstName} ${result.employee.lastName}` : '';
+                setIsSuccess(true);
+                setStatus(identifiedName ? `Welcome, ${identifiedName}` : 'Authentication Confirmed');
+                toast.success(identifiedName ? `Identified: ${identifiedName}` : 'Check-point passed.');
+                if (onSuccess) onSuccess(result);
+
+                setTimeout(() => {
+                    setIsSuccess(false);
+                    setVerifying(false);
+                    setBlinkCount(0);
+                }, 3000);
+
+            } catch (err: any) {
+                const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Access Denied';
+                const isAlreadyDone = errorMessage.toLowerCase().includes('already checked in') ||
+                    errorMessage.toLowerCase().includes('already checked out');
+
+                if (isAlreadyDone) {
+                    setIsSuccess(true);
+                    const isCheckIn = errorMessage.toLowerCase().includes('checked in');
+                    setStatus(isCheckIn ? 'Already Checked In Today' : 'Already Checked Out Today');
+                    toast.success(errorMessage);
+                    if (onSuccess) onSuccess({ status: isCheckIn ? 'already_checked_in' : 'already_checked_out' });
+
+                    setTimeout(() => {
+                        setIsSuccess(false);
+                        setVerifying(false);
+                        setBlinkCount(0);
+                    }, 3000);
+                } else {
+                    setStatus(errorMessage);
+                    toast.error(errorMessage);
+                    setVerifying(false);
+                }
+            }
+        };
+
+        animationFrameId = requestAnimationFrame(loop);
+        return () => cancelAnimationFrame(animationFrameId);
+    }, [modelsLoaded, framePulse, employeeId, verifying, isSuccess, userLocation, officeSettings, blinkCount, mode, onIdentify, onSuccess]);
+
 
     return (
         <div className="w-full relative flex flex-col items-center">
@@ -569,7 +530,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     </div>
 
                     <div className="absolute bottom-6 right-6 text-[8px] font-mono text-right text-blue-500/60 uppercase tracking-widest">
-                        Liveness // <span className={(blinkCount > 0 || FACE_API_CONFIG.bypassLiveness) ? 'text-emerald-500' : 'text-rose-500'}>{(blinkCount > 0 || FACE_API_CONFIG.bypassLiveness) ? 'VERIFIED' : 'PENDING'}</span>
+                        Liveness // <span className={(blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness) ? 'text-emerald-500' : 'text-rose-500'}>{(blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness) ? 'VERIFIED' : 'PENDING'}</span>
                     </div>
 
                     {/* Dynamic Status Badge */}
@@ -628,8 +589,8 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     </div>
                     <div className="flex items-center gap-6 mt-1">
                         <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${(blinkCount > 0 || FACE_API_CONFIG.bypassLiveness) ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-rose-500/50'}`} />
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Liveness: {(blinkCount > 0 || FACE_API_CONFIG.bypassLiveness) ? 'VERIFIED' : 'PENDING'}</span>
+                            <div className={`w-2 h-2 rounded-full ${(blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness) ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-rose-500/50'}`} />
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Liveness: {(blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness) ? 'VERIFIED' : 'PENDING'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${userLocation ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : (locationError ? 'bg-rose-500' : 'bg-amber-500/50')}`} />

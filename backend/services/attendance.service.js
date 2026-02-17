@@ -81,24 +81,22 @@ class AttendanceService {
 
         // Logic for marking LATE based on settings
         try {
-            const workStartTimeStr = await systemSettingService.getSetting('work_start_time') || '08:00';
-            const gracePeriod = await systemSettingService.getSetting('grace_period_minutes') || 0;
+            const [workStartTimeStr, gracePeriod] = await Promise.all([
+                systemSettingService.getSetting('work_start_time'),
+                systemSettingService.getSetting('grace_period_minutes')
+            ]);
 
-            const [hours, minutes] = workStartTimeStr.split(':').map(Number);
+            const [hours, minutes] = (workStartTimeStr || '08:00').split(':').map(Number);
             const workStart = new Date(checkInData.time);
             workStart.setHours(hours, minutes, 0, 0);
 
             // Add grace period
-            const threshold = new Date(workStart.getTime() + gracePeriod * 60000);
+            const threshold = new Date(workStart.getTime() + (parseInt(gracePeriod) || 0) * 60000);
 
-            if (checkInData.time > threshold) {
-                attendance.status = 'late';
-            } else {
-                attendance.status = 'present';
-            }
+            attendance.status = checkInData.time > threshold ? 'late' : 'present';
         } catch (settingsErr) {
             console.error('Error fetching settings for late check:', settingsErr);
-            attendance.status = 'present'; // Default
+            attendance.status = 'present';
         }
 
         await attendance.save();
@@ -149,9 +147,6 @@ class AttendanceService {
 
     // Fetch attendance
     static async getAttendance(user, query) {
-        // const { error, value } = attendanceQuerySchema.validate(query);
-        // if (error) throw new Error(`Validation failed: ${error.details[0].message}`);
-
         const filter = { isActive: true };
 
         // Date Filtering
@@ -167,13 +162,6 @@ class AttendanceService {
         } else if (query.startDate) {
             const start = new Date(query.startDate);
             filter.date = { $gte: start };
-        } else {
-            // Default to today if no date provided? Or maybe last 30 days?
-            // For now, let's not enforce a default date filter if they want everything, 
-            // but for performance, maybe default to current month or similar.
-            // Let's stick to the user's request: "record for a day".
-            // If they pass a specific date (like today), we handle it.
-            // If no date, maybe return recent ones.
         }
 
         // Employee Filtering
@@ -181,9 +169,7 @@ class AttendanceService {
             if (query.employeeId) {
                 filter.employeeId = query.employeeId;
             }
-            // If admin and no employeeId, return all (subject to date filter)
         } else {
-            // Non-admin can only see their own
             filter.employeeId = user._id;
         }
 
@@ -192,16 +178,13 @@ class AttendanceService {
             filter.status = query.status;
         }
 
-        // Special handling for "today" convenience if needed, 
-        // but typically frontend passes startDate=today&endDate=today
-
-        // Populate employee details for admin view
-        const attendanceList = await Attendance.find(filter)
+        // Use .lean() for faster read-only queries
+        return await Attendance.find(filter)
             .populate('employeeId', 'firstName lastName email photoUrl position department')
-            .sort({ 'checkIn.time': -1 });
-
-        return attendanceList;
+            .sort({ 'checkIn.time': -1 })
+            .lean();
     }
+
 
     // Delete attendance record
     static async deleteRecord(id) {
