@@ -1,9 +1,37 @@
 const Payroll = require('../models/payroll.model');
 const Employee = require('../models/employee.model');
 const Attendance = require('../models/attendance.model');
+const BusinessBalance = require('../models/businessBalance.model');
 const mongoose = require('mongoose');
 
 class PayrollService {
+    static async topUpMasterBalance(amount, notes = 'Manual Top-up') {
+        let balanceDoc = await BusinessBalance.findOne();
+        if (!balanceDoc) {
+            balanceDoc = new BusinessBalance({ totalBudget: 0 });
+        }
+
+        balanceDoc.totalBudget += parseFloat(amount);
+        balanceDoc.lastTopUp = new Date();
+        balanceDoc.notes = notes;
+
+        await balanceDoc.save();
+        return balanceDoc;
+    }
+
+    static async updateCompanyBankDetails(details) {
+        let balanceDoc = await BusinessBalance.findOne();
+        if (!balanceDoc) {
+            balanceDoc = new BusinessBalance({ totalBudget: 0 });
+        }
+
+        balanceDoc.accountNumber = details.accountNumber;
+        balanceDoc.accountName = details.accountName;
+
+        await balanceDoc.save();
+        return balanceDoc;
+    }
+
     static async getFinancialStats() {
         const processedPayroll = await Payroll.aggregate([
             {
@@ -26,6 +54,16 @@ class PayrollService {
             if (item._id === 'pending') stats.pending = item.total;
             stats.totalPayroll += item.total;
         });
+
+        // Fetch Business Balance (The Owner's Master Account)
+        let balanceDoc = await BusinessBalance.findOne();
+        if (!balanceDoc) {
+            // First time setup: Owner starts with $10,000 for demonstration
+            balanceDoc = await BusinessBalance.create({ totalBudget: 10000 });
+        }
+
+        stats.masterBalance = balanceDoc.totalBudget;
+        stats.ownerResidual = Math.max(0, balanceDoc.totalBudget - stats.disbursed);
 
         // Dynamic efficiency based on disbursed vs total
         if (stats.totalPayroll > 0) {

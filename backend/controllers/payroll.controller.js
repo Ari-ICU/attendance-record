@@ -54,6 +54,27 @@ class PayrollController {
         }
     }
 
+    static async topUp(req, res) {
+        try {
+            const { amount, notes } = req.body;
+            if (!amount || amount <= 0) throw new Error('Invalid deposit amount');
+
+            const result = await PayrollService.topUpMasterBalance(amount, notes);
+            res.json(ApiResponse.success(result, `Successfully deposited $${amount} to vault`));
+        } catch (error) {
+            res.status(500).json(ApiResponse.error(error.message));
+        }
+    }
+
+    static async updateBankDetails(req, res) {
+        try {
+            const result = await PayrollService.updateCompanyBankDetails(req.body);
+            res.json(ApiResponse.success(result, 'Company bank credentials synchronized'));
+        } catch (error) {
+            res.status(500).json(ApiResponse.error(error.message));
+        }
+    }
+
     static async generate(req, res) {
         try {
             const { month, year } = req.body;

@@ -14,7 +14,10 @@ import {
     TrendingUp,
     ShieldCheck,
     RefreshCw,
-    UserCircle
+    UserCircle,
+    Briefcase,
+    PlusCircle,
+    X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Employee } from '@/types/employee.types';
@@ -29,12 +32,22 @@ export default function PayrollPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDisbursing, setIsDisbursing] = useState(false);
     const [isApproving, setIsApproving] = useState(false);
+    const [isDepositing, setIsDepositing] = useState(false);
+    const [showDepositModal, setShowDepositModal] = useState(false);
+    const [showBankSettings, setShowBankSettings] = useState(false);
+    const [depositAmount, setDepositAmount] = useState('');
+    const [bankDetails, setBankDetails] = useState({
+        accountNumber: '',
+        accountName: ''
+    });
 
     const [stats, setStats] = useState({
         totalPayroll: 0,
         disbursed: 0,
         pending: 0,
-        efficiency: 0
+        efficiency: 0,
+        masterBalance: 0,
+        ownerResidual: 0
     });
     const [ledger, setLedger] = useState<any[]>([]);
 
@@ -46,6 +59,10 @@ export default function PayrollPage() {
                 PayrollService.getLedger()
             ]);
             setStats(statsData);
+            setBankDetails({
+                accountNumber: statsData.accountNumber || '',
+                accountName: statsData.accountName || ''
+            });
             setLedger(ledgerData);
         } catch (error) {
             toast.error('Financial data sync failed');
@@ -83,10 +100,10 @@ export default function PayrollPage() {
     };
 
     const statCards = [
-        { label: 'Total Payroll', value: `$${stats.totalPayroll.toLocaleString()}`, icon: DollarSign, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: '+4.2%' },
-        { label: 'Disbursed', value: `$${stats.disbursed.toLocaleString()}`, icon: Banknote, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: '82%' },
-        { label: 'Pending Distribution', value: `$${stats.pending.toLocaleString()}`, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: '18%' },
-        { label: 'System Efficiency', value: `${stats.efficiency}%`, icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-500/10', trend: '+0.1%' },
+        { label: 'Owner Executive Vault', value: `$${(stats.masterBalance || 0).toLocaleString()}`, icon: Briefcase, color: 'text-indigo-400', bg: 'bg-indigo-500/10', trend: 'Master Fund' },
+        { label: 'Disbursed', value: `$${stats.disbursed.toLocaleString()}`, icon: Banknote, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: 'Secured' },
+        { label: 'Payroll Expense', value: `$${stats.totalPayroll.toLocaleString()}`, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: 'Monthly Burn' },
+        { label: 'Owner Residual', value: `$${(stats.ownerResidual || 0).toLocaleString()}`, icon: Wallet, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: 'Remaining' },
     ];
 
     const handleDisburse = async () => {
@@ -112,6 +129,24 @@ export default function PayrollPage() {
             toast.error('Approval sequence failed');
         } finally {
             setIsApproving(false);
+        }
+    };
+
+    const handleDeposit = async () => {
+        const amount = parseFloat(depositAmount);
+        if (isNaN(amount) || amount <= 0) return toast.error('Enter a valid amount');
+
+        try {
+            setIsDepositing(true);
+            await PayrollService.deposit(amount, 'Business Owner Capital Top-up');
+            toast.success(`Funded Executive Vault with $${amount.toLocaleString()}`);
+            setShowDepositModal(false);
+            setDepositAmount('');
+            fetchData();
+        } catch (err) {
+            toast.error('Deposit sequence failed');
+        } finally {
+            setIsDepositing(false);
         }
     };
 
@@ -178,34 +213,79 @@ export default function PayrollPage() {
         toast.success('Financial ledger exported');
     };
 
+    const handleExportABA = () => {
+        if (!bankDetails.accountNumber) {
+            toast.error('Configure Company Bank Account first');
+            setShowBankSettings(true);
+            return;
+        }
+
+        const approvedOnly = ledger.filter(item => item.payroll.status === 'approved' || item.payroll.status === 'disbursed');
+        if (approvedOnly.length === 0) return toast.error('No approved payroll to export');
+
+        // ABA Batch Format: Debit Account, Credit Account, Amount, Currency, Remark, Beneficiary Name
+        const headers = ['Debit Account', 'Credit Account', 'Amount', 'Currency', 'Remark', 'Beneficiary Name'];
+
+        const rows = approvedOnly.map(item => [
+            bankDetails.accountNumber,
+            item.employee.bankDetails?.accountNumber || '',
+            item.payroll.netAmount,
+            'USD',
+            `Salary ${new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' })}`,
+            item.employee.bankDetails?.accountName || `${item.employee.firstName} ${item.employee.lastName}`
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.setAttribute('href', URL.createObjectURL(blob));
+        link.setAttribute('download', `ABA_PAYROLL_BATCH_${new Date().toISOString().split('T')[0]}.csv`);
+        link.click();
+        toast.success('ABA iBusiness Batch generated');
+    };
+
+    const handleSaveBankSettings = async () => {
+        try {
+            await PayrollService.updateCompanyBank(bankDetails);
+            toast.success('Corporate bank credentials synchronized');
+            setShowBankSettings(false);
+        } catch (err) {
+            toast.error('Sync failed');
+        }
+    };
+
     const handleDownloadPayslip = (item: any) => {
         const content = `
-            PAYSLIP RECEIPT
-            --------------------------------------------------
-            Employee: ${item.employee.firstName} ${item.employee.lastName}
-            ID: ${item.employee._id}
-            Position: ${item.employee.position}
-            Department: ${item.employee.department || 'N/A'}
-            Date: ${new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Phnom_Penh' })}
-
-            EARNINGS
-            --------------------------------------------------
-            Base Salary: $${item.payroll.baseAmount.toFixed(2)}
-            Bonus:       $${(item.payroll.bonus || 0).toFixed(2)}
-            --------------------------------------------------
-            Gross Pay:   $${(item.payroll.baseAmount + (item.payroll.bonus || 0)).toFixed(2)}
-
-            DEDUCTIONS
-            --------------------------------------------------
-            Tax/Deductions: $${(item.payroll.deductions || 0).toFixed(2)}
-
-            NET PAY:     $${item.payroll.netAmount.toFixed(2)}
-            --------------------------------------------------
-            --------------------------------------------------
-            Status: ${item.payroll.status.toUpperCase()}
-            Transaction ID: ${item.payroll.transactionId || 'PENDING'}
-            Destination: ${item.employee.bankDetails?.bankName || 'RETAINED CASH'} - ${item.employee.bankDetails?.accountNumber || 'PHYSICAL DISBURSEMENT'}
-        `;
+                PAYSLIP RECEIPT
+                --------------------------------------------------
+                Employee: ${item.employee.firstName} ${item.employee.lastName}
+                ID: ${item.employee._id}
+                Position: ${item.employee.position}
+                Department: ${item.employee.department || 'N/A'}
+                Date: ${new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Phnom_Penh' })}
+    
+                EARNINGS
+                --------------------------------------------------
+                Base Salary: $${item.payroll.baseAmount.toFixed(2)}
+                Bonus:       $${(item.payroll.bonus || 0).toFixed(2)}
+                --------------------------------------------------
+                Gross Pay:   $${(item.payroll.baseAmount + (item.payroll.bonus || 0)).toFixed(2)}
+    
+                DEDUCTIONS
+                --------------------------------------------------
+                Tax/Deductions: $${(item.payroll.deductions || 0).toFixed(2)}
+    
+                NET PAY:     $${item.payroll.netAmount.toFixed(2)}
+                --------------------------------------------------
+                --------------------------------------------------
+                Status: ${item.payroll.status.toUpperCase()}
+                Transaction ID: ${item.payroll.transactionId || 'PENDING'}
+                Destination: ${item.employee.bankDetails?.bankName || 'RETAINED CASH'} - ${item.employee.bankDetails?.accountNumber || 'PHYSICAL DISBURSEMENT'}
+            `;
 
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
         const link = document.createElement('a');
@@ -235,12 +315,26 @@ export default function PayrollPage() {
 
                 <div className="flex items-center gap-3">
                     <button
+                        onClick={() => setShowBankSettings(true)}
+                        className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/5 text-slate-400 hover:text-white transition-all border border-white/10"
+                        title="Bank Connectivity"
+                    >
+                        <ShieldCheck className={`w-5 h-5 ${bankDetails.accountNumber ? 'text-emerald-400' : 'text-slate-500'}`} />
+                    </button>
+                    <button
                         onClick={handleGenerate}
                         disabled={refreshing}
                         className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 text-slate-400 font-black text-xs tracking-widest hover:bg-white/10 transition-all border border-white/10 uppercase"
                     >
                         {refreshing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                         Generate Cycle
+                    </button>
+                    <button
+                        onClick={() => setShowDepositModal(true)}
+                        className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 text-indigo-400 font-black text-xs tracking-widest hover:bg-white/10 transition-all border border-indigo-500/20 uppercase"
+                    >
+                        <PlusCircle className="w-4 h-4" />
+                        Deposit Funds
                     </button>
                     <button
                         onClick={handleApprove}
@@ -325,6 +419,14 @@ export default function PayrollPage() {
                             title="Export to CSV"
                         >
                             <Download className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={handleExportABA}
+                            className="flex items-center gap-2 px-4 py-3 bg-indigo-600/10 border border-indigo-500/30 rounded-2xl text-indigo-400 hover:bg-indigo-600/20 transition-all font-black text-[10px] uppercase tracking-widest"
+                            title="Export ABA iBusiness Batch"
+                        >
+                            <CreditCard className="w-4 h-4" />
+                            ABA Batch
                         </button>
                     </div>
                 </div>
@@ -462,6 +564,122 @@ export default function PayrollPage() {
                     </div>
                 </div>
             </motion.div>
+
+            {/* Deposit Modal */}
+            {showDepositModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="w-full max-w-md glass-pane p-8 rounded-[2rem] border border-white/10 shadow-2xl relative"
+                    >
+                        <button
+                            onClick={() => setShowDepositModal(false)}
+                            className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 text-slate-500 hover:text-white transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="mb-8">
+                            <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6">
+                                <PlusCircle className="w-7 h-7" />
+                            </div>
+                            <h2 className="text-2xl font-black text-white italic">Top Up Executive Vault</h2>
+                            <p className="text-slate-400 text-sm font-medium mt-1 uppercase tracking-tight">Injection of Business Capital</p>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Deposit Amount (USD)</label>
+                                <div className="relative">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl font-black text-indigo-400 opacity-50">$</div>
+                                    <input
+                                        type="number"
+                                        placeholder="0.00"
+                                        value={depositAmount}
+                                        onChange={(e) => setDepositAmount(e.target.value)}
+                                        autoFocus
+                                        className="w-full bg-slate-950/50 border border-white/5 text-white pl-12 pr-6 py-5 rounded-2xl outline-none focus:border-indigo-500/50 transition-all text-2xl font-black"
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleDeposit}
+                                disabled={isDepositing || !depositAmount}
+                                className="w-full py-5 rounded-2xl bg-indigo-600 text-white font-black text-xs tracking-[0.2em] hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20 active:scale-[0.98] disabled:opacity-50 uppercase italic flex items-center justify-center gap-3"
+                            >
+                                {isDepositing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
+                                Initialize Deposit Protocol
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Bank Settings Modal */}
+            {showBankSettings && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="w-full max-w-lg glass-pane p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative"
+                    >
+                        <button
+                            onClick={() => setShowBankSettings(false)}
+                            className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 text-slate-500 hover:text-white transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="mb-10">
+                            <h2 className="text-2xl font-black text-white italic mb-2">Corporate Bank Link</h2>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Configuring ABA / Acleda Merchant Gateway</p>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="p-6 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 mb-8">
+                                <div className="flex items-start gap-4">
+                                    <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
+                                    <p className="text-xs text-emerald-200/70 font-medium leading-relaxed">
+                                        These credentials are used to generate the **Debit Account** column in your bank batch files. Ensure they match your Corporate iBusiness profile.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Company Account Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. ARI ICU TECH LTD"
+                                        value={bankDetails.accountName}
+                                        onChange={(e) => setBankDetails({ ...bankDetails, accountName: e.target.value })}
+                                        className="w-full bg-slate-950/50 border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:border-blue-500/50 transition-all font-bold uppercase tracking-wider"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Corporate Account Number</label>
+                                    <input
+                                        type="text"
+                                        placeholder="000 000 000"
+                                        value={bankDetails.accountNumber}
+                                        onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })}
+                                        className="w-full bg-slate-950/50 border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:border-blue-500/50 transition-all font-mono text-xl"
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleSaveBankSettings}
+                                className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-xs tracking-[0.2em] hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98] uppercase italic mt-4"
+                            >
+                                Synchronize Bank Protocol
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 }
