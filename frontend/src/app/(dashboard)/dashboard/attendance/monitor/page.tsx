@@ -21,6 +21,8 @@ import { AttendanceRecord } from '@/types/attendance.types';
 import { getFullImageUrl } from '@/utils/url.utils';
 import toast from 'react-hot-toast';
 
+import GeofenceVisualizer from '@/components/attendance/GeofenceVisualizer';
+
 export default function LiveMonitorPage() {
     const [records, setRecords] = useState<AttendanceRecord[]>([]);
     const [loading, setLoading] = useState(true);
@@ -66,13 +68,16 @@ export default function LiveMonitorPage() {
     return (
         <div className="space-y-8 pb-12">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-white tracking-tight">Live Monitor</h1>
-                    <p className="text-slate-400 font-medium tracking-tight flex items-center gap-2">
-                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        Real-time attendance stream active
-                    </p>
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 bg-blue-500/10 rounded-lg border border-blue-500/20 text-blue-400">
+                            <Activity size={14} className="animate-pulse" />
+                        </div>
+                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Telemetry Stream active</span>
+                    </div>
+                    <h1 className="text-4xl font-black text-white tracking-tight italic">Live Monitor</h1>
+                    <p className="text-slate-400 font-medium tracking-tight">Real-time personnel positioning and biometric identification</p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -80,49 +85,59 @@ export default function LiveMonitorPage() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                         <input
                             type="text"
-                            placeholder="Find employee..."
+                            placeholder="Find character..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="bg-white/5 border border-white/10 text-white pl-10 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all w-64 text-sm font-medium"
+                            className="bg-slate-950/50 border border-white/5 text-white pl-11 pr-4 py-3 rounded-2xl outline-none focus:border-blue-500/50 transition-all w-64 text-[10px] font-black uppercase tracking-widest placeholder:text-slate-700"
                         />
                     </div>
                     <button
                         onClick={() => fetchRecords(true)}
                         disabled={refreshing}
-                        className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-slate-400 hover:text-white transition-all group active:scale-95 disabled:opacity-50"
+                        className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 text-slate-400 hover:text-white transition-all group active:scale-95 disabled:opacity-50"
                     >
                         <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin text-blue-400' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
                     </button>
                 </div>
             </div>
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat, index) => (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        key={index}
-                        className="glass-pane p-6 rounded-2xl border border-white/5 relative group hover:border-white/10 transition-colors"
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
-                                <stat.icon className="w-6 h-6" />
-                            </div>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
-                                {stat.label}
-                            </span>
-                        </div>
-                        <div className="flex items-end justify-between">
-                            <span className="text-3xl font-black text-white">{stat.value}</span>
-                            <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 px-2 py-1 rounded-lg bg-emerald-500/10">
-                                <ArrowUpRight className="w-3 h-3" />
-                                12%
-                            </div>
-                        </div>
-                    </motion.div>
-                ))}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Stats Overview */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {stats.map((stat, index) => (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: index * 0.1 }}
+                                key={index}
+                                className="glass-pane p-6 rounded-3xl border border-white/5 relative group hover:border-blue-500/30 transition-all duration-500"
+                            >
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} border border-white/5`}>
+                                        <stat.icon className="w-6 h-6" />
+                                    </div>
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                                        {stat.label}
+                                    </span>
+                                </div>
+                                <div className="flex items-end justify-between">
+                                    <span className="text-4xl font-black text-white italic">{stat.value}</span>
+                                    <div className="flex items-center gap-1 text-[10px] font-black text-emerald-400 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                                        <ArrowUpRight className="w-3 h-3" />
+                                        SAFE
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Main Log Section Moved into this grid later */}
+                </div>
+
+                <div className="lg:col-span-1">
+                    <GeofenceVisualizer />
+                </div>
             </div>
 
             {/* Main Log Section */}

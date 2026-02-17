@@ -99,27 +99,29 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
         <div className="flex min-h-screen font-sans text-slate-100">
             {/* Sidebar */}
-            <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-2xl`}>
+            <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-2xl print:hidden`}>
                 <Sidebar menuItems={menuItems} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
             </div>
 
             {/* Mobile Overlay */}
             {!sidebarCollapsed && (
                 <div
-                    className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+                    className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity duration-300 print:hidden"
                     onClick={() => setSidebarCollapsed(true)}
                 />
             )}
 
             {/* Main Content */}
-            <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} relative min-h-screen`}>
+            <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} relative min-h-screen print:ml-0`}>
                 {/* Header */}
-                <AHeader sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
+                <div className="print:hidden">
+                    <AHeader sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
+                </div>
 
                 {/* Background ambient glow */}
-                <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-transparent pointer-events-none opacity-50 blur-3xl z-0" />
+                <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-transparent pointer-events-none opacity-50 blur-3xl z-0 print:hidden" />
 
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto">
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto print:p-0">
                     {children}
                 </main>
             </div>

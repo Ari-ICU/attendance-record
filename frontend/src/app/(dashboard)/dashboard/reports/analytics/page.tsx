@@ -300,54 +300,122 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Bottom Row - Departmental Metrics */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="glass-pane p-8 rounded-[2.5rem] border border-white/10"
-            >
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20 text-purple-400">
-                            <Globe className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-black text-white uppercase tracking-widest italic">Entity Performance</h2>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Inter-departmental compliance metrics</p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="lg:col-span-2 glass-pane p-8 rounded-[2.5rem] border border-white/10"
+                >
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20 text-purple-400">
+                                <Globe className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-black text-white uppercase tracking-widest italic">Entity Performance</h2>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Inter-departmental compliance metrics</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {(analytics?.entityPerformance?.length > 0 ? analytics.entityPerformance : [
-                        { name: 'Eng', score: 98, trend: 'up' },
-                        { name: 'Research', score: 92, trend: 'up' },
-                        { name: 'Security', score: 85, trend: 'down' },
-                        { name: 'Ops', score: 89, trend: 'up' },
-                    ]).map((dept: any, i: number) => (
-                        <div key={i} className="space-y-4 p-5 rounded-3xl bg-white/[0.02] border border-white/5 group hover:border-white/10 transition-all">
-                            <div className="flex justify-between items-start">
-                                <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider italic leading-tight max-w-[100px]">{dept.name}</h3>
-                                {dept.score >= 90 ? <ArrowUpRight className="w-4 h-4 text-emerald-400" /> : <ArrowDownRight className="w-4 h-4 text-rose-400" />}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {(analytics?.entityPerformance?.length > 0 ? analytics.entityPerformance : [
+                            { name: 'Eng', score: 98, trend: 'up' },
+                            { name: 'Research', score: 92, trend: 'up' },
+                            { name: 'Security', score: 85, trend: 'down' },
+                            { name: 'Ops', score: 89, trend: 'up' },
+                        ]).map((dept: any, i: number) => (
+                            <div key={i} className="space-y-4 p-5 rounded-3xl bg-white/[0.02] border border-white/5 group hover:border-white/10 transition-all">
+                                <div className="flex justify-between items-start">
+                                    <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider italic leading-tight max-w-[100px]">{dept.name}</h3>
+                                    {dept.score >= 90 ? <ArrowUpRight className="w-4 h-4 text-emerald-400" /> : <ArrowDownRight className="w-4 h-4 text-rose-400" />}
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex items-end justify-between">
+                                        <span className="text-2xl font-black text-white">{dept.score}%</span>
+                                        <span className="text-[8px] font-bold text-slate-500 uppercase">Target: 95%</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${dept.score}%` }}
+                                            transition={{ duration: 1.5, delay: 0.8 + (i * 0.1) }}
+                                            className={`h-full bg-gradient-to-r ${dept.score >= 90 ? 'from-blue-500 to-emerald-500' : 'from-blue-500 to-amber-500'}`}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <div className="flex items-end justify-between">
-                                    <span className="text-2xl font-black text-white">{dept.score}%</span>
-                                    <span className="text-[8px] font-bold text-slate-500 uppercase">Target: 95%</span>
+                        ))}
+                    </div>
+                </motion.div>
+
+                {/* AI Forecasting Module */}
+                <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className="glass-pane p-8 rounded-[2.5rem] border border-blue-500/20 bg-blue-500/[0.02] relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 p-8 opacity-10">
+                        <Cpu size={120} className="text-blue-500" />
+                    </div>
+
+                    <div className="relative z-10 flex flex-col h-full">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6 w-fit">
+                            <Zap className="w-3 h-3 text-blue-400 animate-pulse" />
+                            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Neural Forecasting v2</span>
+                        </div>
+
+                        <h2 className="text-xl font-black text-white italic tracking-tight mb-2">Predictive Logic</h2>
+                        <p className="text-xs text-slate-400 font-medium mb-8">AI-driven attendance probability for the next 72 hours</p>
+
+                        <div className="space-y-6 flex-1">
+                            {[
+                                { day: 'Wednesday', prob: 94, status: 'High' },
+                                { day: 'Thursday', prob: 88, status: 'Stable' },
+                                { day: 'Friday', prob: 76, status: 'Low Risk' },
+                            ].map((forecast, i) => (
+                                <div key={i} className="space-y-2">
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{forecast.day}</p>
+                                            <p className="text-sm font-black text-white">{forecast.prob}% Probability</p>
+                                        </div>
+                                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-md border ${forecast.status === 'High' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                                forecast.status === 'Stable' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                                    'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                                            }`}>
+                                            {forecast.status}
+                                        </span>
+                                    </div>
+                                    <div className="h-1 w-full bg-slate-900 rounded-full overflow-hidden">
+                                        <motion.div
+                                            initial={{ scaleX: 0 }}
+                                            animate={{ scaleX: forecast.prob / 100 }}
+                                            transition={{ duration: 1.5, delay: 1 + (i * 0.1) }}
+                                            style={{ originX: 0 }}
+                                            className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${dept.score}%` }}
-                                        transition={{ duration: 1.5, delay: 0.8 + (i * 0.1) }}
-                                        className={`h-full bg-gradient-to-r ${dept.score >= 90 ? 'from-blue-500 to-emerald-500' : 'from-blue-500 to-amber-500'}`}
-                                    />
+                            ))}
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-white/5">
+                            <div className="flex items-center justify-between">
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Confidence Index</span>
+                                    <span className="text-lg font-black text-emerald-400 italic">98.2%</span>
                                 </div>
+                                <button className="p-3 bg-blue-600 rounded-2xl text-white shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all">
+                                    <RefreshCw size={18} />
+                                </button>
                             </div>
                         </div>
-                    ))}
-                </div>
-            </motion.div>
+                    </div>
+                </motion.div>
+            </div>
         </div>
     );
 }

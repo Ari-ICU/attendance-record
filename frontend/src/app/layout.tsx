@@ -21,7 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased selection:bg-blue-500/30`}>
         <AuthProvider>
           <SocketProvider>
-            <Stars />
+            <div className="print:hidden">
+              <Stars />
+            </div>
             <main className="relative z-10 w-full h-full">
               {children}
             </main>
