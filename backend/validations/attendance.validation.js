@@ -36,38 +36,50 @@ const faceVerificationSchema = Joi.object({
     })
 });
 
-deviceInfo: deviceInfoSchema.optional(),
+const checkInSchema = Joi.object({
+    employeeId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+    location: locationSchema.optional(),
+    method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification').default('manual').messages({
+        'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification'
+    }),
+    deviceInfo: deviceInfoSchema.optional(),
     platform: Joi.string().optional(),
-        browser: Joi.string().optional(),
-            faceDescriptor: Joi.array().items(Joi.number()).optional(),
-                faceImage: Joi.string().when('method', {
-                    is: 'face_verification',
-                    then: Joi.when('faceDescriptor', {
-                        is: Joi.exist(),
-                        then: Joi.optional(),
-                        otherwise: Joi.required()
-                    }).messages({
-                        'any.required': 'Face image or descriptor is required for face_verification method'
-                    }),
-                    otherwise: Joi.forbidden()
-                })
+    browser: Joi.string().optional(),
+    faceDescriptor: Joi.array().items(Joi.number()).optional(),
+    faceImage: Joi.string().when('method', {
+        is: 'face_verification',
+        then: Joi.when('faceDescriptor', {
+            is: Joi.exist(),
+            then: Joi.optional(),
+            otherwise: Joi.required()
+        }).messages({
+            'any.required': 'Face image or descriptor is required for face_verification method'
+        }),
+        otherwise: Joi.forbidden()
+    })
 });
 
-deviceInfo: deviceInfoSchema.optional(),
+const checkOutSchema = Joi.object({
+    employeeId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+    location: locationSchema.optional(),
+    method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification').default('manual').messages({
+        'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification'
+    }),
+    deviceInfo: deviceInfoSchema.optional(),
     platform: Joi.string().optional(),
-        browser: Joi.string().optional(),
-            faceDescriptor: Joi.array().items(Joi.number()).optional(),
-                faceImage: Joi.string().when('method', {
-                    is: 'face_verification',
-                    then: Joi.when('faceDescriptor', {
-                        is: Joi.exist(),
-                        then: Joi.optional(),
-                        otherwise: Joi.required()
-                    }).messages({
-                        'any.required': 'Face image or descriptor is required for face_verification method'
-                    }),
-                    otherwise: Joi.forbidden()
-                })
+    browser: Joi.string().optional(),
+    faceDescriptor: Joi.array().items(Joi.number()).optional(),
+    faceImage: Joi.string().when('method', {
+        is: 'face_verification',
+        then: Joi.when('faceDescriptor', {
+            is: Joi.exist(),
+            then: Joi.optional(),
+            otherwise: Joi.required()
+        }).messages({
+            'any.required': 'Face image or descriptor is required for face_verification method'
+        }),
+        otherwise: Joi.forbidden()
+    })
 });
 
 const breakSchema = Joi.object({
