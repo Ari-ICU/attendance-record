@@ -35,10 +35,10 @@ const FACE_API_CONFIG = {
 
     // If true, scanning will FAIL if geolocation is blocked or outside range.
     // If false, it will allow the scan but still show location data.
-    requireGeofence: false,
+    requireGeofence: true,
 
     // Auto-bypass liveness check (Set to true for fully automatic scan)
-    bypassLiveness: true
+    bypassLiveness: false
 };
 
 // Default fallbacks while settings load
@@ -123,9 +123,32 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
         );
     };
 
-    // Get location on mount
+    // Get location on mount and watch permissions
     useEffect(() => {
         requestLocation();
+
+        let permissionStatus: PermissionStatus | null = null;
+
+        // Monitor browser permissions for real-time updates
+        if ('permissions' in navigator) {
+            navigator.permissions.query({ name: 'geolocation' as PermissionName }).then((status) => {
+                permissionStatus = status;
+                status.onchange = () => {
+                    if (status.state === 'granted') {
+                        requestLocation();
+                    } else if (status.state === 'denied') {
+                        setUserLocation(null);
+                        setLocationError('Location Access Denied');
+                    }
+                };
+            });
+        }
+
+        return () => {
+            if (permissionStatus) {
+                permissionStatus.onchange = null;
+            }
+        };
     }, []);
 
     const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -659,7 +682,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                             {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
                                 <button
                                     onClick={() => {
-                                        setUserLocation(DEFAULT_OFFICE_COORDS);
+                                        setUserLocation({ lat: officeSettings.lat, lng: officeSettings.lng });
                                         setLocationError(null);
                                         toast.success('Developer Bypass Active');
                                     }}

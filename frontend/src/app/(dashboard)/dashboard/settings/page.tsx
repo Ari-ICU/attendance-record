@@ -26,7 +26,8 @@ import {
     Users,
     Clock,
     UserPlus,
-    UserMinus
+    UserMinus,
+    MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -239,6 +240,29 @@ export default function SettingsPage() {
     };
 
 
+    const handleGetCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            toast.error('Local telemetry capture unsupported');
+            return;
+        }
+
+        toast.loading('Acquiring GPS anchor...', { id: 'geo-sync' });
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setSettings({
+                    ...settings,
+                    office_latitude: parseFloat(position.coords.latitude.toFixed(6)),
+                    office_longitude: parseFloat(position.coords.longitude.toFixed(6))
+                });
+                toast.success('Coordinates synchronized', { id: 'geo-sync' });
+            },
+            (error) => {
+                toast.error(`Telemetry failed: ${error.message}`, { id: 'geo-sync' });
+            },
+            { enableHighAccuracy: true }
+        );
+    };
+
     if (loading) return (
         <div className="h-96 flex items-center justify-center">
             <RotateCcw className="w-8 h-8 text-blue-500 animate-spin" />
@@ -415,49 +439,56 @@ export default function SettingsPage() {
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6 pt-6 border-t border-white/5">
+                                    <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-2 mb-4">
                                         <div className="flex items-center gap-2">
                                             <Globe className="w-4 h-4 text-emerald-400" />
                                             <h3 className="text-xs font-black text-white uppercase tracking-widest italic">Biometric Boundaries (Geofencing)</h3>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Ref. Latitude</label>
-                                                <input
-                                                    type="number"
-                                                    step="0.0001"
-                                                    value={settings.office_latitude}
-                                                    onChange={(e) => setSettings({ ...settings, office_latitude: parseFloat(e.target.value) })}
-                                                    className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3 px-5 text-sm font-bold text-white outline-none focus:border-emerald-500/50 transition-all font-mono"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Ref. Longitude</label>
-                                                <input
-                                                    type="number"
-                                                    step="0.0001"
-                                                    value={settings.office_longitude}
-                                                    onChange={(e) => setSettings({ ...settings, office_longitude: parseFloat(e.target.value) })}
-                                                    className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3 px-5 text-sm font-bold text-white outline-none focus:border-emerald-500/50 transition-all font-mono"
-                                                />
-                                            </div>
+                                        <button
+                                            onClick={handleGetCurrentLocation}
+                                            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/10 active:scale-95"
+                                        >
+                                            <MapPin size={10} />
+                                            Sync to My Location
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Ref. Latitude</label>
+                                            <input
+                                                type="number"
+                                                step="0.000001"
+                                                value={settings.office_latitude}
+                                                onChange={(e) => setSettings({ ...settings, office_latitude: parseFloat(e.target.value) })}
+                                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3 px-5 text-sm font-bold text-white outline-none focus:border-emerald-500/50 transition-all font-mono"
+                                            />
                                         </div>
-                                        <div className="p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10 space-y-4">
-                                            <div className="flex items-center justify-between">
-                                                <div className="space-y-1">
-                                                    <p className="text-xs font-black text-white uppercase tracking-tight italic">Scanning Radius</p>
-                                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">Max distance (meters) for valid authentication</p>
-                                                </div>
-                                                <div className="flex items-center gap-6">
-                                                    <span className="text-lg font-black text-blue-400 font-mono w-16 text-right">{settings.geofence_range_meters}m</span>
-                                                    <input
-                                                        type="range"
-                                                        min="10" max="1000" step="10"
-                                                        value={settings.geofence_range_meters}
-                                                        onChange={(e) => setSettings({ ...settings, geofence_range_meters: parseInt(e.target.value) })}
-                                                        className="w-48 accent-blue-500 h-1 bg-slate-900 rounded-full"
-                                                    />
-                                                </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Ref. Longitude</label>
+                                            <input
+                                                type="number"
+                                                step="0.000001"
+                                                value={settings.office_longitude}
+                                                onChange={(e) => setSettings({ ...settings, office_longitude: parseFloat(e.target.value) })}
+                                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3 px-5 text-sm font-bold text-white outline-none focus:border-emerald-500/50 transition-all font-mono"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <p className="text-xs font-black text-white uppercase tracking-tight italic">Scanning Radius</p>
+                                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">Max distance (meters) for valid authentication</p>
+                                            </div>
+                                            <div className="flex items-center gap-6">
+                                                <span className="text-lg font-black text-blue-400 font-mono w-16 text-right">{settings.geofence_range_meters}m</span>
+                                                <input
+                                                    type="range"
+                                                    min="10" max="1000" step="10"
+                                                    value={settings.geofence_range_meters}
+                                                    onChange={(e) => setSettings({ ...settings, geofence_range_meters: parseInt(e.target.value) })}
+                                                    className="w-48 accent-blue-500 h-1 bg-slate-900 rounded-full"
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -737,7 +768,7 @@ export default function SettingsPage() {
                     </AnimatePresence>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 
