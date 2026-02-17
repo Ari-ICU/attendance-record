@@ -7,7 +7,7 @@ export const BIOMETRIC_CONFIG = {
     detector: 'tinyFaceDetector' as 'tinyFaceDetector' | 'ssdMobilenetv1',
 
     // For TinyFaceDetector: Higher = more accurate but slower. Standard: 160, 224, 320, 416, 512, 608
-    inputSize: 416,
+    inputSize: 224, // Reduced from 416 for heat optimization
 
     // Confidence threshold (0.1 to 0.9). Higher = stricter detection.
     scoreThreshold: 0.5,

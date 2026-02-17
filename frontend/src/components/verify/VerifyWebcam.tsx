@@ -184,11 +184,30 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
 
         let animationFrameId: number;
         let lastTimestamp = 0;
-        const FPS_LIMIT = 15; // Limit to 15 FPS for processing to save CPU
-        const frameInterval = 1000 / FPS_LIMIT;
+        let isBrowserActive = true;
+
+        // Adaptive FPS: High when face detected, Low when searching
+        const getFrameInterval = () => {
+            if (!isBrowserActive) return 2000; // Deep sleep if tab hidden
+            return lastVerifiedRef.current === 0 ? 1000 / 10 : 1000 / 20; // 10 FPS searching, 20 FPS verifying
+        };
+
+        const handleVisibilityChange = () => {
+            isBrowserActive = !document.hidden;
+            if (document.hidden) {
+                console.log('Biometric Protocol: Suspended (Tab Hidden)');
+                cancelAnimationFrame(animationFrameId);
+            } else {
+                console.log('Biometric Protocol: Resumed');
+                animationFrameId = requestAnimationFrame(loop);
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         const loop = async (timestamp: number) => {
-            if (timestamp - lastTimestamp >= frameInterval) {
+            const frameInterval = getFrameInterval();
+            if (timestamp - lastTimestamp >= frameInterval && isBrowserActive) {
                 lastTimestamp = timestamp;
                 await detectFace();
             }
@@ -462,7 +481,10 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
         };
 
         animationFrameId = requestAnimationFrame(loop);
-        return () => cancelAnimationFrame(animationFrameId);
+        return () => {
+            cancelAnimationFrame(animationFrameId);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, [modelsLoaded, framePulse, employeeId, verifying, isSuccess, userLocation, officeSettings, blinkCount, mode, onIdentify, onSuccess]);
 
 
