@@ -31,6 +31,11 @@ const employeeSchema = new mongoose.Schema({
     baseSalary: { type: Number, default: 0 },
     hourlyRate: { type: Number, default: 0 },
     currency: { type: String, default: 'USD' },
+    bankDetails: {
+        bankName: { type: String, trim: true }, // e.g., ABA, Acleda
+        accountName: { type: String, trim: true },
+        accountNumber: { type: String, trim: true }
+    },
     isActive: { type: Boolean, default: true }
 
 }, {

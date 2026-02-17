@@ -15,7 +15,8 @@ import {
     CheckCircle2,
     XCircle,
     Fingerprint,
-    DollarSign
+    DollarSign,
+    CreditCard
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -34,6 +35,9 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
         { icon: <Building2 className="w-5 h-5" />, label: 'Department', value: employee.department || 'General' },
         { icon: <Calendar className="w-5 h-5" />, label: 'Joining Date', value: employee.dateOfJoining ? new Date(employee.dateOfJoining).toLocaleDateString() : 'N/A' },
         { icon: <Fingerprint className="w-5 h-5" />, label: 'Face ID', value: employee.faceVerificationEnabled ? 'Enabled' : 'Disabled' },
+        { icon: <CreditCard className="w-5 h-5" />, label: 'Bank', value: employee.bankDetails?.bankName || 'Not Set' },
+        { icon: <CreditCard className="w-5 h-5" />, label: 'Account No.', value: employee.bankDetails?.accountNumber || 'Not Set' },
+        { icon: <User className="w-5 h-5" />, label: 'Acc. Name', value: employee.bankDetails?.accountName || 'Not Set' },
     ];
 
     return (

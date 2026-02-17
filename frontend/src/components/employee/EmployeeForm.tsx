@@ -30,6 +30,11 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
         baseSalary: 0,
         hourlyRate: 0,
         currency: 'USD',
+        bankDetails: {
+            bankName: '',
+            accountName: '',
+            accountNumber: ''
+        }
     });
 
 
@@ -76,6 +81,11 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
                 baseSalary: initialData.baseSalary || 0,
                 hourlyRate: initialData.hourlyRate || 0,
                 currency: initialData.currency || 'USD',
+                bankDetails: {
+                    bankName: initialData.bankDetails?.bankName || '',
+                    accountName: initialData.bankDetails?.accountName || '',
+                    accountNumber: initialData.bankDetails?.accountNumber || ''
+                },
                 image: undefined,
             });
 
@@ -97,6 +107,15 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
         if (type === 'number') {
             const numValue = value === '' ? 0 : parseFloat(value);
             setFormData({ ...formData, [name]: numValue });
+        } else if (name.startsWith('bank.')) {
+            const field = name.split('.')[1];
+            setFormData({
+                ...formData,
+                bankDetails: {
+                    ...formData.bankDetails,
+                    [field]: value
+                }
+            });
         } else {
             setFormData({ ...formData, [name]: value });
         }
@@ -267,7 +286,7 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
                                             <select
                                                 name={field.name}
                                                 id={field.name}
-                                                value={formData[field.name as keyof EmployeeCreateData] || ''}
+                                                value={(formData[field.name as keyof EmployeeCreateData] as any) || ''}
                                                 onChange={(e) => setFormData({ ...formData, [e.target.name]: e.target.value })}
                                                 required={field.required}
                                                 className="
@@ -294,7 +313,7 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
                                                 type={field.type}
                                                 name={field.name}
                                                 id={field.name}
-                                                value={formData[field.name as keyof EmployeeCreateData] ?? ''}
+                                                value={(formData[field.name as keyof EmployeeCreateData] as any) ?? ''}
                                                 onChange={handleChange}
                                                 required={field.required}
                                                 placeholder={field.placeholder}
@@ -310,6 +329,56 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
 
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Bank Details Section */}
+                        <div className="pt-8 border-t border-white/5">
+                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                </svg>
+                                Bank Transfer Details
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Bank Name</label>
+                                    <select
+                                        name="bank.bankName"
+                                        value={formData.bankDetails?.bankName || ''}
+                                        onChange={(e) => handleChange(e as any)}
+                                        className="w-full px-5 py-4 rounded-2xl bg-slate-950/50 border border-white/5 text-white appearance-none cursor-pointer focus:outline-none focus:border-blue-500/50 transition-all"
+                                    >
+                                        <option value="">Select Bank</option>
+                                        <option value="ABA">ABA Bank</option>
+                                        <option value="Acleda">Acleda Bank</option>
+                                        <option value="Wing">Wing Bank</option>
+                                        <option value="Sathapana">Sathapana Bank</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Account Holder Name</label>
+                                    <input
+                                        type="text"
+                                        name="bank.accountName"
+                                        value={formData.bankDetails?.accountName || ''}
+                                        onChange={(e) => handleChange(e as any)}
+                                        placeholder="e.g. JOHN DOE"
+                                        className="w-full px-5 py-4 rounded-2xl bg-slate-950/50 border border-white/5 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 transition-all font-mono"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Account Number</label>
+                                    <input
+                                        type="text"
+                                        name="bank.accountNumber"
+                                        value={formData.bankDetails?.accountNumber || ''}
+                                        onChange={(e) => handleChange(e as any)}
+                                        placeholder="000 000 000"
+                                        className="w-full px-5 py-4 rounded-2xl bg-slate-950/50 border border-white/5 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 transition-all font-mono"
+                                    />
+                                </div>
                             </div>
                         </div>
 

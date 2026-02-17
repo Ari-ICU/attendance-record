@@ -1,6 +1,12 @@
 // src/types/employee.types.ts
 
 // Employee data structure based on MongoDB schema
+export interface BankDetails {
+    bankName?: string;
+    accountName?: string;
+    accountNumber?: string;
+}
+
 export interface Employee {
     _id: string;
     firstName: string;
@@ -19,6 +25,7 @@ export interface Employee {
     baseSalary: number;
     hourlyRate: number;
     currency: string;
+    bankDetails?: BankDetails;
     isActive: boolean;
 
     createdAt: string; // ISO date string
@@ -40,6 +47,7 @@ export interface EmployeeCreateData {
     baseSalary?: number;
     hourlyRate?: number;
     currency?: string;
+    bankDetails?: BankDetails;
 }
 
 
@@ -58,6 +66,7 @@ export interface EmployeeUpdateData {
     baseSalary?: number;
     hourlyRate?: number;
     currency?: string;
+    bankDetails?: BankDetails;
     isActive?: boolean;
 }
 

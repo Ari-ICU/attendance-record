@@ -18,7 +18,12 @@ const employeeCreateSchema = Joi.object({
     isActive: Joi.boolean().optional().default(true),
     baseSalary: Joi.number().min(0).optional().default(0),
     hourlyRate: Joi.number().min(0).optional().default(0),
-    currency: Joi.string().valid('USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD').default('USD')
+    currency: Joi.string().valid('USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD').default('USD'),
+    bankDetails: Joi.object({
+        bankName: Joi.string().trim().optional().allow('', null),
+        accountName: Joi.string().trim().optional().allow('', null),
+        accountNumber: Joi.string().trim().optional().allow('', null)
+    }).optional()
 });
 
 const employeeUpdateSchema = Joi.object({
@@ -37,7 +42,12 @@ const employeeUpdateSchema = Joi.object({
     isActive: Joi.boolean(),
     baseSalary: Joi.number().min(0).optional(),
     hourlyRate: Joi.number().min(0).optional(),
-    currency: Joi.string().valid('USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD').optional()
+    currency: Joi.string().valid('USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD').optional(),
+    bankDetails: Joi.object({
+        bankName: Joi.string().trim().optional().allow('', null),
+        accountName: Joi.string().trim().optional().allow('', null),
+        accountNumber: Joi.string().trim().optional().allow('', null)
+    }).optional()
 }).min(1);
 
 const employeeQuerySchema = Joi.object({
