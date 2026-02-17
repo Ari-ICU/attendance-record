@@ -28,6 +28,7 @@ export default function PayrollPage() {
     const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDisbursing, setIsDisbursing] = useState(false);
+    const [isApproving, setIsApproving] = useState(false);
 
     const [stats, setStats] = useState({
         totalPayroll: 0,
@@ -92,12 +93,25 @@ export default function PayrollPage() {
         try {
             setIsDisbursing(true);
             await PayrollService.disburse();
-            toast.success('Batch disbursement sequence completed');
+            toast.success('Funds released for approved entities');
             fetchData();
-        } catch (err) {
-            toast.error('Disbursement failed');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Disbursement failed');
         } finally {
             setIsDisbursing(false);
+        }
+    };
+
+    const handleApprove = async () => {
+        try {
+            setIsApproving(true);
+            await PayrollService.approve();
+            toast.success('Cycle methodology validated and approved');
+            fetchData();
+        } catch (err) {
+            toast.error('Approval sequence failed');
+        } finally {
+            setIsApproving(false);
         }
     };
 
@@ -117,7 +131,7 @@ export default function PayrollPage() {
     const handleDownloadCSV = () => {
         if (filteredLedger.length === 0) return toast.error('No data to export');
 
-        const headers = ['Employee ID', 'Name', 'Position', 'Dept', 'Monthly Base', 'Hourly Rate', 'Hours', 'Net Pay', 'Compliance', 'Status', 'Date', 'TXID'];
+        const headers = ['Employee ID', 'Name', 'Position', 'Dept', 'Monthly Base', 'Hourly Rate', 'Hours', 'Net Pay', 'Compliance', 'Status', 'Bank Name', 'Account No', 'Account Name', 'Date', 'TXID'];
 
         const formatCSVRow = (arr: (string | number)[]) => {
             return arr.map(val => {
@@ -139,6 +153,9 @@ export default function PayrollPage() {
             item.payroll.netAmount,
             `${item.payroll.complianceScore || 0}%`,
             item.payroll.status?.toUpperCase() || 'PENDING',
+            item.employee.bankDetails?.bankName || 'N/A',
+            item.employee.bankDetails?.accountNumber || '---',
+            item.employee.bankDetails?.accountName || '---',
             item.payroll.paymentDate ? new Date(item.payroll.paymentDate).toLocaleDateString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : 'N/A',
             item.payroll.transactionId || '---'
         ]);
@@ -184,8 +201,10 @@ export default function PayrollPage() {
 
             NET PAY:     $${item.payroll.netAmount.toFixed(2)}
             --------------------------------------------------
+            --------------------------------------------------
             Status: ${item.payroll.status.toUpperCase()}
             Transaction ID: ${item.payroll.transactionId || 'PENDING'}
+            Destination: ${item.employee.bankDetails?.bankName || 'RETAINED CASH'} - ${item.employee.bankDetails?.accountNumber || 'PHYSICAL DISBURSEMENT'}
         `;
 
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
@@ -222,6 +241,14 @@ export default function PayrollPage() {
                     >
                         {refreshing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                         Generate Cycle
+                    </button>
+                    <button
+                        onClick={handleApprove}
+                        disabled={isApproving}
+                        className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 text-amber-400 font-black text-xs tracking-widest hover:bg-white/10 transition-all border border-amber-500/20 uppercase"
+                    >
+                        {isApproving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                        Approve Cycle
                     </button>
                     <button
                         onClick={handleDisburse}
@@ -309,6 +336,7 @@ export default function PayrollPage() {
                                 <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Personnel Agent</th>
                                 <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Base Compensation</th>
                                 <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Compliance Score</th>
+                                <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Bank Destination</th>
                                 <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Entity Status</th>
                                 <th className="px-8 py-5 text-right text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Protocol</th>
                             </tr>
@@ -336,7 +364,10 @@ export default function PayrollPage() {
                                                         />
                                                     ) : <UserCircle className="w-full h-full text-slate-700 p-2" />}
                                                 </div>
-                                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-900 shadow-[0_0_10px_rgba(16,185,129,0.5)] ${item.payroll.status === 'disbursed' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-900 shadow-[0_0_10px_rgba(16,185,129,0.5)] 
+                                                    ${item.payroll.status === 'disbursed' ? 'bg-emerald-500' :
+                                                        item.payroll.status === 'approved' ? 'bg-blue-500' :
+                                                            'bg-amber-500'}`} />
                                             </div>
                                             <div>
                                                 <p className="text-sm font-black text-white leading-tight mb-0.5">{item.employee.firstName} {item.employee.lastName}</p>
@@ -347,7 +378,18 @@ export default function PayrollPage() {
                                     <td className="px-8 py-6">
                                         <div className="space-y-1">
                                             <p className="text-sm font-black text-white">${item.payroll.baseAmount.toLocaleString()}.00</p>
-                                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">Gross Primary</p>
+                                            {item.payroll.deductions > 0 && (
+                                                <p className="text-[10px] font-bold text-rose-400 uppercase tracking-tighter">
+                                                    -${item.payroll.deductions.toFixed(2)} (Late: ${item.payroll.lateDeductions || 0})
+                                                </p>
+                                            )}
+                                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">Final Compensation</p>
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-white">{item.employee.bankDetails?.bankName || 'CASH'}</p>
+                                            <p className="text-[9px] font-bold text-slate-500 font-mono">{item.employee.bankDetails?.accountNumber || 'Manual execution'}</p>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
@@ -365,9 +407,17 @@ export default function PayrollPage() {
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-2">
-                                            <div className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${item.payroll.status === 'disbursed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-400'}`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${item.payroll.status === 'disbursed' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                                                {item.payroll.status === 'disbursed' ? 'Verified' : 'Pending'}
+                                            <div className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 
+                                                ${item.payroll.status === 'disbursed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                                    item.payroll.status === 'approved' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                                        'bg-amber-500/10 border-amber-500/20 text-amber-400'}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full animate-pulse 
+                                                    ${item.payroll.status === 'disbursed' ? 'bg-emerald-400' :
+                                                        item.payroll.status === 'approved' ? 'bg-blue-400' :
+                                                            'bg-amber-400'}`} />
+                                                {item.payroll.status === 'disbursed' ? 'Verified' :
+                                                    item.payroll.status === 'approved' ? 'Approved' :
+                                                        'Pending'}
                                             </div>
                                         </div>
                                     </td>

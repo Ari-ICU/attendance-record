@@ -35,6 +35,7 @@ export const API_URLS = {
         STATS: `${BASE_URL}/payroll/stats`,
         LEDGER: `${BASE_URL}/payroll/ledger`,
         DISBURSE: `${BASE_URL}/payroll/disburse`,
+        APPROVE: `${BASE_URL}/payroll/approve`,
         GENERATE: `${BASE_URL}/payroll/generate`,
     },
     REPORTS: {

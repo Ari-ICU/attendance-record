@@ -9,6 +9,7 @@ router.use(adminOnly);
 router.get('/stats', PayrollController.getStats);
 router.get('/ledger', PayrollController.getLedger);
 router.post('/disburse', PayrollController.disburse);
+router.post('/approve', PayrollController.approve);
 router.post('/generate', PayrollController.generate);
 
 module.exports = router;

@@ -40,6 +40,20 @@ class PayrollController {
         }
     }
 
+    static async approve(req, res) {
+        try {
+            const { month, year } = req.body;
+            const now = new Date();
+            const targetMonth = parseInt(month) || now.getMonth() + 1;
+            const targetYear = parseInt(year) || now.getFullYear();
+
+            const result = await PayrollService.approveBatch(targetMonth, targetYear, req.user._id);
+            res.json(ApiResponse.success(result));
+        } catch (error) {
+            res.status(500).json(ApiResponse.error(error.message));
+        }
+    }
+
     static async generate(req, res) {
         try {
             const { month, year } = req.body;

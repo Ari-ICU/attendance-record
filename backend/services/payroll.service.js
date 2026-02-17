@@ -60,18 +60,56 @@ class PayrollService {
         return results;
     }
 
-    static async executeBatchDisbursement(month, year) {
+    static async approveBatch(month, year, userId) {
         const result = await Payroll.updateMany(
             { month, year, status: 'pending' },
             {
                 $set: {
-                    status: 'disbursed',
-                    paymentDate: new Date()
+                    status: 'approved',
+                    approvedBy: userId,
+                    approvedAt: new Date()
                 }
             }
         );
-        return result;
+        return {
+            count: result.modifiedCount,
+            message: `${result.modifiedCount} payroll records approved for disbursement.`
+        };
     }
+
+    static async executeBatchDisbursement(month, year) {
+        // ONLY DISBURSE APPROVED PAYROLLS
+        const approvedPayrolls = await Payroll.find({ month, year, status: 'approved' }).populate('employeeId');
+        const results = [];
+
+        for (const payroll of approvedPayrolls) {
+            const employee = payroll.employeeId;
+
+            // Snapshot the destination details
+            payroll.bankSnapshot = {
+                bankName: employee.bankDetails?.bankName || 'CASH',
+                accountName: employee.bankDetails?.accountName || employee.fullName,
+                accountNumber: employee.bankDetails?.accountNumber || 'MANUAL'
+            };
+
+            payroll.status = 'disbursed';
+            payroll.paymentDate = new Date();
+
+            // Generate a unique transaction reference: PAY-YYYYMM-EMP-RANDOM
+            const randomSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
+            payroll.transactionId = `PAY-${year}${String(month).padStart(2, '0')}-${employee._id.toString().slice(-4)}-${randomSuffix}`;
+
+            await payroll.save();
+            results.push(payroll);
+        }
+
+        return {
+            count: results.length,
+            message: `${results.length} payments executed and snapped to ledger.`
+        };
+    }
+
+
 
     static async generateMonthlyPayroll(month, year) {
         const employees = await Employee.find({ isActive: true });
@@ -81,13 +119,17 @@ class PayrollService {
         const endDate = new Date(year, month, 0, 23, 59, 59);
 
         const allAttendance = await Attendance.find({
-            date: { $gte: startDate, $lte: endDate }
+            date: { $gte: startDate, $lte: endDate },
+            isActive: true
         });
+
+        // Get deduction setting or default $2 per lateness
+        const LATE_PENALTY = 2;
 
         for (const emp of employees) {
             try {
                 const existing = await Payroll.findOne({ employeeId: emp._id, month, year });
-                if (existing && existing.status === 'disbursed') {
+                if (existing && (existing.status === 'disbursed' || existing.status === 'approved')) {
                     processedRecords.push(existing);
                     continue;
                 }
@@ -96,10 +138,11 @@ class PayrollService {
                 let totalHours = 0;
                 const empAttendance = allAttendance.filter(a => a.employeeId.toString() === emp._id.toString());
 
-                // Compliance Score calculation based on "present" vs total workdays
                 const totalWorkDays = empAttendance.length;
                 const presentDays = empAttendance.filter(a => a.status === 'present').length;
-                const complianceScore = totalWorkDays > 0 ? Math.round((presentDays / totalWorkDays) * 100) : 0;
+                const lateDays = empAttendance.filter(a => a.status === 'late').length;
+
+                const complianceScore = totalWorkDays > 0 ? Math.round(((presentDays + lateDays) / totalWorkDays) * 100) : 0;
 
                 if (emp.hourlyRate > 0) {
                     empAttendance.forEach(record => {
@@ -108,16 +151,16 @@ class PayrollService {
                             if (durationHours > 0) totalHours += durationHours;
                         }
                     });
-
-                    const hourlyEarnings = parseFloat((totalHours * emp.hourlyRate).toFixed(2));
-                    // Add hourly earnings to base salary (allows for base + commission/overtime models)
-                    // If they are purely hourly, they should set baseSalary to 0
-                    baseAmount += hourlyEarnings;
+                    baseAmount += parseFloat((totalHours * emp.hourlyRate).toFixed(2));
                 }
 
                 const bonus = 0;
-                const deductions = 0;
-                const netAmount = Math.max(0, baseAmount + bonus - deductions);
+                // Calculate Lateness Deductions
+                const lateDeductions = lateDays * LATE_PENALTY;
+                const otherDeductions = 0;
+                const totalDeductions = lateDeductions + otherDeductions;
+
+                const netAmount = Math.max(0, baseAmount + bonus - totalDeductions);
 
                 const payrollData = {
                     employeeId: emp._id,
@@ -125,11 +168,12 @@ class PayrollService {
                     year,
                     baseAmount,
                     bonus,
-                    deductions,
+                    deductions: totalDeductions,
+                    lateDeductions,
                     netAmount,
                     status: 'pending',
                     totalHours: parseFloat(totalHours.toFixed(2)),
-                    complianceScore: complianceScore || 85 // fallback to 85 if they exist but no attendance yet
+                    complianceScore: complianceScore || 85
                 };
 
                 const payroll = await Payroll.findOneAndUpdate(
@@ -145,6 +189,7 @@ class PayrollService {
         }
         return processedRecords;
     }
+
 }
 
 module.exports = PayrollService;

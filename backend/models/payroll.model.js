@@ -12,11 +12,19 @@ const payrollSchema = new mongoose.Schema({
     bonus: { type: Number, default: 0 },
     deductions: { type: Number, default: 0 },
     netAmount: { type: Number, required: true, default: 0 },
-    status: { type: String, enum: ['pending', 'disbursed', 'failed'], default: 'pending' },
+    lateDeductions: { type: Number, default: 0 },
+    status: { type: String, enum: ['pending', 'approved', 'disbursed', 'failed'], default: 'pending' },
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    approvedAt: { type: Date },
     paymentDate: { type: Date },
     paymentMethod: { type: String, enum: ['bank_transfer', 'cash', 'cheque'], default: 'bank_transfer' },
     transactionId: { type: String },
     complianceScore: { type: Number, default: 0 },
+    bankSnapshot: {
+        bankName: String,
+        accountName: String,
+        accountNumber: String
+    },
     notes: { type: String },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });

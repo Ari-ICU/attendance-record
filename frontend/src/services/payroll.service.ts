@@ -16,6 +16,10 @@ export const PayrollService = {
         const response = await api.post(API_URLS.PAYROLL.DISBURSE, { month, year });
         return response.data.data;
     },
+    approve: async (month?: number, year?: number) => {
+        const response = await api.post(API_URLS.PAYROLL.APPROVE, { month, year });
+        return response.data.data;
+    },
     generate: async (month?: number, year?: number) => {
         const response = await api.post(API_URLS.PAYROLL.GENERATE, { month, year });
         return response.data.data;
