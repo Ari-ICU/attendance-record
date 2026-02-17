@@ -20,7 +20,8 @@ import {
     Globe,
     Cpu,
     Calendar,
-    Activity
+    Activity,
+    ShieldAlert
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AttendanceService } from '@/services/attendance.service';
@@ -405,9 +406,17 @@ export default function AttendanceRecordsPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyles(record.status)}`}>
-                                                {record.status}
-                                            </span>
+                                            <div className="flex flex-col gap-1">
+                                                <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyles(record.status)}`}>
+                                                    {record.status}
+                                                </span>
+                                                {record.checkIn?.method === 'face_verification' && !record.checkIn?.location && (
+                                                    <span className="flex items-center gap-1 text-[8px] font-black text-rose-500 uppercase tracking-tighter mt-1 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+                                                        <ShieldAlert size={8} />
+                                                        Low Integrity
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2.5">
@@ -549,6 +558,15 @@ export default function AttendanceRecordsPage() {
                                                 <span className="font-bold text-slate-500 uppercase">IP Source</span>
                                                 <span className="font-black text-slate-300">{selectedRecord.checkIn?.ipAddress || 'Internal Network'}</span>
                                             </div>
+                                            {selectedRecord.checkIn?.method === 'face_verification' && !selectedRecord.checkIn?.location && (
+                                                <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3">
+                                                    <ShieldAlert className="w-4 h-4 text-rose-400" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Integrity Violation</span>
+                                                        <span className="text-[8px] font-bold text-rose-400/60 uppercase">Biometric scan performed without GPS anchor. Potential spoofing or bypass detected.</span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 

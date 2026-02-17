@@ -298,8 +298,9 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                     statusMessage = 'Subject out of frame';
                 } else if (blinkCount === 0) {
                     statusMessage = 'Blink to verify liveness';
-                } else if (!userLocation && FACE_API_CONFIG.requireGeofence) {
-                    statusMessage = 'Syncing geofence...';
+                } else if (!userLocation) {
+                    statusMessage = 'Securing GPS Anchor...';
+                    color = 'rgba(245, 158, 11, 0.8)';
                 } else {
                     statusMessage = 'Identity verification active';
                 }
