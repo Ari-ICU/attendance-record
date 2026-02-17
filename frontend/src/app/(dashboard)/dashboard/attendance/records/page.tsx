@@ -359,6 +359,17 @@ export default function AttendanceRecordsPage() {
                                                             timeZone: 'Asia/Phnom_Penh'
                                                         }) : '---'}
                                                     </span>
+                                                    {record.checkIn?.location && (
+                                                        <a
+                                                            href={`https://www.google.com/maps?q=${record.checkIn.location.latitude},${record.checkIn.location.longitude}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="p-1 bg-blue-500/10 rounded-md border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all scale-75"
+                                                            title="View Check-in Location"
+                                                        >
+                                                            <MapPin size={10} />
+                                                        </a>
+                                                    )}
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
@@ -369,6 +380,17 @@ export default function AttendanceRecordsPage() {
                                                             timeZone: 'Asia/Phnom_Penh'
                                                         }) : '---'}
                                                     </span>
+                                                    {record.checkOut?.location && (
+                                                        <a
+                                                            href={`https://www.google.com/maps?q=${record.checkOut.location.latitude},${record.checkOut.location.longitude}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="p-1 bg-rose-500/10 rounded-md border border-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white transition-all scale-75"
+                                                            title="View Check-out Location"
+                                                        >
+                                                            <MapPin size={10} />
+                                                        </a>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
@@ -509,9 +531,19 @@ export default function AttendanceRecordsPage() {
                                             </div>
                                             <div className="flex justify-between items-center text-[10px]">
                                                 <span className="font-bold text-slate-500 uppercase">GPS Node</span>
-                                                <span className="font-black text-slate-300">
-                                                    {selectedRecord.checkIn?.location?.latitude?.toFixed(4) || '---'}, {selectedRecord.checkIn?.location?.longitude?.toFixed(4) || '---'}
-                                                </span>
+                                                {selectedRecord.checkIn?.location ? (
+                                                    <a
+                                                        href={`https://www.google.com/maps?q=${selectedRecord.checkIn.location.latitude},${selectedRecord.checkIn.location.longitude}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="font-black text-blue-400 hover:underline flex items-center gap-1"
+                                                    >
+                                                        <MapPin size={10} />
+                                                        {selectedRecord.checkIn.location.latitude.toFixed(4)}, {selectedRecord.checkIn.location.longitude.toFixed(4)}
+                                                    </a>
+                                                ) : (
+                                                    <span className="font-black text-slate-500 italic">No Location Data</span>
+                                                )}
                                             </div>
                                             <div className="flex justify-between items-center text-[10px]">
                                                 <span className="font-bold text-slate-500 uppercase">IP Source</span>
@@ -539,9 +571,19 @@ export default function AttendanceRecordsPage() {
                                             </div>
                                             <div className="flex justify-between items-center text-[10px]">
                                                 <span className="font-bold text-slate-500 uppercase">GPS Exit Node</span>
-                                                <span className="font-black text-slate-300">
-                                                    {selectedRecord.checkOut?.location?.latitude?.toFixed(4) || '---'}, {selectedRecord.checkOut?.location?.longitude?.toFixed(4) || '---'}
-                                                </span>
+                                                {selectedRecord.checkOut?.location ? (
+                                                    <a
+                                                        href={`https://www.google.com/maps?q=${selectedRecord.checkOut.location.latitude},${selectedRecord.checkOut.location.longitude}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="font-black text-rose-400 hover:underline flex items-center gap-1"
+                                                    >
+                                                        <MapPin size={10} />
+                                                        {selectedRecord.checkOut.location.latitude.toFixed(4)}, {selectedRecord.checkOut.location.longitude.toFixed(4)}
+                                                    </a>
+                                                ) : (
+                                                    <span className="font-black text-slate-500 italic">No Location Data</span>
+                                                )}
                                             </div>
                                             <div className="flex justify-between items-center text-[10px]">
                                                 <span className="font-bold text-slate-500 uppercase">Exit Device</span>

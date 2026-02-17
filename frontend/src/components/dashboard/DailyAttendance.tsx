@@ -195,9 +195,22 @@ export default function DailyAttendance() {
                                         <td className="px-8 py-6">
                                             {record.checkIn?.time ? (
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-mono font-bold text-slate-200">
-                                                        {new Date(record.checkIn.time).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-mono font-bold text-slate-200">
+                                                            {new Date(record.checkIn.time).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                        {record.checkIn.location && (
+                                                            <a
+                                                                href={`https://www.google.com/maps?q=${record.checkIn.location.latitude},${record.checkIn.location.longitude}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="p-1 bg-emerald-500/10 rounded-md border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all"
+                                                                title={`${record.checkIn.location.latitude}, ${record.checkIn.location.longitude}`}
+                                                            >
+                                                                <MapPin size={10} />
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                     <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-1">Verified via {record.checkIn.method.replace('_', ' ')}</span>
                                                 </div>
                                             ) : <span className="text-slate-700">--:--</span>}
@@ -205,9 +218,22 @@ export default function DailyAttendance() {
                                         <td className="px-8 py-6">
                                             {record.checkOut?.time ? (
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-mono font-bold text-slate-200">
-                                                        {new Date(record.checkOut.time).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-mono font-bold text-slate-200">
+                                                            {new Date(record.checkOut.time).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                        {record.checkOut.location && (
+                                                            <a
+                                                                href={`https://www.google.com/maps?q=${record.checkOut.location.latitude},${record.checkOut.location.longitude}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="p-1 bg-emerald-500/10 rounded-md border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all"
+                                                                title={`${record.checkOut.location.latitude}, ${record.checkOut.location.longitude}`}
+                                                            >
+                                                                <MapPin size={10} />
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                     <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mt-1 italic">{record.checkOut.totalHours?.toFixed(2)}h Logged</span>
                                                 </div>
                                             ) : record.checkIn?.time ? (
@@ -242,6 +268,6 @@ export default function DailyAttendance() {
                 transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                 className="absolute left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent pointer-events-none z-0"
             />
-        </motion.div>
+        </motion.div >
     );
 }

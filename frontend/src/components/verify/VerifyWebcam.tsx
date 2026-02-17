@@ -360,13 +360,25 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                             result = await AttendanceService.checkIn({
                                 employeeId: employeeId || undefined,
                                 method: 'face_verification',
-                                faceDescriptor: descriptorArray
+                                faceDescriptor: descriptorArray,
+                                location: userLocation ? {
+                                    latitude: userLocation.lat,
+                                    longitude: userLocation.lng
+                                } : undefined,
+                                platform: navigator.platform,
+                                browser: navigator.userAgent
                             });
                         } else if (mode === 'check-out') {
                             result = await AttendanceService.checkOut({
                                 employeeId: employeeId || undefined,
                                 method: 'face_verification',
-                                faceDescriptor: descriptorArray
+                                faceDescriptor: descriptorArray,
+                                location: userLocation ? {
+                                    latitude: userLocation.lat,
+                                    longitude: userLocation.lng
+                                } : undefined,
+                                platform: navigator.platform,
+                                browser: navigator.userAgent
                             });
                         } else {
                             result = await EmployeeService.verifyFace({
