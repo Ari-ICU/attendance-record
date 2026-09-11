@@ -30,7 +30,7 @@ export default function DashboardPage() {
                 ]);
 
                 const records = recordsRes.status === 'fulfilled' ? (recordsRes.value?.data?.docs || recordsRes.value?.data || []) : [];
-                const totalPersonnel = empRes.status === 'fulfilled' ? (empRes.value?.total || empRes.value?.employees?.length || 0) : 0;
+                const totalPersonnel = empRes.status === 'fulfilled' ? (empRes.value?.pagination?.totalItems || empRes.value?.employees?.length || 0) : 0;
 
                 const present = records.filter((r: any) => r.status === 'present').length;
                 const late = records.filter((r: any) => r.status === 'late').length;

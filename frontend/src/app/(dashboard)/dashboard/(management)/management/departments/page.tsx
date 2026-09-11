@@ -205,7 +205,7 @@ export default function DepartmentsPage() {
                             <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
                                 <div className="flex items-center gap-2">
                                     <Users size={14} className="text-slate-400" />
-                                    <span className="font-semibold text-slate-700">{dept.employeeCount || 0} Enrolled</span>
+                                    <span className="font-semibold text-slate-700">{(dept as any).employeeCount || 0} Enrolled</span>
                                 </div>
                                 <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium text-[11px]">
                                     Active Track

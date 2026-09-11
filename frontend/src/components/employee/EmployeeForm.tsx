@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { getFullImageUrl } from '@/utils/url.utils';
 import { DepartmentService } from '@/services/department.service';
 import { Department } from '@/types/department.types';
-import { User, Check, RotateCcw, CreditCard, Building } from 'lucide-react';
+import { User, Check, RotateCcw, CreditCard, Building, Camera, X } from 'lucide-react';
 
 interface EmployeeFormProps {
     initialData?: Employee | null;
@@ -97,36 +97,36 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
         }
     }, [initialData, initialType]);
 
-    // Handle input change
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type } = e.target;
-
-        if (type === 'number') {
-            const numValue = value === '' ? 0 : parseFloat(value);
-            setFormData({ ...formData, [name]: numValue });
-        } else if (name.startsWith('bank.')) {
-            const field = name.split('.')[1];
-            setFormData({
-                ...formData,
-                bankDetails: {
-                    ...formData.bankDetails,
-                    [field]: value
-                }
-            });
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        if (name.includes('.')) {
+            const [parent, child] = name.split('.');
+            setFormData((prev: any) => ({
+                ...prev,
+                [parent]: {
+                    ...prev[parent],
+                    [child]: value,
+                },
+            }));
         } else {
-            setFormData({ ...formData, [name]: value });
+            setFormData((prev) => ({
+                ...prev,
+                [name]: name === 'baseSalary' || name === 'hourlyRate' ? parseFloat(value) || 0 : value,
+            }));
         }
     };
 
-    // Handle image upload
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image size must be less than 5MB');
+                return;
+            }
+            setFormData((prev) => ({ ...prev, image: file }));
             const reader = new FileReader();
             reader.onloadend = () => {
-                const base64 = reader.result as string;
-                setFormData({ ...formData, image: base64.split(',')[1] });
-                setImagePreview(base64);
+                setImagePreview(reader.result as string);
             };
             reader.readAsDataURL(file);
         }
@@ -134,280 +134,199 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!formData.dateOfJoining) {
-            toast.error('Please select a Date of Joining');
+        if (!formData.firstName || !formData.lastName || !formData.email) {
+            toast.error('Please fill in required fields');
             return;
         }
-
-        const payload = {
-            ...formData,
-            dateOfJoining: formData.dateOfJoining,
-            department: formData.department || '',
-            phone: formData.phone.trim()
-        };
-
-        onSubmit(payload);
+        onSubmit(formData);
     };
 
+    const isStudent = formData.type === 'student';
+
     return (
-        <div className="max-w-4xl mx-auto py-2">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm">
-                <div className="mb-8 border-b border-slate-800 pb-5">
-                    <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                        {initialData ? 'Edit' : 'Add New'} {formData.type === 'student' ? 'Student' : 'Employee'} Profile
+        <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                        {initialData ? `Edit ${isStudent ? 'Student' : 'Staff Member'}` : `Enroll New ${isStudent ? 'Student' : 'Staff Member'}`}
                     </h2>
-                    <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                        Enter the personal, employment, and financial details for this record.
+                    <p className="text-xs text-slate-400 mt-0.5">
+                        Fill in personal info, class track, and biometric portrait.
                     </p>
                 </div>
-
-                {error && (
-                    <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start gap-3">
-                        <div className="flex-1">
-                            <h3 className="text-xs font-semibold text-rose-400 uppercase">Submission Error</h3>
-                            <p className="text-xs text-rose-300 mt-0.5">{error}</p>
-                        </div>
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
-                        {/* Avatar photo upload */}
-                        <div className="flex flex-col items-center gap-3 w-full md:w-44 shrink-0">
-                            <div className="w-36 h-36 rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center relative group">
-                                {imagePreview ? (
-                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="flex flex-col items-center text-slate-500">
-                                        <User className="w-10 h-10 mb-1" />
-                                        <span className="text-[11px] font-medium">No Photo</span>
-                                    </div>
-                                )}
-                                <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer text-xs font-semibold text-white">
-                                    Change
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                        className="hidden"
-                                    />
-                                </label>
-                            </div>
-                            <span className="text-[10px] text-slate-500">JPG, PNG up to 3MB</span>
-                        </div>
-
-                        {/* Form Inputs Grid */}
-                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">First Name <span className="text-rose-400">*</span></label>
-                                <input
-                                    type="text"
-                                    name="firstName"
-                                    value={formData.firstName}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="First name"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Last Name <span className="text-rose-400">*</span></label>
-                                <input
-                                    type="text"
-                                    name="lastName"
-                                    value={formData.lastName}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="Last name"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Email Address <span className="text-rose-400">*</span></label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="name@company.com"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Phone Number <span className="text-rose-400">*</span></label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="+855 00 000 000"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors font-mono"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Position / Role <span className="text-rose-400">*</span></label>
-                                <input
-                                    type="text"
-                                    name="position"
-                                    value={formData.position}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="e.g. Senior Engineer"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Department</label>
-                                <select
-                                    name="department"
-                                    value={formData.department}
-                                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
-                                >
-                                    <option value="">Select Department</option>
-                                    {departments.map((d) => (
-                                        <option key={d._id} value={d.name}>{d.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Date of Joining <span className="text-rose-400">*</span></label>
-                                <input
-                                    type="date"
-                                    name="dateOfJoining"
-                                    value={formData.dateOfJoining}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Entity Type <span className="text-rose-400">*</span></label>
-                                <select
-                                    name="type"
-                                    value={formData.type}
-                                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
-                                >
-                                    <option value="employee">Employee</option>
-                                    <option value="student">Student</option>
-                                </select>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Monthly Base Salary ($)</label>
-                                <input
-                                    type="number"
-                                    name="baseSalary"
-                                    value={formData.baseSalary || ''}
-                                    onChange={handleChange}
-                                    placeholder="0.00"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors font-mono"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Hourly Rate ($)</label>
-                                <input
-                                    type="number"
-                                    name="hourlyRate"
-                                    value={formData.hourlyRate || ''}
-                                    onChange={handleChange}
-                                    placeholder="0.00"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors font-mono"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Bank Details Section */}
-                    <div className="pt-6 border-t border-slate-800">
-                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                            <CreditCard className="w-4 h-4 text-blue-400" />
-                            Bank & Payment Information
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Bank Name</label>
-                                <select
-                                    name="bank.bankName"
-                                    value={formData.bankDetails?.bankName || ''}
-                                    onChange={(e) => handleChange(e as any)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
-                                >
-                                    <option value="">Select Bank</option>
-                                    <option value="ABA">ABA Bank</option>
-                                    <option value="Acleda">Acleda Bank</option>
-                                    <option value="Wing">Wing Bank</option>
-                                    <option value="Sathapana">Sathapana Bank</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Account Holder Name</label>
-                                <input
-                                    type="text"
-                                    name="bank.accountName"
-                                    value={formData.bankDetails?.accountName || ''}
-                                    onChange={(e) => handleChange(e as any)}
-                                    placeholder="e.g. JOHN DOE"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors font-medium uppercase"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Account Number</label>
-                                <input
-                                    type="text"
-                                    name="bank.accountNumber"
-                                    value={formData.bankDetails?.accountNumber || ''}
-                                    onChange={(e) => handleChange(e as any)}
-                                    placeholder="000 000 000"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors font-mono"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Footer Actions */}
-                    <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-800">
-                        <button
-                            type="button"
-                            onClick={onCancel}
-                            className="px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="px-6 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <RotateCcw className="w-4 h-4 animate-spin" />
-                                    <span>Saving...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span>{initialData ? 'Save Changes' : `Create ${formData.type === 'student' ? 'Student' : 'Employee'}`}</span>
-                                    <Check className="w-4 h-4" />
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </form>
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                    <X size={18} />
+                </button>
             </div>
-        </div>
+
+            {error && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl">
+                    {error}
+                </div>
+            )}
+
+            {/* Photo Upload Card */}
+            <div className="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-white border border-slate-200 shrink-0 flex items-center justify-center shadow-2xs">
+                    {imagePreview ? (
+                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                        <User className="w-8 h-8 text-slate-400" />
+                    )}
+                </div>
+                <div className="space-y-1 text-center sm:text-left">
+                    <label className="text-xs font-bold text-slate-900 block">Biometric ID Photo</label>
+                    <p className="text-[11px] text-slate-400">Clear frontal face portrait for recognition (JPG/PNG max 5MB)</p>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        id="photoUpload"
+                        onChange={handleImageChange}
+                        className="hidden"
+                    />
+                    <label
+                        htmlFor="photoUpload"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200/80 text-blue-600 hover:bg-blue-50 text-xs font-semibold cursor-pointer transition-colors shadow-2xs mt-1"
+                    >
+                        <Camera size={13} />
+                        <span>Choose Photo</span>
+                    </label>
+                </div>
+            </div>
+
+            {/* Personal Details */}
+            <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Personal Information</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700">First Name *</label>
+                        <input
+                            type="text"
+                            required
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={handleInputChange}
+                            placeholder="e.g. Dara"
+                            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700">Last Name *</label>
+                        <input
+                            type="text"
+                            required
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleInputChange}
+                            placeholder="e.g. Sok"
+                            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700">Email Address *</label>
+                        <input
+                            type="email"
+                            required
+                            name="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            placeholder="e.g. dara.sok@campus.edu"
+                            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700">Phone Number</label>
+                        <input
+                            type="text"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            placeholder="e.g. +855 12 345 678"
+                            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Academic / Role Details */}
+            <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Class & Enrollment</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700">Account Type</label>
+                        <select
+                            name="type"
+                            value={formData.type}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-800 outline-none focus:bg-white focus:border-blue-500 transition-colors capitalize"
+                        >
+                            <option value="student">Student</option>
+                            <option value="employee">Staff / Teacher</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700">Class / Department</label>
+                        <select
+                            name="department"
+                            value={formData.department}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-800 outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                        >
+                            <option value="">Select Class / Dept</option>
+                            {departments.map((dept) => (
+                                <option key={dept._id} value={dept._id}>
+                                    {dept.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700">Designation / Track</label>
+                        <input
+                            type="text"
+                            name="position"
+                            value={formData.position}
+                            onChange={handleInputChange}
+                            placeholder={isStudent ? 'e.g. Web Dev Year 1' : 'e.g. Lecturer'}
+                            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold transition-colors"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                    {isSubmitting ? (
+                        <>
+                            <RotateCcw size={14} className="animate-spin" />
+                            <span>Saving...</span>
+                        </>
+                    ) : (
+                        <>
+                            <Check size={14} />
+                            <span>{initialData ? 'Update Record' : 'Save & Register'}</span>
+                        </>
+                    )}
+                </button>
+            </div>
+        </form>
     );
 }
-

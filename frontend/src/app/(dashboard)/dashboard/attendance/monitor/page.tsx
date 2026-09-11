@@ -179,7 +179,7 @@ export default function LiveMonitorPage() {
                                                     </td>
                                                     <td className="py-3 px-4 text-xs font-medium text-slate-600">
                                                         <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold">
-                                                            {record.employeeId?.department?.name || 'Web 01'}
+                                                            {typeof record.employeeId?.department === 'object' ? (record.employeeId.department as any)?.name : record.employeeId?.department || 'Web 01'}
                                                         </span>
                                                     </td>
                                                     <td className="py-3 px-4 font-mono text-xs text-slate-700">
