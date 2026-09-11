@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { Plus, Users, User } from 'lucide-react';
 import EmployeeList from '@/components/employee/EmployeeList';
 import { Employee } from '@/types/employee.types';
 import { EmployeeService } from '@/services/employee.service';
@@ -38,28 +38,33 @@ export default function EmployeePage() {
             await EmployeeService.deleteEmployee(id);
             setEmployees((prev) => prev.filter((e) => e._id !== id));
         } catch (error) {
-            console.error('Failed to delete employee', error);
+            console.error('Failed to delete record', error);
         }
     };
 
+    const isStudent = typeFilter === 'student';
+
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                        {typeFilter === 'student' ? 'Student Management' : typeFilter === 'employee' ? 'Employee Management' : 'People Management'}
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <span>{isStudent ? 'Student Directory' : 'Faculty & Staff Roster'}</span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-200">
+                            {employees.length} Enrolled
+                        </span>
                     </h1>
-                    <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                        {typeFilter === 'student' ? 'Manage your students, classes, and attendance records.' : 'Manage personnel directory, roles, and status.'}
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                        {isStudent ? 'Manage student IDs, class enrollments, and biometric templates.' : 'Manage employee profiles, departmental roles, and access clearances.'}
                     </p>
                 </div>
 
                 <Link
                     href={`/dashboard/management/employee/create?type=${typeFilter || 'employee'}`}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-sm transition-colors text-xs sm:text-sm font-semibold active:scale-95 whitespace-nowrap"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-semibold active:scale-95 whitespace-nowrap"
                 >
                     <Plus className="w-4 h-4" />
-                    <span>Add {typeFilter === 'student' ? 'Student' : 'Employee'}</span>
+                    <span>Add {isStudent ? 'Student' : 'Staff Member'}</span>
                 </Link>
             </div>
 
@@ -71,4 +76,3 @@ export default function EmployeePage() {
         </div>
     );
 }
-

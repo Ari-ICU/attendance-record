@@ -6,23 +6,17 @@ import {
     Search,
     Download,
     Filter,
-    ChevronLeft,
-    ChevronRight,
     Clock,
     User,
-    ArrowUpDown,
     FileSpreadsheet,
     X,
-    MoreHorizontal,
     Eye,
     MapPin,
-    Monitor,
-    Globe,
-    Cpu,
     Calendar,
     Activity,
-    ShieldAlert,
-    RotateCcw
+    RotateCcw,
+    Check,
+    AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AttendanceService } from '@/services/attendance.service';
@@ -93,496 +87,326 @@ export default function AttendanceRecordsPage() {
     const filteredRecords = records.filter(record =>
         record.employeeId?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         record.employeeId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.employeeId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
+        record.employeeId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.employeeId?.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleExport = () => {
         setIsExporting(true);
         try {
-            const headers = ['Personnel', 'Position', 'Dept', 'Date', 'Check-In', 'CI Method', 'Check-Out', 'CO Method', 'Total Hours', 'Status'];
+            const csvContent = [
+                ['Student Name', 'ID', 'Date', 'Check In', 'Check Out', 'Status', 'Location'].join(','),
+                ...filteredRecords.map(r => [
+                    `"${r.employeeId?.firstName || ''} ${r.employeeId?.lastName || ''}"`,
+                    r.employeeId?._id || '',
+                    r.date ? new Date(r.date).toLocaleDateString() : '',
+                    r.checkIn?.time ? new Date(r.checkIn.time).toLocaleTimeString() : 'N/A',
+                    r.checkOut?.time ? new Date(r.checkOut.time).toLocaleTimeString() : 'N/A',
+                    r.status,
+                    `"${r.checkIn?.location?.address || 'Campus Hub'}"`
+                ].join(','))
+            ].join('\n');
 
-            const formatCSVRow = (arr: (string | number)[]) => {
-                return arr.map(val => {
-                    const s = String(val ?? '');
-                    return s.includes(',') || s.includes('"') || s.includes('\n')
-                        ? `"${s.replace(/"/g, '""')}"`
-                        : s;
-                }).join(',');
-            };
-
-            const rows = filteredRecords.map(r => [
-                r.employeeId?.fullName || 'N/A',
-                r.employeeId?.position || 'N/A',
-                r.employeeId?.department || 'N/A',
-                new Date(r.date).toLocaleDateString('en-US', { timeZone: 'Asia/Phnom_Penh' }),
-                r.checkIn?.time ? new Date(r.checkIn.time).toLocaleTimeString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : '---',
-                r.checkIn?.method?.replace('_', ' ') || '---',
-                r.checkOut?.time ? new Date(r.checkOut.time).toLocaleTimeString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : '---',
-                r.checkOut?.method?.replace('_', ' ') || '---',
-                r.totalHours ? r.totalHours.toFixed(2) : '0.00',
-                r.status?.toUpperCase() || 'PRESENT'
-            ]);
-
-            const csvContent = [headers.join(','), ...rows.map(row => formatCSVRow(row))].join("\n");
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
+            const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `attendance_records_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `attendance_records_${new Date().toISOString().split('T')[0]}.csv`);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
 
-            toast.success('Attendance report exported');
+            toast.success('Attendance records exported successfully');
         } catch (error) {
-            toast.error('Failed to export report');
+            console.error('Export failed:', error);
+            toast.error('Failed to export records');
         } finally {
             setIsExporting(false);
         }
     };
 
-    const handleDeleteRecord = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this attendance record? This action cannot be undone.')) return;
-
-        try {
-            await AttendanceService.deleteRecord(id);
-            setRecords(prev => prev.filter(r => r._id !== id));
-            toast.success('Record deleted successfully');
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to delete record');
-        }
-    };
-
     return (
         <div className="space-y-6 pb-12">
-            {/* Header Area */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Attendance Records</h1>
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1 text-xs text-slate-400">
-                        <span>Review historical biometric logs and performance records</span>
-                        {currentTime && (
-                            <>
-                                <span className="text-slate-600 hidden sm:inline">•</span>
-                                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/80 rounded-lg border border-slate-700/60 text-slate-300 font-mono text-[11px]">
-                                    <Clock className="w-3.5 h-3.5 text-blue-400" />
-                                    <span>
-                                        {currentTime.toLocaleTimeString('en-US', {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                            second: '2-digit',
-                                            timeZone: 'Asia/Phnom_Penh'
-                                        })}
-                                    </span>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Attendance Records</h1>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Historical verification logs, date-range filters, and CSV export</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                     <button
                         onClick={handleExport}
-                        disabled={isExporting}
-                        className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold text-xs sm:text-sm hover:bg-blue-500 transition-colors shadow-sm active:scale-95 disabled:opacity-50"
+                        disabled={isExporting || filteredRecords.length === 0}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-xs disabled:opacity-50"
                     >
-                        {isExporting ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        Export CSV
+                        <Download size={15} />
+                        <span>Export CSV</span>
+                    </button>
+                    <button
+                        onClick={() => fetchData()}
+                        className="p-2 rounded-xl bg-white border border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-2xs"
+                        title="Reload records"
+                    >
+                        <RotateCcw size={15} />
                     </button>
                 </div>
             </div>
 
-            {/* Filter Panel */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="space-y-1.5">
-                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Search</label>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                            <input
-                                type="text"
-                                placeholder="Search by name..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-blue-500 transition-colors"
-                            />
-                        </div>
+            {/* Filter Panel Card */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                        <Filter size={15} className="text-blue-600" />
+                        <span className="text-xs font-bold text-slate-900">Filter Criteria</span>
                     </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Date Range</label>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="date"
-                                value={filters.startDate}
-                                onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs text-slate-200 outline-none focus:border-blue-500 transition-colors"
-                            />
-                            <span className="text-slate-600 text-xs">-</span>
-                            <input
-                                type="date"
-                                value={filters.endDate}
-                                onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs text-slate-200 outline-none focus:border-blue-500 transition-colors"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Employee</label>
-                        <select
-                            value={filters.employeeId}
-                            onChange={(e) => handleFilterChange('employeeId', e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
-                        >
-                            <option value="">All Personnel</option>
-                            {employees.map(emp => (
-                                <option key={emp._id} value={emp._id}>{emp.firstName} {emp.lastName}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="flex items-end gap-2">
-                        <div className="flex-1 space-y-1.5">
-                            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Status</label>
-                            <select
-                                value={filters.status}
-                                onChange={(e) => handleFilterChange('status', e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
-                            >
-                                <option value="">All Statuses</option>
-                                <option value="present">Present (On Time)</option>
-                                <option value="late">Late Arrival</option>
-                                <option value="absent">Absent</option>
-                                <option value="on_leave">On Leave</option>
-                            </select>
-                        </div>
+                    {(filters.startDate || filters.endDate || filters.employeeId || filters.status || searchTerm) && (
                         <button
                             onClick={clearFilters}
-                            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-colors"
-                            title="Reset Filters"
+                            className="text-xs font-semibold text-rose-600 hover:underline flex items-center gap-1"
                         >
-                            <RotateCcw className="w-4 h-4" />
+                            <X size={12} />
+                            <span>Reset Filters</span>
                         </button>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {/* Search by Name */}
+                    <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-500">Search Student / Personnel</label>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Name or email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Start Date */}
+                    <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-500">From Date</label>
+                        <input
+                            type="date"
+                            value={filters.startDate}
+                            onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-800 outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                        />
+                    </div>
+
+                    {/* End Date */}
+                    <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-500">To Date</label>
+                        <input
+                            type="date"
+                            value={filters.endDate}
+                            onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-800 outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                        />
+                    </div>
+
+                    {/* Status Filter */}
+                    <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-500">Status</label>
+                        <select
+                            value={filters.status}
+                            onChange={(e) => handleFilterChange('status', e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-800 outline-none focus:bg-white focus:border-blue-500 transition-colors capitalize"
+                        >
+                            <option value="">All Statuses</option>
+                            <option value="present">Present</option>
+                            <option value="late">Late</option>
+                            <option value="absent">Absent</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
-            {/* Records Table */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            {/* Records Table Card */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+                    <h2 className="text-sm font-bold text-slate-900">Attendance Log</h2>
+                    <span className="text-xs font-semibold text-slate-400">
+                        {filteredRecords.length} Results
+                    </span>
+                </div>
+
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[850px] text-left">
+                    <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-950/60 border-b border-slate-800">
-                                <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Employee</th>
-                                <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Date</th>
-                                <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Check In / Out</th>
-                                <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Time</th>
-                                <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                                <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Action</th>
+                            <tr className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                <th className="py-3 px-4 sm:px-5">Student / Personnel</th>
+                                <th className="py-3 px-4">Date</th>
+                                <th className="py-3 px-4">Check In</th>
+                                <th className="py-3 px-4">Check Out</th>
+                                <th className="py-3 px-4">Status</th>
+                                <th className="py-3 px-4 sm:px-5 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800/60">
+                        <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
                             {loading ? (
-                                [1, 2, 3, 4, 5].map(i => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td colSpan={6} className="px-5 py-4">
-                                            <div className="h-10 bg-slate-800 rounded-lg w-full" />
-                                        </td>
-                                    </tr>
-                                ))
+                                <tr>
+                                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                                        <div className="w-6 h-6 border-2 border-blue-500/20 border-t-blue-600 rounded-full animate-spin mx-auto mb-2" />
+                                        <span className="text-xs font-medium">Loading records...</span>
+                                    </td>
+                                </tr>
                             ) : filteredRecords.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-16 text-center">
-                                        <div className="flex flex-col items-center gap-3 text-slate-500">
-                                            <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center">
-                                                <FileSpreadsheet className="w-6 h-6 text-slate-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-semibold text-slate-300">No matching attendance records</p>
-                                                <p className="text-xs text-slate-500 mt-0.5">Try adjusting your search criteria or date filter</p>
-                                            </div>
-                                        </div>
+                                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                                        <p className="text-xs font-medium">No records match your selected criteria</p>
                                     </td>
                                 </tr>
                             ) : (
-                                filteredRecords.map((record) => (
-                                    <tr key={record._id} className="hover:bg-slate-800/40 transition-colors">
-                                        <td className="px-5 py-3.5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center text-slate-400 font-semibold text-xs">
-                                                    {record.employeeId?.photoUrl ? (
-                                                        <img
-                                                            src={getFullImageUrl(record.employeeId.photoUrl) || ''}
-                                                            alt=""
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <span>{record.employeeId?.firstName?.charAt(0) || 'U'}</span>
-                                                    )}
+                                filteredRecords.map((record) => {
+                                    const isPresent = record.status === 'present';
+                                    const isLate = record.status === 'late';
+                                    const isAbsent = record.status === 'absent';
+
+                                    return (
+                                        <tr key={record._id} className="hover:bg-slate-50/70 transition-colors">
+                                            <td className="py-3 px-4 sm:px-5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 font-bold text-xs shrink-0 overflow-hidden">
+                                                        {record.employeeId?.photoUrl ? (
+                                                            <img
+                                                                src={getFullImageUrl(record.employeeId.photoUrl) || ''}
+                                                                alt=""
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <span>{record.employeeId?.firstName?.[0] || 'U'}</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-slate-900 truncate text-xs sm:text-sm">
+                                                            {record.employeeId?.firstName} {record.employeeId?.lastName}
+                                                        </p>
+                                                        <p className="text-[11px] text-slate-400 font-mono truncate">
+                                                            {record.employeeId?.email}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-xs sm:text-sm font-semibold text-white">{record.employeeId?.fullName || 'Personnel'}</p>
-                                                    <p className="text-[11px] text-slate-400">{record.employeeId?.position || 'Staff'}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <p className="text-xs sm:text-sm font-medium text-slate-200">
-                                                {new Date(record.date).toLocaleDateString('en-US', {
-                                                    day: '2-digit',
-                                                    month: 'short',
-                                                    year: 'numeric',
-                                                    timeZone: 'Asia/Phnom_Penh'
-                                                })}
-                                            </p>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <div className="flex flex-col gap-1 text-xs font-mono">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                                                    <span className="text-slate-300">
-                                                        {record.checkIn ? new Date(record.checkIn.time).toLocaleTimeString('en-US', {
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                            timeZone: 'Asia/Phnom_Penh'
-                                                        }) : '---'}
-                                                    </span>
-                                                    {record.checkIn?.location && (
-                                                        <a
-                                                            href={`https://www.google.com/maps?q=${record.checkIn.location.latitude},${record.checkIn.location.longitude}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-blue-400 hover:text-blue-300"
-                                                            title="View Check-in Location"
-                                                        >
-                                                            <MapPin size={12} />
-                                                        </a>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
-                                                    <span className="text-slate-400">
-                                                        {record.checkOut ? new Date(record.checkOut.time).toLocaleTimeString('en-US', {
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                            timeZone: 'Asia/Phnom_Penh'
-                                                        }) : '---'}
-                                                    </span>
-                                                    {record.checkOut?.location && (
-                                                        <a
-                                                            href={`https://www.google.com/maps?q=${record.checkOut.location.latitude},${record.checkOut.location.longitude}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-blue-400 hover:text-blue-300"
-                                                            title="View Check-out Location"
-                                                        >
-                                                            <MapPin size={12} />
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <span className={`text-xs font-semibold ${record.totalHours ? 'text-slate-200' : 'text-blue-400'}`}>
-                                                {record.totalHours ? `${record.totalHours.toFixed(1)} hrs` : 'In Progress'}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <div className="flex flex-col gap-1">
-                                                <span className={`inline-flex items-center w-fit px-2.5 py-0.5 rounded-md text-[11px] font-semibold capitalize border ${getStatusStyles(record.status)}`}>
-                                                    {record.status?.replace('_', ' ')}
+                                            </td>
+                                            <td className="py-3 px-4 text-xs font-medium text-slate-700">
+                                                {record.date ? new Date(record.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '---'}
+                                            </td>
+                                            <td className="py-3 px-4 font-mono text-xs text-slate-700">
+                                                {record.checkIn?.time ? new Date(record.checkIn.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                            </td>
+                                            <td className="py-3 px-4 font-mono text-xs text-slate-700">
+                                                {record.checkOut?.time ? new Date(record.checkOut.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold capitalize border shadow-2xs ${
+                                                    isPresent
+                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                        : isLate
+                                                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                                        : 'bg-rose-50 text-rose-700 border-rose-200'
+                                                }`}>
+                                                    {isPresent && <Check size={12} strokeWidth={3} className="text-emerald-600" />}
+                                                    {isLate && <Clock size={12} className="text-amber-600" />}
+                                                    <span>{record.status || 'present'}</span>
                                                 </span>
-                                                {record.checkIn?.method === 'face_verification' && !record.checkIn?.location && (
-                                                    <span className="flex items-center gap-1 text-[10px] font-medium text-rose-400">
-                                                        <ShieldAlert size={10} />
-                                                        No GPS
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3.5 text-right">
-                                            <div className="flex items-center justify-end gap-1.5">
+                                            </td>
+                                            <td className="py-3 px-4 sm:px-5 text-right">
                                                 <button
                                                     onClick={() => {
                                                         setSelectedRecord(record);
                                                         setIsDetailModalOpen(true);
                                                     }}
-                                                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                                                    className="p-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors"
                                                     title="View Details"
                                                 >
-                                                    <Eye className="w-4 h-4" />
+                                                    <Eye size={14} />
                                                 </button>
-                                                <button
-                                                    onClick={() => handleDeleteRecord(record._id)}
-                                                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 transition-colors"
-                                                    title="Delete Record"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
                 </div>
-
-                {/* Footer info */}
-                <div className="p-4 bg-slate-950/40 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                    <span>Showing {filteredRecords.length} record{filteredRecords.length !== 1 ? 's' : ''}</span>
-                    <div className="flex items-center gap-1">
-                        <button className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white disabled:opacity-40">
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <span className="px-2.5 py-1 rounded-md bg-blue-600 text-white font-medium text-xs">1</span>
-                        <button className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white disabled:opacity-40">
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
             </div>
 
-            {/* Detail Modal */}
+            {/* Record Detail Modal */}
             <AnimatePresence>
                 {isDetailModalOpen && selectedRecord && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
                         <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-xl"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden p-6 space-y-4"
                         >
-                            {/* Modal Header */}
-                            <div className="bg-slate-950/60 border-b border-slate-800 p-5 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                                        <Activity className="w-4 h-4 text-blue-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-base font-bold text-white">Record Details</h3>
-                                        <p className="text-xs text-slate-400 font-mono">ID: {selectedRecord._id}</p>
-                                    </div>
-                                </div>
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                <h3 className="text-sm font-bold text-slate-900">Attendance Log Details</h3>
                                 <button
                                     onClick={() => setIsDetailModalOpen(false)}
-                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                                 >
-                                    <X className="w-4 h-4" />
+                                    <X size={16} />
                                 </button>
                             </div>
 
-                            <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
-                                {/* Personnel Overview */}
-                                <div className="flex items-center gap-4 p-4 bg-slate-950/50 border border-slate-800 rounded-xl">
-                                    <div className="w-14 h-14 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center text-slate-400 font-bold text-lg">
-                                        {selectedRecord.employeeId?.photoUrl ? (
-                                            <img
-                                                src={getFullImageUrl(selectedRecord.employeeId.photoUrl) || ''}
-                                                alt=""
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <User className="w-6 h-6" />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <h4 className="text-base font-bold text-white">{selectedRecord.employeeId?.fullName}</h4>
-                                        <p className="text-xs text-slate-400">{selectedRecord.employeeId?.position} • {selectedRecord.employeeId?.department}</p>
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-semibold capitalize border ${getStatusStyles(selectedRecord.status)}`}>
-                                                {selectedRecord.status?.replace('_', ' ')}
-                                            </span>
-                                        </div>
-                                    </div>
+                            <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                                <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-sm shrink-0 overflow-hidden">
+                                    {selectedRecord.employeeId?.photoUrl ? (
+                                        <img
+                                            src={getFullImageUrl(selectedRecord.employeeId.photoUrl) || ''}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <span>{selectedRecord.employeeId?.firstName?.[0] || 'U'}</span>
+                                    )}
                                 </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {/* Entry Log */}
-                                    <div className="bg-slate-950/40 border border-slate-800 rounded-xl p-4 space-y-2.5">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                                            <h5 className="text-xs font-semibold text-slate-300">Check-In Details</h5>
-                                        </div>
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-slate-500">Time</span>
-                                            <span className="font-mono text-slate-200">
-                                                {selectedRecord.checkIn?.time ? new Date(selectedRecord.checkIn.time).toLocaleTimeString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : 'N/A'}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-slate-500">Method</span>
-                                            <span className="text-slate-200 capitalize">{selectedRecord.checkIn?.method?.replace('_', ' ') || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-slate-500">Location</span>
-                                            {selectedRecord.checkIn?.location ? (
-                                                <a
-                                                    href={`https://www.google.com/maps?q=${selectedRecord.checkIn.location.latitude},${selectedRecord.checkIn.location.longitude}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-400 hover:underline flex items-center gap-1 font-mono"
-                                                >
-                                                    <MapPin size={11} />
-                                                    GPS Verified
-                                                </a>
-                                            ) : (
-                                                <span className="text-slate-500 italic">No GPS Data</span>
-                                            )}
-                                        </div>
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-slate-500">IP Address</span>
-                                            <span className="font-mono text-slate-300">{selectedRecord.checkIn?.ipAddress || 'Internal'}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Exit Log */}
-                                    <div className="bg-slate-950/40 border border-slate-800 rounded-xl p-4 space-y-2.5">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="w-2 h-2 rounded-full bg-blue-400" />
-                                            <h5 className="text-xs font-semibold text-slate-300">Check-Out Details</h5>
-                                        </div>
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-slate-500">Time</span>
-                                            <span className="font-mono text-slate-200">
-                                                {selectedRecord.checkOut?.time ? new Date(selectedRecord.checkOut.time).toLocaleTimeString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : 'Active Session'}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-slate-500">Work Duration</span>
-                                            <span className="font-semibold text-emerald-400">
-                                                {selectedRecord.totalHours ? `${selectedRecord.totalHours.toFixed(1)} hrs` : 'In Progress'}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-slate-500">Location</span>
-                                            {selectedRecord.checkOut?.location ? (
-                                                <a
-                                                    href={`https://www.google.com/maps?q=${selectedRecord.checkOut.location.latitude},${selectedRecord.checkOut.location.longitude}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-400 hover:underline flex items-center gap-1 font-mono"
-                                                >
-                                                    <MapPin size={11} />
-                                                    GPS Verified
-                                                </a>
-                                            ) : (
-                                                <span className="text-slate-500 italic">No GPS Data</span>
-                                            )}
-                                        </div>
-                                    </div>
+                                <div className="min-w-0">
+                                    <p className="font-bold text-slate-900 text-sm">
+                                        {selectedRecord.employeeId?.firstName} {selectedRecord.employeeId?.lastName}
+                                    </p>
+                                    <p className="text-xs text-slate-500 font-mono">
+                                        {selectedRecord.employeeId?.email}
+                                    </p>
                                 </div>
                             </div>
 
-                            {/* Modal Footer */}
-                            <div className="bg-slate-950/60 border-t border-slate-800 p-4 flex justify-end">
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                                    <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px] block">Check In Time</span>
+                                    <span className="font-bold text-slate-800 font-mono text-sm mt-0.5 block">
+                                        {selectedRecord.checkIn?.time ? new Date(selectedRecord.checkIn.time).toLocaleTimeString() : 'N/A'}
+                                    </span>
+                                </div>
+                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                                    <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px] block">Check Out Time</span>
+                                    <span className="font-bold text-slate-800 font-mono text-sm mt-0.5 block">
+                                        {selectedRecord.checkOut?.time ? new Date(selectedRecord.checkOut.time).toLocaleTimeString() : 'N/A'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1 text-xs">
+                                <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Verification Mode</span>
+                                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-700 font-medium flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                                    <span>Biometric Facial Recognition · On Campus</span>
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
                                 <button
                                     onClick={() => setIsDetailModalOpen(false)}
-                                    className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition-colors"
+                                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
                                 >
-                                    Close
+                                    Close Details
                                 </button>
                             </div>
                         </motion.div>
@@ -591,15 +415,4 @@ export default function AttendanceRecordsPage() {
             </AnimatePresence>
         </div>
     );
-}
-
-function getStatusStyles(status: string) {
-    switch (status) {
-        case 'present': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-        case 'late': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-        case 'absent': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-        case 'remote': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-        case 'on_leave': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-        default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-    }
 }

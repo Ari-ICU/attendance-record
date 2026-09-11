@@ -8,23 +8,15 @@ import {
     Clock,
     Search,
     Download,
-    ArrowUpRight,
     DollarSign,
     FileText,
-    TrendingUp,
-    ShieldCheck,
     RefreshCw,
-    UserCircle,
-    Briefcase,
-    PlusCircle,
     X,
-    Zap,
-    ChevronLeft,
-    ChevronRight,
-    RotateCcw
+    RotateCcw,
+    Check,
+    Building2
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Employee } from '@/types/employee.types';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getFullImageUrl } from '@/utils/url.utils';
 import { PayrollService } from '@/services/payroll.service';
 import toast from 'react-hot-toast';
@@ -39,6 +31,7 @@ export default function PayrollPage() {
     const [showDepositModal, setShowDepositModal] = useState(false);
     const [showBankSettings, setShowBankSettings] = useState(false);
     const [depositAmount, setDepositAmount] = useState('');
+    const [selectedPayslip, setSelectedPayslip] = useState<any | null>(null);
     const [bankDetails, setBankDetails] = useState({
         accountNumber: '',
         accountName: ''
@@ -93,584 +86,397 @@ export default function PayrollPage() {
         currentPage * itemsPerPage
     );
 
-    const handlePrevPage = () => {
-        if (currentPage > 1) setCurrentPage(prev => prev - 1);
-    };
-
-    const handleNextPage = () => {
-        if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
-    };
-
-    const statCards = [
-        { label: 'Executive Vault', value: `$${(stats.masterBalance || 0).toLocaleString()}`, icon: Briefcase, color: 'text-indigo-400', bg: 'bg-indigo-500/10', trend: 'Master Fund' },
-        { label: 'Disbursed Funds', value: `$${stats.disbursed.toLocaleString()}`, icon: Banknote, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: 'Paid Out' },
-        { label: 'Payroll Expense', value: `$${stats.totalPayroll.toLocaleString()}`, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: 'Monthly Total' },
-        { label: 'Owner Residual', value: `$${(stats.ownerResidual || 0).toLocaleString()}`, icon: Wallet, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: 'Remaining' },
-    ];
-
-    const handleDisburse = async () => {
+    const handleDisburseAll = async () => {
+        if (!confirm('Are you sure you want to approve and execute disbursement for all pending staff salaries?')) return;
         try {
             setIsDisbursing(true);
-            await PayrollService.disburse();
-            toast.success('Funds released for approved entities');
+            await PayrollService.disburseAll();
+            toast.success('Salaries disbursed successfully');
             fetchData();
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Disbursement failed');
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Disbursement failed');
         } finally {
             setIsDisbursing(false);
         }
     };
 
-    const handleApprove = async () => {
+    const handleSingleDisburse = async (empId: string) => {
         try {
-            setIsApproving(true);
-            await PayrollService.approve();
-            toast.success('Cycle methodology validated and approved');
+            await PayrollService.disburse(empId);
+            toast.success('Disbursement executed');
             fetchData();
-        } catch (err) {
-            toast.error('Approval sequence failed');
-        } finally {
-            setIsApproving(false);
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Disbursement failed');
         }
     };
 
-    const handleDeposit = async () => {
-        const amount = parseFloat(depositAmount);
-        if (isNaN(amount) || amount <= 0) return toast.error('Enter a valid amount');
-
+    const handleDeposit = async (e: React.FormEvent) => {
+        e.preventDefault();
         try {
             setIsDepositing(true);
-            await PayrollService.deposit(amount, 'Business Owner Capital Top-up');
-            toast.success(`Funded Executive Vault with $${amount.toLocaleString()}`);
+            await PayrollService.deposit({ amount: parseFloat(depositAmount) });
+            toast.success('Funds deposited successfully');
             setShowDepositModal(false);
             setDepositAmount('');
             fetchData();
-        } catch (err) {
-            toast.error('Deposit sequence failed');
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Deposit failed');
         } finally {
             setIsDepositing(false);
         }
     };
 
-    const handleGenerate = async () => {
+    const handleSaveBank = async (e: React.FormEvent) => {
+        e.preventDefault();
         try {
-            setRefreshing(true);
-            await PayrollService.generate();
-            toast.success('Generated payroll for current cycle');
-            fetchData();
-        } catch (err) {
-            toast.error('Generation failed');
-        } finally {
-            setRefreshing(false);
-        }
-    };
-
-    const handleDownloadCSV = () => {
-        if (filteredLedger.length === 0) return toast.error('No data to export');
-
-        const headers = ['Employee ID', 'Name', 'Position', 'Dept', 'Monthly Base', 'Hourly Rate', 'Hours', 'Net Pay', 'Compliance', 'Status', 'Bank Name', 'Account No', 'Account Name', 'Date', 'TXID'];
-
-        const formatCSVRow = (arr: (string | number)[]) => {
-            return arr.map(val => {
-                const s = String(val ?? '');
-                return s.includes(',') || s.includes('"') || s.includes('\n')
-                    ? `"${s.replace(/"/g, '""')}"`
-                    : s;
-            }).join(',');
-        };
-
-        const rows = filteredLedger.map(item => [
-            item.employee._id,
-            `${item.employee.firstName} ${item.employee.lastName}`,
-            item.employee.position || 'N/A',
-            item.employee.department || 'N/A',
-            item.payroll.baseAmount || 0,
-            item.employee.hourlyRate || 0,
-            item.payroll.totalHours || 0,
-            item.payroll.netAmount,
-            `${item.payroll.complianceScore || 0}%`,
-            item.payroll.status?.toUpperCase() || 'PENDING',
-            item.employee.bankDetails?.bankName || 'N/A',
-            item.employee.bankDetails?.accountNumber || '---',
-            item.employee.bankDetails?.accountName || '---',
-            item.payroll.paymentDate ? new Date(item.payroll.paymentDate).toLocaleDateString('en-US', { timeZone: 'Asia/Phnom_Penh' }) : 'N/A',
-            item.payroll.transactionId || '---'
-        ]);
-
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => formatCSVRow(row))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        const dateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Phnom_Penh' });
-        link.setAttribute('download', `payroll_ledger_${dateStr}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast.success('Financial ledger exported');
-    };
-
-    const handleExportABA = () => {
-        if (!bankDetails.accountNumber) {
-            toast.error('Configure Company Bank Account first');
-            setShowBankSettings(true);
-            return;
-        }
-
-        const approvedOnly = ledger.filter(item => item.payroll.status === 'approved' || item.payroll.status === 'disbursed');
-        if (approvedOnly.length === 0) return toast.error('No approved payroll to export');
-
-        const headers = ['Debit Account', 'Credit Account', 'Amount', 'Currency', 'Remark', 'Beneficiary Name'];
-
-        const rows = approvedOnly.map(item => [
-            bankDetails.accountNumber,
-            item.employee.bankDetails?.accountNumber || '',
-            item.payroll.netAmount,
-            'USD',
-            `Salary ${new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' })}`,
-            item.employee.bankDetails?.accountName || `${item.employee.firstName} ${item.employee.lastName}`
-        ]);
-
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.setAttribute('href', URL.createObjectURL(blob));
-        link.setAttribute('download', `ABA_PAYROLL_BATCH_${new Date().toISOString().split('T')[0]}.csv`);
-        link.click();
-        toast.success('ABA iBusiness Batch generated');
-    };
-
-    const handleSaveBankSettings = async () => {
-        try {
-            await PayrollService.updateCompanyBank(bankDetails);
-            toast.success('Corporate bank credentials synchronized');
+            await PayrollService.updateBankAccount(bankDetails);
+            toast.success('Bank credentials updated');
             setShowBankSettings(false);
-        } catch (err) {
-            toast.error('Sync failed');
+            fetchData();
+        } catch (error: any) {
+            toast.error('Failed to update bank details');
         }
-    };
-
-    const [selectedPayslip, setSelectedPayslip] = useState<any>(null);
-    const [showPayslipModal, setShowPayslipModal] = useState(false);
-
-    const handleViewPayslip = (item: any) => {
-        setSelectedPayslip(item);
-        setShowPayslipModal(true);
     };
 
     return (
         <div className="space-y-6 pb-12">
-            <div className="print:hidden space-y-6">
-                {/* Header Area */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <CreditCard size={24} className="text-blue-600" />
+                        <span>Compensation & Payroll Ledger</span>
+                    </h1>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                        Automated hourly & monthly compensation calculated from biometric attendance records.
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                    <button
+                        onClick={() => setShowDepositModal(true)}
+                        className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-xs text-xs font-semibold transition-all"
+                    >
+                        <Wallet size={14} />
+                        <span>Deposit Funds</span>
+                    </button>
+                    <button
+                        onClick={handleDisburseAll}
+                        disabled={isDisbursing}
+                        className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-xs text-xs font-semibold transition-all disabled:opacity-50"
+                    >
+                        <Banknote size={14} />
+                        <span>Disburse All</span>
+                    </button>
+                    <button
+                        onClick={fetchData}
+                        className="p-2 rounded-xl bg-white border border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-2xs"
+                    >
+                        <RefreshCw size={14} className={refreshing ? 'animate-spin text-blue-600' : ''} />
+                    </button>
+                </div>
+            </div>
+
+            {/* Bento Financial Summary Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-semibold text-slate-500">Total Payroll Commitment</span>
+                        <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                            <DollarSign size={16} />
+                        </div>
+                    </div>
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Payroll & Financial Management</h1>
-                        <p className="text-xs sm:text-sm text-slate-400 mt-1">Enterprise salary disbursement, balance tracking, and ledger records</p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        <button
-                            onClick={() => setShowBankSettings(true)}
-                            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors"
-                            title="Bank Settings"
-                        >
-                            <ShieldCheck className={`w-4 h-4 ${bankDetails.accountNumber ? 'text-emerald-400' : 'text-slate-400'}`} />
-                        </button>
-                        <button
-                            onClick={handleGenerate}
-                            disabled={refreshing}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors disabled:opacity-50"
-                        >
-                            {refreshing ? <RotateCcw className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
-                            Generate Cycle
-                        </button>
-                        <button
-                            onClick={() => setShowDepositModal(true)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold border border-indigo-500/30 transition-colors"
-                        >
-                            <PlusCircle className="w-3.5 h-3.5" />
-                            Deposit Funds
-                        </button>
-                        <button
-                            onClick={handleApprove}
-                            disabled={isApproving}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 text-xs font-semibold border border-amber-500/30 transition-colors disabled:opacity-50"
-                        >
-                            {isApproving ? <RotateCcw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-                            Approve
-                        </button>
-                        <button
-                            onClick={handleDisburse}
-                            disabled={isDisbursing}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
-                        >
-                            {isDisbursing ? <RotateCcw className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
-                            Disburse
-                        </button>
+                        <div className="text-2xl font-bold text-slate-900 tracking-tight font-sans">
+                            ${stats.totalPayroll.toLocaleString()}
+                        </div>
+                        <span className="text-[11px] text-slate-400 font-medium">Monthly Active Ledger</span>
                     </div>
                 </div>
 
-                {/* Financial Overview Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {statCards.map((stat, index) => (
-                        <div
-                            key={index}
-                            className="bg-slate-900 border border-slate-800 p-5 rounded-2xl"
-                        >
-                            <div className="flex items-center justify-between mb-3">
-                                <div className={`p-2.5 rounded-xl ${stat.bg} ${stat.color}`}>
-                                    <stat.icon className="w-5 h-5" />
-                                </div>
-                                <span className="text-xs font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">
-                                    {stat.trend}
-                                </span>
-                            </div>
-                            <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{stat.value}</div>
-                            <div className="text-xs text-slate-400 mt-1">{stat.label}</div>
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-semibold text-slate-500">Disbursed Volume</span>
+                        <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+                            <Banknote size={16} />
                         </div>
-                    ))}
+                    </div>
+                    <div>
+                        <div className="text-2xl font-bold text-emerald-600 tracking-tight font-sans">
+                            ${stats.disbursed.toLocaleString()}
+                        </div>
+                        <span className="text-[11px] text-emerald-600/80 font-medium">Completed Payouts</span>
+                    </div>
                 </div>
 
-                {/* Main Ledger */}
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
-                    <div className="p-4 sm:p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/40">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400">
-                                <Wallet className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h2 className="text-sm sm:text-base font-bold text-white">Compensation Ledger</h2>
-                                <p className="text-xs text-slate-400">Payroll cycle breakdown</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                                <input
-                                    type="text"
-                                    placeholder="Search by name..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="bg-slate-950 border border-slate-800 text-slate-100 pl-9 pr-3 py-1.5 rounded-xl outline-none focus:border-blue-500 transition-colors w-48 sm:w-60 text-xs"
-                                />
-                            </div>
-                            <button
-                                onClick={handleDownloadCSV}
-                                className="p-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-colors"
-                                title="Export to CSV"
-                            >
-                                <Download className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={handleExportABA}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-indigo-300 hover:bg-indigo-600/30 transition-colors text-xs font-semibold"
-                                title="Export ABA Batch"
-                            >
-                                <CreditCard className="w-3.5 h-3.5" />
-                                ABA
-                            </button>
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-semibold text-slate-500">Pending Approvals</span>
+                        <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+                            <Clock size={16} />
                         </div>
                     </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[850px] text-left">
-                            <thead>
-                                <tr className="bg-slate-950/60 border-b border-slate-800">
-                                    <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Employee</th>
-                                    <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Base Pay</th>
-                                    <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Bank Details</th>
-                                    <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Compliance</th>
-                                    <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                                    <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Payslip</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-800/60">
-                                {loading ? (
-                                    [1, 2, 3].map(i => (
-                                        <tr key={i} className="animate-pulse">
-                                            <td colSpan={6} className="px-5 py-4">
-                                                <div className="h-10 bg-slate-800 rounded-lg w-full" />
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : paginatedLedger.map((item) => (
-                                    <tr key={item.employee._id} className="hover:bg-slate-800/40 transition-colors">
-                                        <td className="px-5 py-3.5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center text-slate-400 font-semibold text-xs">
-                                                    {item.employee.photoUrl ? (
-                                                        <img
-                                                            src={getFullImageUrl(item.employee.photoUrl)}
-                                                            className="w-full h-full object-cover"
-                                                            alt=""
-                                                        />
-                                                    ) : <UserCircle className="w-5 h-5 text-slate-400" />}
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs sm:text-sm font-semibold text-white">{item.employee.firstName} {item.employee.lastName}</p>
-                                                    <p className="text-[11px] text-slate-400">{item.employee.position || 'Specialist'}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <div className="space-y-0.5">
-                                                <p className="text-xs sm:text-sm font-semibold text-white">${item.payroll.baseAmount?.toLocaleString() || 0}.00</p>
-                                                {item.payroll.deductions > 0 && (
-                                                    <p className="text-[10px] text-rose-400 font-medium">
-                                                        -${item.payroll.deductions.toFixed(2)} deductions
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <div className="space-y-0.5 text-xs">
-                                                <p className="font-semibold text-slate-200">{item.employee.bankDetails?.bankName || 'CASH'}</p>
-                                                <p className="text-slate-400 font-mono text-[11px]">{item.employee.bankDetails?.accountNumber || 'Manual Execution'}</p>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                                                    <div
-                                                        style={{ width: `${item.payroll.complianceScore || 0}%` }}
-                                                        className="h-full bg-blue-500"
-                                                    />
-                                                </div>
-                                                <span className="text-xs font-semibold text-slate-300">{item.payroll.complianceScore || 0}%</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold capitalize border ${
-                                                item.payroll.status === 'disbursed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                                                item.payroll.status === 'approved' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-                                                'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                                            }`}>
-                                                {item.payroll.status === 'disbursed' ? 'Disbursed' :
-                                                item.payroll.status === 'approved' ? 'Approved' : 'Pending'}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-3.5 text-right">
-                                            <button
-                                                onClick={() => handleViewPayslip(item)}
-                                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                                                title="View Payslip"
-                                            >
-                                                <FileText className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Footer Controls */}
-                    <div className="p-4 bg-slate-950/40 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                        <span>Showing {filteredLedger.length} entities</span>
-
-                        <div className="flex items-center gap-2">
-                            <span>Page {currentPage} of {Math.max(1, totalPages)}</span>
-                            <div className="flex gap-1">
-                                <button
-                                    onClick={handlePrevPage}
-                                    disabled={currentPage === 1}
-                                    className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded-lg text-slate-300 transition-colors"
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={handleNextPage}
-                                    disabled={currentPage >= totalPages}
-                                    className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded-lg text-slate-300 transition-colors"
-                                >
-                                    <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
+                    <div>
+                        <div className="text-2xl font-bold text-amber-600 tracking-tight font-sans">
+                            ${stats.pending.toLocaleString()}
                         </div>
+                        <span className="text-[11px] text-amber-600/80 font-medium">Awaiting Payout</span>
+                    </div>
+                </div>
+
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-semibold text-slate-500">Account Balance</span>
+                        <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+                            <Wallet size={16} />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-2xl font-bold text-indigo-600 tracking-tight font-sans">
+                            ${stats.masterBalance.toLocaleString()}
+                        </div>
+                        <span className="text-[11px] text-indigo-600/80 font-medium">ABA PayWay Reserve</span>
                     </div>
                 </div>
             </div>
 
+            {/* Compensation Ledger Table Card */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div className="relative w-full sm:w-80">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                        <input
+                            type="text"
+                            placeholder="Filter staff by name..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-colors"
+                        />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-400">
+                        {filteredLedger.length} Personnel in Payroll
+                    </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[750px]">
+                        <thead>
+                            <tr className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                <th className="py-3 px-5">Staff Member</th>
+                                <th className="py-3 px-4">Base Rate / Salary</th>
+                                <th className="py-3 px-4">Logged Hours</th>
+                                <th className="py-3 px-4">Gross Compensation</th>
+                                <th className="py-3 px-4">Status</th>
+                                <th className="py-3 px-5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                                        <div className="w-6 h-6 border-2 border-blue-500/20 border-t-blue-600 rounded-full animate-spin mx-auto mb-2" />
+                                        <span className="text-xs font-medium">Loading payroll records...</span>
+                                    </td>
+                                </tr>
+                            ) : paginatedLedger.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                                        <p className="text-xs font-medium">No personnel found in current ledger</p>
+                                    </td>
+                                </tr>
+                            ) : (
+                                paginatedLedger.map((item) => (
+                                    <tr key={item.employee._id} className="hover:bg-slate-50/70 transition-colors">
+                                        <td className="py-3.5 px-5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 font-bold text-xs shrink-0 overflow-hidden">
+                                                    {item.employee.photoUrl ? (
+                                                        <img
+                                                            src={getFullImageUrl(item.employee.photoUrl) || ''}
+                                                            alt=""
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <span>{item.employee.firstName?.[0]}{item.employee.lastName?.[0]}</span>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-slate-900 text-xs sm:text-sm">
+                                                        {item.employee.firstName} {item.employee.lastName}
+                                                    </div>
+                                                    <div className="text-[11px] text-slate-400 font-mono">
+                                                        {item.employee.position || 'Staff'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
+                                            ${item.baseSalary || 500}
+                                        </td>
+
+                                        <td className="py-3.5 px-4 font-mono text-slate-600">
+                                            {item.workedHours || 160} hrs
+                                        </td>
+
+                                        <td className="py-3.5 px-4 font-mono font-bold text-slate-900 text-sm">
+                                            ${item.netPayable || item.baseSalary || 500}
+                                        </td>
+
+                                        <td className="py-3.5 px-4">
+                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                                item.status === 'paid'
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'paid' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                                <span className="capitalize">{item.status || 'Pending'}</span>
+                                            </span>
+                                        </td>
+
+                                        <td className="py-3.5 px-5 text-right">
+                                            <div className="inline-flex items-center gap-2">
+                                                <button
+                                                    onClick={() => setSelectedPayslip(item)}
+                                                    className="p-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                                    title="View Payslip"
+                                                >
+                                                    <FileText size={14} />
+                                                </button>
+                                                {item.status !== 'paid' && (
+                                                    <button
+                                                        onClick={() => handleSingleDisburse(item.employee._id)}
+                                                        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                                                    >
+                                                        Pay
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             {/* Deposit Modal */}
-            {showDepositModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                    <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative">
-                        <button
-                            onClick={() => setShowDepositModal(false)}
-                            className="absolute top-5 right-5 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            <AnimatePresence>
+                {showDepositModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden p-6 space-y-4"
                         >
-                            <X className="w-4 h-4" />
-                        </button>
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                <h3 className="text-base font-bold text-slate-900">Deposit Reserve Capital</h3>
+                                <button
+                                    onClick={() => setShowDepositModal(false)}
+                                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
 
-                        <div className="mb-6">
-                            <h2 className="text-lg font-bold text-white">Deposit Business Funds</h2>
-                            <p className="text-xs text-slate-400 mt-0.5">Top-up company master liquidity vault</p>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Deposit Amount (USD)</label>
-                                <div className="relative">
-                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
+                            <form onSubmit={handleDeposit} className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-slate-700">Deposit Amount ($ USD)</label>
                                     <input
                                         type="number"
-                                        placeholder="0.00"
+                                        required
+                                        min="1"
                                         value={depositAmount}
                                         onChange={(e) => setDepositAmount(e.target.value)}
-                                        autoFocus
-                                        className="w-full bg-slate-950 border border-slate-800 text-white pl-8 pr-4 py-2.5 rounded-xl outline-none focus:border-blue-500 transition-colors text-lg font-bold"
+                                        placeholder="e.g. 5000"
+                                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-base font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 font-mono transition-colors"
                                     />
                                 </div>
-                            </div>
 
-                            <button
-                                onClick={handleDeposit}
-                                disabled={isDepositing || !depositAmount}
-                                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
-                            >
-                                {isDepositing ? <RotateCcw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                                Confirm Deposit
-                            </button>
-                        </div>
+                                <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-700 leading-relaxed">
+                                    Funds deposited will be credited to the primary ABA PayWay clearing balance and instantly available for disbursements.
+                                </div>
+
+                                <div className="flex gap-2 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowDepositModal(false)}
+                                        className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isDepositing}
+                                        className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-xs shadow-xs transition-colors disabled:opacity-50"
+                                    >
+                                        {isDepositing ? 'Processing...' : 'Confirm Deposit'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
                     </div>
-                </div>
-            )}
-
-            {/* Bank Settings Modal */}
-            {showBankSettings && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                    <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative">
-                        <button
-                            onClick={() => setShowBankSettings(false)}
-                            className="absolute top-5 right-5 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-
-                        <div className="mb-6">
-                            <h2 className="text-lg font-bold text-white">Company Bank Credentials</h2>
-                            <p className="text-xs text-slate-400 mt-0.5">Used for ABA / Acleda batch exports</p>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Company Account Name</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. ARI ICU TECH LTD"
-                                    value={bankDetails.accountName}
-                                    onChange={(e) => setBankDetails({ ...bankDetails, accountName: e.target.value })}
-                                    className="w-full bg-slate-950 border border-slate-800 text-white px-3 py-2 rounded-xl outline-none focus:border-blue-500 transition-colors text-xs sm:text-sm font-medium uppercase"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-400">Corporate Account Number</label>
-                                <input
-                                    type="text"
-                                    placeholder="000 000 000"
-                                    value={bankDetails.accountNumber}
-                                    onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })}
-                                    className="w-full bg-slate-950 border border-slate-800 text-white px-3 py-2 rounded-xl outline-none focus:border-blue-500 transition-colors font-mono text-sm"
-                                />
-                            </div>
-
-                            <button
-                                onClick={handleSaveBankSettings}
-                                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm mt-2"
-                            >
-                                Save Bank Credentials
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
 
             {/* Payslip Modal */}
-            {showPayslipModal && selectedPayslip && (
-                <div id="payslip-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm print:absolute print:inset-0 print:p-0 print:bg-white print:backdrop-blur-none">
-                    <div className="w-full max-w-xl bg-slate-900 rounded-2xl border border-slate-800 shadow-xl overflow-hidden flex flex-col print:border-none print:shadow-none print:bg-white">
-                        {/* Header controls (Hidden on print) */}
-                        <div className="p-4 border-b border-slate-800 bg-slate-950/40 flex items-center justify-between print:hidden">
-                            <div className="flex items-center gap-2.5">
-                                <FileText className="w-4 h-4 text-blue-400" />
-                                <h2 className="text-sm font-bold text-white">Payslip Receipt</h2>
-                            </div>
-                            <div className="flex gap-2">
+            <AnimatePresence>
+                {selectedPayslip && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden p-6 space-y-4"
+                        >
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                <div>
+                                    <h3 className="text-base font-bold text-slate-900">Official Payslip Statement</h3>
+                                    <p className="text-xs text-slate-400">Campus Attendance Payroll Engine</p>
+                                </div>
                                 <button
-                                    onClick={() => window.print()}
-                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
+                                    onClick={() => setSelectedPayslip(null)}
+                                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                                 >
-                                    <Download size={13} />
-                                    Print / PDF
-                                </button>
-                                <button
-                                    onClick={() => setShowPayslipModal(false)}
-                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
-                                >
-                                    <X className="w-4 h-4" />
+                                    <X size={16} />
                                 </button>
                             </div>
-                        </div>
 
-                        {/* Payslip Content */}
-                        <div id="payslip-content" className="p-6 md:p-8 space-y-6 bg-white text-slate-950 print:p-0">
-                            <div className="flex justify-between items-start border-b-2 border-slate-900 pb-4">
-                                <div>
-                                    <h1 className="text-xl font-bold tracking-tight text-slate-950">ARI ICU TECH LTD</h1>
-                                    <p className="text-xs text-slate-500">Salary Disbursement Slip</p>
+                            <div className="space-y-3 text-xs">
+                                <div className="flex justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                                    <span className="text-slate-500 font-medium">Employee Name:</span>
+                                    <span className="font-bold text-slate-900">
+                                        {selectedPayslip.employee.firstName} {selectedPayslip.employee.lastName}
+                                    </span>
                                 </div>
-                                <div className="text-right text-xs">
-                                    <p className="font-semibold text-slate-900">ID: {selectedPayslip.payroll.transactionId || 'PENDING'}</p>
-                                    <p className="text-slate-500">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                                <div className="flex justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                                    <span className="text-slate-500 font-medium">Designation:</span>
+                                    <span className="font-bold text-slate-900">{selectedPayslip.employee.position || 'Staff'}</span>
+                                </div>
+                                <div className="flex justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                                    <span className="text-slate-500 font-medium">Logged Working Hours:</span>
+                                    <span className="font-bold text-slate-900 font-mono">{selectedPayslip.workedHours || 160} hrs</span>
+                                </div>
+                                <div className="flex justify-between p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 font-bold text-sm">
+                                    <span>Total Net Payable:</span>
+                                    <span className="font-mono">${selectedPayslip.netPayable || selectedPayslip.baseSalary || 500}</span>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 text-xs">
-                                <div>
-                                    <p className="text-slate-400 uppercase font-semibold text-[10px]">Employee</p>
-                                    <p className="text-sm font-bold text-slate-900 mt-0.5">{selectedPayslip.employee.firstName} {selectedPayslip.employee.lastName}</p>
-                                    <p className="text-slate-500">{selectedPayslip.employee.position || 'Specialist'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-slate-400 uppercase font-semibold text-[10px]">Bank / Account</p>
-                                    <p className="text-sm font-bold text-slate-900 mt-0.5">{selectedPayslip.employee.bankDetails?.bankName || 'Cash Disbursement'}</p>
-                                    <p className="text-slate-500 font-mono">{selectedPayslip.employee.bankDetails?.accountNumber || '---'}</p>
-                                </div>
+                            <div className="pt-2">
+                                <button
+                                    onClick={() => setSelectedPayslip(null)}
+                                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
+                                >
+                                    Close Statement
+                                </button>
                             </div>
-
-                            <div className="border-t border-slate-200 pt-4 space-y-2 text-xs">
-                                <div className="flex justify-between">
-                                    <span className="text-slate-600">Base Salary</span>
-                                    <span className="font-semibold text-slate-900">${(selectedPayslip.payroll.baseAmount || 0).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-600">Bonus & Performance</span>
-                                    <span className="font-semibold text-emerald-600">+${(selectedPayslip.payroll.bonus || 0).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-600">Attendance Deductions</span>
-                                    <span className="font-semibold text-rose-600">-${(selectedPayslip.payroll.deductions || 0).toFixed(2)}</span>
-                                </div>
-                                <div className="pt-3 border-t-2 border-slate-900 flex justify-between items-baseline">
-                                    <span className="font-bold text-slate-950 text-sm">Net Pay Released</span>
-                                    <span className="text-xl font-bold text-slate-950">USD ${(selectedPayslip.payroll.netAmount || 0).toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     );
 }
-

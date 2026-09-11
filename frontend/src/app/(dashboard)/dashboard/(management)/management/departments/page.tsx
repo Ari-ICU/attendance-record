@@ -9,7 +9,8 @@ import {
     Trash2,
     Building2,
     X,
-    RotateCcw
+    RotateCcw,
+    Edit2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DepartmentService } from '@/services/department.service';
@@ -45,7 +46,7 @@ export default function DepartmentsPage() {
             setDepartments(deptRes.data || []);
             setEmployees(empRes.employees || []);
         } catch (error) {
-            toast.error('Failed to load organizational data');
+            toast.error('Failed to load classes / departments');
         } finally {
             setLoading(false);
         }
@@ -60,10 +61,10 @@ export default function DepartmentsPage() {
         try {
             if (isEditMode && activeDepartmentId) {
                 await DepartmentService.update(activeDepartmentId, formData);
-                toast.success('Department updated successfully');
+                toast.success('Class updated successfully');
             } else {
                 await DepartmentService.create(formData);
-                toast.success('Department created successfully');
+                toast.success('Class created successfully');
             }
             setIsCreateModalOpen(false);
             setFormData({ name: '', description: '', head: '' });
@@ -94,211 +95,207 @@ export default function DepartmentsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this department?')) return;
+        if (!confirm('Are you sure you want to delete this class/department?')) return;
         try {
             await DepartmentService.delete(id);
-            toast.success('Department deleted');
+            toast.success('Class / Department deleted');
             fetchData();
         } catch (error) {
-            toast.error('Delete failed');
+            toast.error('Failed to delete');
         }
     };
 
-    const filteredDepartments = departments.filter(dept =>
-        dept.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredDepartments = departments.filter(d =>
+        d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
         <div className="space-y-6 pb-12">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Departments & Teams</h1>
-                    <p className="text-xs sm:text-sm text-slate-400 mt-1">Manage company organizational units, leads, and headcounts</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <span>Classes & Departments</span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-200">
+                            {departments.length} Units
+                        </span>
+                    </h1>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                        Configure classes, course tracks, instructors, and student headcounts.
+                    </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                        <input
-                            type="text"
-                            placeholder="Search departments..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="bg-slate-950 border border-slate-800 text-slate-100 pl-9 pr-3 py-2 rounded-xl outline-none focus:border-blue-500 transition-colors w-48 sm:w-60 text-xs sm:text-sm"
-                        />
-                    </div>
+                <div className="flex items-center gap-2.5">
                     <button
                         onClick={openCreateModal}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold text-xs sm:text-sm hover:bg-blue-500 transition-colors shadow-sm whitespace-nowrap active:scale-95"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-semibold active:scale-95"
                     >
-                        <Plus className="w-4 h-4" />
-                        Add Department
+                        <Plus size={16} />
+                        <span>Add Class / Dept</span>
+                    </button>
+                    <button
+                        onClick={fetchData}
+                        className="p-2.5 rounded-xl bg-white border border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-2xs"
+                    >
+                        <RotateCcw size={15} />
                     </button>
                 </div>
             </div>
 
-            {/* Grid display */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Search Toolbar */}
+            <div className="flex items-center bg-white border border-slate-200/80 p-3 rounded-2xl shadow-xs">
+                <div className="relative w-full sm:w-80">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                    <input
+                        type="text"
+                        placeholder="Search class or dept name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                    />
+                </div>
+            </div>
+
+            {/* Bento Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {loading ? (
-                    [1, 2, 3].map(i => (
-                        <div key={i} className="h-48 rounded-2xl bg-slate-900 border border-slate-800 animate-pulse" />
+                    Array(3).fill(0).map((_, i) => (
+                        <div key={i} className="h-48 bg-white border border-slate-200/80 rounded-2xl animate-pulse shadow-xs" />
                     ))
-                ) : filteredDepartments.length === 0 ? (
-                    <div className="col-span-full py-16 text-center bg-slate-900 rounded-2xl border border-slate-800">
-                        <Building2 className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                        <p className="text-sm font-semibold text-slate-300">No departments found</p>
-                        <p className="text-xs text-slate-500 mt-0.5">Click Add Department to create your first organizational unit</p>
-                    </div>
-                ) : (
+                ) : filteredDepartments.length > 0 ? (
                     filteredDepartments.map((dept) => (
                         <div
                             key={dept._id}
-                            className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition-colors relative flex flex-col justify-between"
+                            className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between"
                         >
-                            <div>
-                                <div className="flex items-start justify-between gap-3 mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
-                                            <Building2 className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-base font-bold text-white tracking-tight">{dept.name}</h3>
-                                            <div className="flex items-center gap-1.5 mt-0.5">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                                <span className="text-[11px] font-medium text-slate-400">Active</span>
-                                            </div>
-                                        </div>
+                            <div className="space-y-3">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                                        <Building2 size={20} />
                                     </div>
-
                                     <div className="flex items-center gap-1">
                                         <button
                                             onClick={() => openEditModal(dept)}
-                                            className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
-                                            title="Edit"
+                                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors"
+                                            title="Edit Unit"
                                         >
-                                            <Settings2 className="w-4 h-4" />
+                                            <Edit2 size={14} />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(dept._id)}
-                                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 transition-colors"
-                                            title="Delete"
+                                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 transition-colors"
+                                            title="Delete Unit"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 size={14} />
                                         </button>
                                     </div>
                                 </div>
 
-                                <p className="text-xs text-slate-400 leading-relaxed line-clamp-2 min-h-[32px]">
-                                    {dept.description || 'No description provided for this department.'}
-                                </p>
+                                <div>
+                                    <h3 className="text-base font-bold text-slate-900 leading-snug">
+                                        {dept.name}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                                        {dept.description || 'General classroom track with automated biometric attendance.'}
+                                    </p>
+                                </div>
                             </div>
 
-                            <div className="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    {dept.head ? (
-                                        <>
-                                            <div className="w-7 h-7 rounded-full border border-slate-700 overflow-hidden bg-slate-800 shrink-0">
-                                                {dept.head.photoUrl ? (
-                                                    <img src={getFullImageUrl(dept.head.photoUrl) || ''} className="w-full h-full object-cover" alt="" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-slate-400">
-                                                        {dept.head.firstName?.charAt(0)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <span className="text-xs font-medium text-slate-300 truncate max-w-[120px]">{dept.head.firstName} {dept.head.lastName}</span>
-                                        </>
-                                    ) : (
-                                        <span className="text-xs text-slate-500 italic">No head assigned</span>
-                                    )}
+                            <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2">
+                                    <Users size={14} className="text-slate-400" />
+                                    <span className="font-semibold text-slate-700">{dept.employeeCount || 0} Enrolled</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 text-blue-400 text-xs font-semibold">
-                                    <Users className="w-3.5 h-3.5" />
-                                    <span>{dept.memberCount || 0} members</span>
-                                </div>
+                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium text-[11px]">
+                                    Active Track
+                                </span>
                             </div>
                         </div>
                     ))
+                ) : (
+                    <div className="col-span-full py-16 bg-white border border-slate-200/80 rounded-2xl text-center text-slate-400 shadow-xs">
+                        <Building2 size={36} className="mx-auto mb-2 opacity-30" />
+                        <p className="text-xs font-semibold">No classes or departments found</p>
+                    </div>
                 )}
             </div>
 
-            {/* Create/Edit Modal */}
+            {/* Create / Edit Modal */}
             <AnimatePresence>
                 {isCreateModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
                         <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden p-6 space-y-4"
                         >
-                            <div className="flex items-center justify-between mb-5">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
-                                        <Building2 className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-base font-bold text-white">{isEditMode ? 'Edit Department' : 'Create Department'}</h2>
-                                        <p className="text-xs text-slate-400">{isEditMode ? 'Modify department settings' : 'Set up a new organizational unit'}</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => setIsCreateModalOpen(false)} className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors">
-                                    <X className="w-4 h-4" />
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                <h3 className="text-base font-bold text-slate-900">
+                                    {isEditMode ? 'Edit Class / Department' : 'Create New Class / Dept'}
+                                </h3>
+                                <button
+                                    onClick={() => setIsCreateModalOpen(false)}
+                                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                                >
+                                    <X size={16} />
                                 </button>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-slate-400">Department Name</label>
+                                    <label className="text-xs font-semibold text-slate-700">Class / Dept Name</label>
                                     <input
-                                        required
                                         type="text"
-                                        placeholder="e.g. Engineering"
+                                        required
                                         value={formData.name}
-                                        onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm font-medium text-white outline-none focus:border-blue-500 transition-colors"
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        placeholder="e.g. Web Development 01"
+                                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-800 outline-none focus:bg-white focus:border-blue-500 transition-colors"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-slate-400">Description</label>
+                                    <label className="text-xs font-semibold text-slate-700">Description</label>
                                     <textarea
                                         rows={3}
-                                        placeholder="Department scope and responsibilities..."
                                         value={formData.description}
-                                        onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white outline-none focus:border-blue-500 transition-colors resize-none"
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        placeholder="Brief description of curriculum or department scope..."
+                                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-800 outline-none focus:bg-white focus:border-blue-500 transition-colors resize-none"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-slate-400">Department Head</label>
+                                    <label className="text-xs font-semibold text-slate-700">Lead Instructor / Head</label>
                                     <select
                                         value={formData.head}
-                                        onChange={e => setFormData(prev => ({ ...prev, head: e.target.value }))}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
+                                        onChange={(e) => setFormData({ ...formData, head: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-800 outline-none focus:bg-white focus:border-blue-500 transition-colors capitalize"
                                     >
-                                        <option value="">No Head Assigned</option>
+                                        <option value="">Unassigned</option>
                                         {employees.map(emp => (
-                                            <option key={emp._id} value={emp._id}>{emp.firstName} {emp.lastName}</option>
+                                            <option key={emp._id} value={emp._id}>
+                                                {emp.firstName} {emp.lastName} ({emp.position})
+                                            </option>
                                         ))}
                                     </select>
                                 </div>
 
-                                <div className="pt-3 flex gap-3">
+                                <div className="flex gap-2 pt-2">
                                     <button
                                         type="button"
                                         onClick={() => setIsCreateModalOpen(false)}
-                                        className="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold text-xs hover:bg-slate-700 transition-colors"
+                                        className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
-                                        className="flex-[2] py-2 rounded-xl bg-blue-600 text-white font-semibold text-xs hover:bg-blue-500 transition-colors shadow-sm"
+                                        className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs shadow-xs transition-colors"
                                     >
-                                        {isEditMode ? 'Save Changes' : 'Create Department'}
+                                        {isEditMode ? 'Update Unit' : 'Create Unit'}
                                     </button>
                                 </div>
                             </form>
@@ -309,4 +306,3 @@ export default function DepartmentsPage() {
         </div>
     );
 }
-
