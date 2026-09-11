@@ -24,6 +24,7 @@ export const searchablePages = [
   { name: 'Calendar & Shifts Hub', href: '/dashboard/calendar', category: 'Schedule' },
   { name: 'Time Off & Leave Requests', href: '/dashboard/leave', category: 'Leave' },
   { name: 'Overtime Submissions', href: '/dashboard/overtime', category: 'Overtime' },
+  { name: 'Payroll & Salary Management', href: '/dashboard/payroll', category: 'Payroll' },
   { name: 'Attendance Analytics & Reports', href: '/dashboard/reports/analytics', category: 'Reports' },
   { name: 'Users & Roles Settings', href: '/dashboard/settings?tab=roles', category: 'System' },
   { name: 'System Settings & Backups', href: '/dashboard/settings', category: 'System' },

@@ -15,7 +15,10 @@ import {
     Camera,
     Sparkles,
     TrendingUp,
-    ShieldCheck
+    ShieldCheck,
+    Receipt,
+    DollarSign,
+    ArrowUpRight
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -304,6 +307,44 @@ export default function PortalPage() {
                                 <p className="text-[11px] text-slate-400">High-speed verification active</p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* My Monthly Payslip Card */}
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Receipt size={16} className="text-black" />
+                                <h3 className="font-bold text-slate-900 text-sm">My Monthly Salary & Payslip</h3>
+                            </div>
+                            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                                Paid
+                            </span>
+                        </div>
+                        <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/70 space-y-2">
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="font-medium text-slate-500">Period:</span>
+                                <span className="font-bold text-slate-900">September 2026</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="font-medium text-slate-500">Base Salary:</span>
+                                <span className="font-bold text-slate-900">$2,800.00</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="font-medium text-slate-500">Overtime Pay (6.5h):</span>
+                                <span className="font-bold text-emerald-700">+$243.75</span>
+                            </div>
+                            <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-900">Net Disbursed:</span>
+                                <span className="text-base font-black font-mono text-black">$3,063.18 USD</span>
+                            </div>
+                        </div>
+                        <Link
+                            href="/dashboard/payroll/payslips/ps_001"
+                            className="w-full py-2.5 bg-black hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                        >
+                            <span>View Full Printable Payslip</span>
+                            <ArrowUpRight size={13} />
+                        </Link>
                     </div>
                 </div>
             </div>
