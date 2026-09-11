@@ -161,8 +161,8 @@ export default function PayslipDetailPage() {
                 </div>
 
                 {/* Earnings & Deductions Table */}
-                <div className="mt-6 border border-black">
-                    <div className="grid grid-cols-2 divide-x divide-black border-b border-black">
+                <div className="mt-6 border border-black overflow-hidden">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-black border-b border-black print:grid-cols-2 print:divide-y-0 print:divide-x">
                         <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-black">
                             Earnings / Allowances
                         </div>
@@ -171,42 +171,42 @@ export default function PayslipDetailPage() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 divide-x divide-black text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-black text-xs print:grid-cols-2 print:divide-y-0 print:divide-x">
                         {/* Earnings Column */}
                         <div className="divide-y divide-neutral-200">
-                            <div className="flex justify-between px-3 py-2">
+                            <div className="flex justify-between items-center px-3 py-2 gap-2">
                                 <span className="text-neutral-800">Basic Monthly Salary</span>
-                                <span className="font-mono font-medium">${payslip.earnings.baseSalary.toFixed(2)}</span>
+                                <span className="font-mono font-medium shrink-0">${payslip.earnings.baseSalary.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between px-3 py-2">
+                            <div className="flex justify-between items-center px-3 py-2 gap-2">
                                 <span className="text-neutral-800">Overtime Pay ({payslip.earnings.overtimeHours}h @ 1.5x)</span>
-                                <span className="font-mono font-medium">${payslip.earnings.overtimePay.toFixed(2)}</span>
+                                <span className="font-mono font-medium shrink-0">${payslip.earnings.overtimePay.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between px-3 py-2">
+                            <div className="flex justify-between items-center px-3 py-2 gap-2">
                                 <span className="text-neutral-800">Performance Incentive</span>
-                                <span className="font-mono font-medium">${payslip.earnings.bonuses.toFixed(2)}</span>
+                                <span className="font-mono font-medium shrink-0">${payslip.earnings.bonuses.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between px-3 py-2">
+                            <div className="flex justify-between items-center px-3 py-2 gap-2">
                                 <span className="text-neutral-800">Allowances (Travel & Subsistence)</span>
-                                <span className="font-mono font-medium">${payslip.earnings.allowances.toFixed(2)}</span>
+                                <span className="font-mono font-medium shrink-0">${payslip.earnings.allowances.toFixed(2)}</span>
                             </div>
                         </div>
 
                         {/* Deductions Column */}
                         <div className="divide-y divide-neutral-200">
-                            <div className="flex justify-between px-3 py-2">
+                            <div className="flex justify-between items-center px-3 py-2 gap-2">
                                 <span className="text-neutral-800">Income Tax Withholding (5%)</span>
-                                <span className="font-mono font-medium">${payslip.deductions.taxWithholding.toFixed(2)}</span>
+                                <span className="font-mono font-medium shrink-0">${payslip.deductions.taxWithholding.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between px-3 py-2">
+                            <div className="flex justify-between items-center px-3 py-2 gap-2">
                                 <span className="text-neutral-800">National Social Security (2%)</span>
-                                <span className="font-mono font-medium">${payslip.deductions.socialSecurity.toFixed(2)}</span>
+                                <span className="font-mono font-medium shrink-0">${payslip.deductions.socialSecurity.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between px-3 py-2">
-                                <span className="text-neutral-800">Unpaid Leave Deduction ({payslip.deductions.unpaidLeaveDays} days)</span>
-                                <span className="font-mono font-medium">${payslip.deductions.leaveDeductions.toFixed(2)}</span>
+                            <div className="flex justify-between items-center px-3 py-2 gap-2">
+                                <span className="text-neutral-800">Unpaid Leave ({payslip.deductions.unpaidLeaveDays} days)</span>
+                                <span className="font-mono font-medium shrink-0">${payslip.deductions.leaveDeductions.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between px-3 py-2 text-neutral-400">
+                            <div className="hidden sm:flex print:flex justify-between items-center px-3 py-2 text-neutral-400">
                                 <span>-</span>
                                 <span className="font-mono">-</span>
                             </div>
@@ -214,12 +214,12 @@ export default function PayslipDetailPage() {
                     </div>
 
                     {/* Subtotals */}
-                    <div className="grid grid-cols-2 divide-x divide-black border-t border-black text-xs font-bold">
-                        <div className="flex justify-between px-3 py-2 bg-white">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-black border-t border-black text-xs font-bold print:grid-cols-2 print:divide-y-0 print:divide-x">
+                        <div className="flex justify-between items-center px-3 py-2 bg-white">
                             <span>GROSS EARNINGS</span>
                             <span className="font-mono text-sm">${payslip.earnings.grossEarnings.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between px-3 py-2 bg-white">
+                        <div className="flex justify-between items-center px-3 py-2 bg-white">
                             <span>TOTAL DEDUCTIONS</span>
                             <span className="font-mono text-sm">${payslip.deductions.totalDeductions.toFixed(2)}</span>
                         </div>
