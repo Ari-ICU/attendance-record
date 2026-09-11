@@ -3,34 +3,68 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Timer } from 'lucide-react';
+import { ArrowLeft, Save, Timer, Users, Clock, Calculator } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
+import { MOCK_EMPLOYEES, MOCK_DEPARTMENTS } from '@/mocks/mockData';
 
 export default function CreateOvertimePage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+
+    const employeeOptions = MOCK_EMPLOYEES.map(emp => ({
+        value: emp.fullName || `${emp.firstName} ${emp.lastName}`,
+        label: `${emp.fullName || `${emp.firstName} ${emp.lastName}`} — ${emp.position} (${emp.department})`
+    }));
+
     const [formData, setFormData] = useState({
-        employeeName: 'Thoeurn Ratha',
-        department: 'Engineering & IT',
+        employeeName: MOCK_EMPLOYEES[0]?.fullName || 'Thoeurn Ratha',
+        department: MOCK_EMPLOYEES[0]?.department || 'Engineering & IT',
         date: new Date().toISOString().split('T')[0],
         startTime: '17:30',
         endTime: '20:30',
         hours: 3.0,
-        project: 'Campus Biometric Server Migration',
-        reason: 'Performing database indexing and API endpoint stress-tests during non-peak campus hours.'
+        project: 'Biometric Cloud Gateway Upgrade Sprint',
+        reason: 'Performing database indexing and API endpoint stress-tests during scheduled maintenance window.'
     });
+
+    const handleEmployeeChange = (employeeName: string) => {
+        const matched = MOCK_EMPLOYEES.find(e => (e.fullName || `${e.firstName} ${e.lastName}`) === employeeName);
+        setFormData(prev => ({
+            ...prev,
+            employeeName,
+            department: matched ? matched.department : prev.department
+        }));
+    };
+
+    const handleTimeChange = (type: 'startTime' | 'endTime', value: string) => {
+        const newForm = { ...formData, [type]: value };
+        // Attempt to calculate hours if valid
+        try {
+            const [startH, startM] = (type === 'startTime' ? value : formData.startTime).split(':').map(Number);
+            const [endH, endM] = (type === 'endTime' ? value : formData.endTime).split(':').map(Number);
+            const startMinutes = startH * 60 + startM;
+            const endMinutes = endH * 60 + endM;
+            if (endMinutes > startMinutes) {
+                const diffHours = parseFloat(((endMinutes - startMinutes) / 60).toFixed(1));
+                newForm.hours = diffHours;
+            }
+        } catch {
+            // Keep default
+        }
+        setFormData(newForm);
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.project.trim()) {
-            toast.error('Project title is required');
+            toast.error('Project / task scope is required');
             return;
         }
 
         setLoading(true);
         setTimeout(() => {
-            toast.success('Overtime submission logged successfully!');
+            toast.success('Overtime submission recorded successfully!');
             router.push('/dashboard/overtime');
         }, 300);
     };
@@ -38,7 +72,7 @@ export default function CreateOvertimePage() {
     return (
         <div className="w-full space-y-6 pb-12 font-sans">
             {/* Header */}
-            <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs">
                 <div className="flex items-center gap-3">
                     <Link
                         href="/dashboard/overtime"
@@ -48,25 +82,26 @@ export default function CreateOvertimePage() {
                     </Link>
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">
-                            Submit Overtime Request
+                            Submit Staff Overtime Request
                         </h1>
                         <p className="text-xs sm:text-sm font-medium text-black mt-0.5">
-                            Log extra working hours and task scopes for management approval
+                            Log extra project working hours and deliverables for supervisor authorization
                         </p>
                     </div>
                 </div>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
+            <form onSubmit={handleSubmit} className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-black">Staff Member</label>
-                        <input
-                            type="text"
+                    {/* Staff Member Selector */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                        <label className="text-xs font-bold text-black">Staff Member / Employee *</label>
+                        <CustomDropdown
                             value={formData.employeeName}
-                            onChange={(e) => setFormData({ ...formData, employeeName: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-black outline-none focus:bg-white focus:border-black transition-colors"
+                            onChange={handleEmployeeChange}
+                            options={employeeOptions}
+                            placeholder="Select employee..."
                         />
                     </div>
 
@@ -77,7 +112,7 @@ export default function CreateOvertimePage() {
                             onChange={(val) => setFormData({ ...formData, department: val })}
                             options={[
                                 { value: 'Engineering & IT', label: 'Engineering & IT' },
-                                { value: 'Academic Core', label: 'Academic Core' },
+                                { value: 'Product & Design', label: 'Product & Design' },
                                 { value: 'Human Resources', label: 'Human Resources' },
                                 { value: 'Operations & Facilities', label: 'Operations & Facilities' }
                             ]}
@@ -95,23 +130,12 @@ export default function CreateOvertimePage() {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-black">Calculated Hours</label>
-                        <input
-                            type="number"
-                            step="0.5"
-                            value={formData.hours}
-                            onChange={(e) => setFormData({ ...formData, hours: parseFloat(e.target.value) || 0 })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        />
-                    </div>
-
-                    <div className="space-y-1.5">
                         <label className="text-xs font-bold text-black">Start Time</label>
                         <input
                             type="time"
                             value={formData.startTime}
-                            onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
+                            onChange={(e) => handleTimeChange('startTime', e.target.value)}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors font-mono"
                         />
                     </div>
 
@@ -120,8 +144,23 @@ export default function CreateOvertimePage() {
                         <input
                             type="time"
                             value={formData.endTime}
-                            onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
+                            onChange={(e) => handleTimeChange('endTime', e.target.value)}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors font-mono"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5 sm:col-span-2">
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-black">Calculated Extra Hours</label>
+                            <span className="text-[11px] font-semibold text-slate-700">Auto-computed from time interval</span>
+                        </div>
+                        <input
+                            type="number"
+                            step="0.5"
+                            min="0.5"
+                            value={formData.hours}
+                            onChange={(e) => setFormData({ ...formData, hours: parseFloat(e.target.value) || 0 })}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors font-mono"
                         />
                     </div>
 
@@ -132,8 +171,8 @@ export default function CreateOvertimePage() {
                             required
                             value={formData.project}
                             onChange={(e) => setFormData({ ...formData, project: e.target.value })}
-                            placeholder="e.g. Q3 Infrastructure Cloud Migration Sprint"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
+                            placeholder="e.g. Q3 Cloud Infrastructure Migration Sprint"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-black placeholder:text-slate-400 outline-none focus:bg-white focus:border-black transition-colors"
                         />
                     </div>
 
@@ -143,7 +182,8 @@ export default function CreateOvertimePage() {
                             rows={3}
                             value={formData.reason}
                             onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                            className="w-full p-4 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors resize-none"
+                            placeholder="Detail deliverables and justification for extra hours..."
+                            className="w-full p-4 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-black placeholder:text-slate-400 outline-none focus:bg-white focus:border-black transition-colors resize-none"
                         />
                     </div>
                 </div>
@@ -161,7 +201,7 @@ export default function CreateOvertimePage() {
                         className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-black hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50 cursor-pointer"
                     >
                         <Save size={16} />
-                        <span>{loading ? 'Submitting...' : 'Submit Overtime'}</span>
+                        <span>{loading ? 'Submitting...' : 'Submit Overtime Request'}</span>
                     </button>
                 </div>
             </form>

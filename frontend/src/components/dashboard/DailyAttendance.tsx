@@ -62,7 +62,7 @@ export default function DailyAttendance() {
                         </span>
                     </h2>
                     <p className="text-xs text-slate-400 mt-0.5">
-                        Live classroom check-in feed · Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        Live workforce check-in telemetry feed · Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                 </div>
 

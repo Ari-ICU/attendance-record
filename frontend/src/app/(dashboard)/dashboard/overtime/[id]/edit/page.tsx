@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
-import { MOCK_OVERTIME, OvertimeItem } from '@/mocks/mockData';
+import { MOCK_OVERTIME, MOCK_EMPLOYEES, OvertimeItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 
@@ -15,10 +15,15 @@ export default function EditOvertimePage() {
 
     const current = MOCK_OVERTIME.find(o => o.id === id) || MOCK_OVERTIME[0];
 
+    const employeeOptions = MOCK_EMPLOYEES.map(emp => ({
+        value: emp.fullName || `${emp.firstName} ${emp.lastName}`,
+        label: `${emp.fullName || `${emp.firstName} ${emp.lastName}`} — ${emp.position} (${emp.department})`
+    }));
+
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         employeeName: current.employeeName,
-        department: current.department,
+        department: current.department === 'Academic Core' ? 'Product & Design' : current.department,
         date: current.date,
         startTime: current.startTime,
         endTime: current.endTime,
@@ -27,6 +32,15 @@ export default function EditOvertimePage() {
         reason: current.reason,
         status: current.status
     });
+
+    const handleEmployeeChange = (employeeName: string) => {
+        const matched = MOCK_EMPLOYEES.find(e => (e.fullName || `${e.firstName} ${e.lastName}`) === employeeName);
+        setFormData(prev => ({
+            ...prev,
+            employeeName,
+            department: matched ? matched.department : prev.department
+        }));
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,13 +76,13 @@ export default function EditOvertimePage() {
             {/* Form */}
             <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-black">Staff Member</label>
-                        <input
-                            type="text"
+                    <div className="space-y-1.5 sm:col-span-2">
+                        <label className="text-xs font-bold text-black">Staff Member / Employee *</label>
+                        <CustomDropdown
                             value={formData.employeeName}
-                            onChange={(e) => setFormData({ ...formData, employeeName: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-black outline-none focus:bg-white focus:border-black transition-colors"
+                            onChange={handleEmployeeChange}
+                            options={employeeOptions}
+                            placeholder="Select employee..."
                         />
                     </div>
 
@@ -79,7 +93,7 @@ export default function EditOvertimePage() {
                             onChange={(val) => setFormData({ ...formData, department: val })}
                             options={[
                                 { value: 'Engineering & IT', label: 'Engineering & IT' },
-                                { value: 'Academic Core', label: 'Academic Core' },
+                                { value: 'Product & Design', label: 'Product & Design' },
                                 { value: 'Human Resources', label: 'Human Resources' },
                                 { value: 'Operations & Facilities', label: 'Operations & Facilities' }
                             ]}
