@@ -33,30 +33,30 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
     return (
         <div className="space-y-4">
             {/* Search and Filter Bar */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-white border border-slate-200/80 p-3 sm:p-4 rounded-2xl shadow-xs">
+            <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-white border border-slate-200 p-3 sm:p-4 rounded-2xl shadow-xs">
                 <div className="relative w-full sm:w-80">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={15} />
                     <input
                         type="text"
                         placeholder="Search by name, ID, or class..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none transition-colors"
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-black font-semibold placeholder-slate-500 focus:bg-white focus:border-blue-500 outline-hidden transition-colors"
                     />
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <span className="text-xs font-semibold text-slate-400 hidden sm:inline">
+                    <span className="text-xs font-bold text-slate-800 hidden sm:inline">
                         Showing {filteredEmployees.length} of {employees.length}
                     </span>
                 </div>
             </div>
 
             {/* Table Card */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
-                            <tr className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black text-black uppercase tracking-wider">
                                 <th className="px-5 py-3.5">Student / Staff Member</th>
                                 <th className="px-5 py-3.5">Class / Department</th>
                                 <th className="px-5 py-3.5">Contact Line</th>
@@ -102,22 +102,22 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                                             </td>
 
                                             <td className="px-5 py-3.5 whitespace-nowrap">
-                                                <div className="font-semibold text-slate-800 text-xs">{employee.position || 'Student'}</div>
-                                                <div className="text-[11px] text-slate-400">{deptName || 'Academic Core'}</div>
+                                                <div className="font-bold text-black text-xs">{employee.position || 'Student'}</div>
+                                                <div className="text-[11px] text-slate-600 font-medium">{deptName || 'Academic Core'}</div>
                                             </td>
 
                                             <td className="px-5 py-3.5 whitespace-nowrap">
-                                                <div className="text-xs text-slate-700">{employee.email}</div>
-                                                <div className="text-[11px] text-slate-400">{employee.phone || '--'}</div>
+                                                <div className="text-xs font-semibold text-slate-900">{employee.email}</div>
+                                                <div className="text-[11px] text-slate-600 font-medium">{employee.phone || '--'}</div>
                                             </td>
 
                                             <td className="px-5 py-3.5 whitespace-nowrap">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
                                                     hasBio
-                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                                                        : 'bg-amber-50 text-amber-800 border border-amber-300'
                                                 }`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${hasBio ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${hasBio ? 'bg-emerald-600' : 'bg-amber-600'}`} />
                                                     <span>{hasBio ? 'Face Bio Active' : 'Face Pending'}</span>
                                                 </span>
                                             </td>
@@ -126,21 +126,21 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                                                 <div className="flex items-center justify-end gap-1.5">
                                                     <Link
                                                         href={`/dashboard/management/employee/${employee._id}`}
-                                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors"
                                                         title="View Profile"
                                                     >
                                                         <Eye size={14} />
                                                     </Link>
                                                 <button
                                                     onClick={() => onEdit(employee)}
-                                                    className="p-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                                                    className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors cursor-pointer"
                                                     title="Edit Record"
                                                 >
                                                     <Edit2 size={14} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(employee._id, employee.fullName || `${employee.firstName} ${employee.lastName}`)}
-                                                    className="p-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-600 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors"
+                                                    className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer"
                                                     title="Delete Record"
                                                 >
                                                     <Trash2 size={14} />
@@ -152,9 +152,9 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="py-12 text-center text-slate-400">
-                                        <User size={28} className="mx-auto mb-2 opacity-30 text-slate-400" />
-                                        <p className="text-xs font-medium">No personnel or students found matching your search</p>
+                                    <td colSpan={5} className="py-14 text-center text-slate-700">
+                                        <User size={32} className="mx-auto mb-2 opacity-50 text-slate-600" />
+                                        <p className="text-sm font-bold text-slate-900">No personnel or students found matching your search</p>
                                     </td>
                                 </tr>
                             )}
