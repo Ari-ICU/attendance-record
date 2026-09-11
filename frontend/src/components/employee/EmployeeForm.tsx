@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { getFullImageUrl } from '@/utils/url.utils';
 import { DepartmentService } from '@/services/department.service';
 import { Department } from '@/types/department.types';
-
+import { User, Check, RotateCcw, CreditCard, Building } from 'lucide-react';
 
 interface EmployeeFormProps {
     initialData?: Employee | null;
@@ -37,7 +37,6 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
         }
     });
 
-
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [departments, setDepartments] = useState<Department[]>([]);
 
@@ -54,7 +53,6 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
         };
         fetchDepartments();
     }, []);
-
 
     const formatDateForInput = (dateString?: string) => {
         if (!dateString) return '';
@@ -103,7 +101,6 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
 
-        // Handle numeric fields
         if (type === 'number') {
             const numValue = value === '' ? 0 : parseFloat(value);
             setFormData({ ...formData, [name]: numValue });
@@ -153,273 +150,264 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
         onSubmit(payload);
     };
 
-
     return (
-        <div className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
-            <div className="w-full max-w-4xl glass-pane rounded-3xl shadow-2xl overflow-hidden border border-white/10 relative group">
-                {/* Decorative glow */}
-                <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full transition-all duration-500 group-hover:bg-blue-500/20" />
-                <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full transition-all duration-500 group-hover:bg-indigo-500/20" />
+        <div className="max-w-4xl mx-auto py-2">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm">
+                <div className="mb-8 border-b border-slate-800 pb-5">
+                    <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                        {initialData ? 'Edit' : 'Add New'} {formData.type === 'student' ? 'Student' : 'Employee'} Profile
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                        Enter the personal, employment, and financial details for this record.
+                    </p>
+                </div>
 
-                <div className="p-8 sm:p-12 relative z-10">
-                    <div className="flex justify-between items-center mb-12">
-                        <div>
-                            <h2 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-slate-500 tracking-tight">
-                                {initialData ? 'Edit' : 'Add New'} {formData.type === 'student' ? 'Student' : 'Employee'}
-                            </h2>
-                            <p className="text-slate-400 mt-2 font-medium">
-                                Enter the information to {initialData ? 'update' : 'create'} the profile.
-                            </p>
+                {error && (
+                    <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start gap-3">
+                        <div className="flex-1">
+                            <h3 className="text-xs font-semibold text-rose-400 uppercase">Submission Error</h3>
+                            <p className="text-xs text-rose-300 mt-0.5">{error}</p>
+                        </div>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
+                        {/* Avatar photo upload */}
+                        <div className="flex flex-col items-center gap-3 w-full md:w-44 shrink-0">
+                            <div className="w-36 h-36 rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center relative group">
+                                {imagePreview ? (
+                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="flex flex-col items-center text-slate-500">
+                                        <User className="w-10 h-10 mb-1" />
+                                        <span className="text-[11px] font-medium">No Photo</span>
+                                    </div>
+                                )}
+                                <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer text-xs font-semibold text-white">
+                                    Change
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        className="hidden"
+                                    />
+                                </label>
+                            </div>
+                            <span className="text-[10px] text-slate-500">JPG, PNG up to 3MB</span>
+                        </div>
+
+                        {/* Form Inputs Grid */}
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">First Name <span className="text-rose-400">*</span></label>
+                                <input
+                                    type="text"
+                                    name="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="First name"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Last Name <span className="text-rose-400">*</span></label>
+                                <input
+                                    type="text"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="Last name"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Email Address <span className="text-rose-400">*</span></label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="name@company.com"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Phone Number <span className="text-rose-400">*</span></label>
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="+855 00 000 000"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors font-mono"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Position / Role <span className="text-rose-400">*</span></label>
+                                <input
+                                    type="text"
+                                    name="position"
+                                    value={formData.position}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="e.g. Senior Engineer"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Department</label>
+                                <select
+                                    name="department"
+                                    value={formData.department}
+                                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
+                                >
+                                    <option value="">Select Department</option>
+                                    {departments.map((d) => (
+                                        <option key={d._id} value={d.name}>{d.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Date of Joining <span className="text-rose-400">*</span></label>
+                                <input
+                                    type="date"
+                                    name="dateOfJoining"
+                                    value={formData.dateOfJoining}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Entity Type <span className="text-rose-400">*</span></label>
+                                <select
+                                    name="type"
+                                    value={formData.type}
+                                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
+                                >
+                                    <option value="employee">Employee</option>
+                                    <option value="student">Student</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Monthly Base Salary ($)</label>
+                                <input
+                                    type="number"
+                                    name="baseSalary"
+                                    value={formData.baseSalary || ''}
+                                    onChange={handleChange}
+                                    placeholder="0.00"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors font-mono"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Hourly Rate ($)</label>
+                                <input
+                                    type="number"
+                                    name="hourlyRate"
+                                    value={formData.hourlyRate || ''}
+                                    onChange={handleChange}
+                                    placeholder="0.00"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors font-mono"
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    {error && (
-                        <div className="mb-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
-                            <div className="p-2 bg-rose-500/20 rounded-xl text-rose-400">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                    {/* Bank Details Section */}
+                    <div className="pt-6 border-t border-slate-800">
+                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-blue-400" />
+                            Bank & Payment Information
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Bank Name</label>
+                                <select
+                                    name="bank.bankName"
+                                    value={formData.bankDetails?.bankName || ''}
+                                    onChange={(e) => handleChange(e as any)}
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors"
+                                >
+                                    <option value="">Select Bank</option>
+                                    <option value="ABA">ABA Bank</option>
+                                    <option value="Acleda">Acleda Bank</option>
+                                    <option value="Wing">Wing Bank</option>
+                                    <option value="Sathapana">Sathapana Bank</option>
+                                    <option value="Other">Other</option>
+                                </select>
                             </div>
-                            <div className="flex-1">
-                                <h3 className="text-sm font-bold text-rose-400 uppercase tracking-widest">Submission Error</h3>
-                                <p className="text-sm text-rose-200/70 mt-1 font-medium leading-relaxed">{error}</p>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Account Holder Name</label>
+                                <input
+                                    type="text"
+                                    name="bank.accountName"
+                                    value={formData.bankDetails?.accountName || ''}
+                                    onChange={(e) => handleChange(e as any)}
+                                    placeholder="e.g. JOHN DOE"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors font-medium uppercase"
+                                />
                             </div>
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-10">
-                        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-                            {/* Left Column: Image Upload */}
-                            <div className="flex flex-col items-center gap-6 lg:w-1/3">
-                                <div className="relative group/avatar">
-                                    <div className={`
-                                        w-48 h-48 rounded-3xl flex items-center justify-center overflow-hidden
-                                        bg-slate-900 border-2 border-white/5 shadow-2xl
-                                        transition-all duration-500 group-hover/avatar:border-blue-500/50 group-hover/avatar:scale-[1.02]
-                                        relative
-                                    `}>
-                                        {imagePreview ? (
-                                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover transition-transform duration-700 group-hover/avatar:scale-110" />
-                                        ) : (
-                                            <div className="flex flex-col items-center text-slate-500 group-hover/avatar:text-blue-400 transition-colors">
-                                                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-3">
-                                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                    </svg>
-                                                </div>
-                                                <span className="text-xs font-bold uppercase tracking-widest">Upload Photo</span>
-                                            </div>
-                                        )}
-
-                                        {/* Overlay for file input */}
-                                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover/avatar:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-sm">
-                                            <label className="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-xl transition-all transform hover:scale-105 active:scale-95">
-                                                Change
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleImageChange}
-                                                    className="hidden"
-                                                />
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <p className="text-[10px] uppercase font-bold tracking-widest text-center mt-4 text-slate-500">
-                                        JPEG, PNG, GIF • Max 3MB
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Right Column: Form Fields */}
-                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                {[
-                                    { label: 'First Name', name: 'firstName', type: 'text', required: true, placeholder: 'e.g. John' },
-                                    { label: 'Last Name', name: 'lastName', type: 'text', required: true, placeholder: 'e.g. Doe' },
-                                    { label: 'Email Address', name: 'email', type: 'email', required: true, placeholder: 'john.doe@company.com' },
-                                    { label: 'Phone Number', name: 'phone', type: 'tel', required: true, placeholder: '+1 (555) 000-0000' },
-                                    { label: 'Position / Role', name: 'position', type: 'text', required: true, placeholder: 'Software Engineer' },
-                                    {
-                                        label: 'Department',
-                                        name: 'department',
-                                        type: 'select',
-                                        required: false,
-                                        options: [
-                                            { label: 'Select Department', value: '' },
-                                            ...departments.map(d => ({ label: d.name, value: d.name }))
-                                        ]
-                                    },
-                                    { label: 'Date of Joining', name: 'dateOfJoining', type: 'date', required: true, placeholder: '' },
-                                    {
-                                        label: 'Entity Type',
-                                        name: 'type',
-                                        type: 'select',
-                                        required: true,
-                                        options: [
-                                            { label: 'Employee', value: 'employee' },
-                                            { label: 'Student', value: 'student' }
-                                        ]
-                                    },
-                                    { label: 'Base Salary ($)', name: 'baseSalary', type: 'number', required: false, placeholder: '0.00' },
-                                    { label: 'Hourly Rate ($)', name: 'hourlyRate', type: 'number', required: false, placeholder: '0.00' },
-                                    {
-                                        label: 'Currency',
-                                        name: 'currency',
-                                        type: 'select',
-                                        required: true,
-                                        options: [
-                                            { label: 'USD', value: 'USD' },
-                                            { label: 'EUR', value: 'EUR' },
-                                            { label: 'GBP', value: 'GBP' },
-                                            { label: 'JPY', value: 'JPY' },
-                                            { label: 'CAD', value: 'CAD' },
-                                            { label: 'AUD', value: 'AUD' },
-                                        ]
-                                    },
-
-
-                                ].map((field) => (
-                                    <div key={field.name} className={`${field.name === 'dateOfJoining' || field.name === 'department' ? 'col-span-1' : 'col-span-1'} space-y-2`}>
-                                        <label htmlFor={field.name} className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
-                                            {field.label} {field.required && <span className="text-rose-500">*</span>}
-                                        </label>
-                                        {field.type === 'select' ? (
-                                            <select
-                                                name={field.name}
-                                                id={field.name}
-                                                value={(formData[field.name as keyof EmployeeCreateData] as any) || ''}
-                                                onChange={(e) => setFormData({ ...formData, [e.target.name]: e.target.value })}
-                                                required={field.required}
-                                                className="
-                                                    w-full px-5 py-4 rounded-2xl bg-slate-950/50 
-                                                    border border-white/5 text-white placeholder-slate-600
-                                                    focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 
-                                                    transition-all duration-300 hover:bg-slate-950/80
-                                                    appearance-none cursor-pointer
-                                                "
-                                            >
-                                                {field.options?.map((opt: any) => {
-                                                    const label = typeof opt === 'object' ? opt.label : opt;
-                                                    const value = typeof opt === 'object' ? opt.value : opt;
-                                                    return (
-                                                        <option key={value} value={value} className="bg-slate-900 capitalize">
-                                                            {label}
-                                                        </option>
-                                                    );
-                                                })}
-                                            </select>
-
-                                        ) : (
-                                            <input
-                                                type={field.type}
-                                                name={field.name}
-                                                id={field.name}
-                                                value={(formData[field.name as keyof EmployeeCreateData] as any) ?? ''}
-                                                onChange={handleChange}
-                                                required={field.required}
-                                                placeholder={field.placeholder}
-                                                className="
-                                                    w-full px-5 py-4 rounded-2xl bg-slate-950/50 
-                                                    border border-white/5 text-white placeholder-slate-600
-                                                    focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 
-                                                    transition-all duration-300 hover:bg-slate-950/80
-                                                    autofill:shadow-[0_0_0px_1000px_#020617_inset] autofill:text-fill-white
-                                                "
-                                            />
-                                        )}
-
-                                    </div>
-                                ))}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Account Number</label>
+                                <input
+                                    type="text"
+                                    name="bank.accountNumber"
+                                    value={formData.bankDetails?.accountNumber || ''}
+                                    onChange={(e) => handleChange(e as any)}
+                                    placeholder="000 000 000"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-colors font-mono"
+                                />
                             </div>
                         </div>
+                    </div>
 
-                        {/* Bank Details Section */}
-                        <div className="pt-8 border-t border-white/5">
-                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                </svg>
-                                Bank Transfer Details
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Bank Name</label>
-                                    <select
-                                        name="bank.bankName"
-                                        value={formData.bankDetails?.bankName || ''}
-                                        onChange={(e) => handleChange(e as any)}
-                                        className="w-full px-5 py-4 rounded-2xl bg-slate-950/50 border border-white/5 text-white appearance-none cursor-pointer focus:outline-none focus:border-blue-500/50 transition-all"
-                                    >
-                                        <option value="">Select Bank</option>
-                                        <option value="ABA">ABA Bank</option>
-                                        <option value="Acleda">Acleda Bank</option>
-                                        <option value="Wing">Wing Bank</option>
-                                        <option value="Sathapana">Sathapana Bank</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Account Holder Name</label>
-                                    <input
-                                        type="text"
-                                        name="bank.accountName"
-                                        value={formData.bankDetails?.accountName || ''}
-                                        onChange={(e) => handleChange(e as any)}
-                                        placeholder="e.g. JOHN DOE"
-                                        className="w-full px-5 py-4 rounded-2xl bg-slate-950/50 border border-white/5 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 transition-all font-mono"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Account Number</label>
-                                    <input
-                                        type="text"
-                                        name="bank.accountNumber"
-                                        value={formData.bankDetails?.accountNumber || ''}
-                                        onChange={(e) => handleChange(e as any)}
-                                        placeholder="000 000 000"
-                                        className="w-full px-5 py-4 rounded-2xl bg-slate-950/50 border border-white/5 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 transition-all font-mono"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Footer Actions */}
-                        <div className="flex items-center justify-end gap-x-4 pt-10 border-t border-white/5">
-                            <button
-                                type="button"
-                                onClick={onCancel}
-                                className="px-8 py-4 rounded-2xl font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all active:scale-95"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className={`
-                                    px-10 py-4 rounded-2xl font-bold text-white shadow-xl shadow-blue-500/20
-                                    bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500
-                                    transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300
-                                    flex items-center gap-2
-                                    ${isSubmitting ? 'opacity-70 cursor-not-allowed grayscale' : ''}
-                                `}
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        <span>Processing...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>{initialData ? 'Save Changes' : `Create ${formData.type === 'student' ? 'Student' : 'Employee'}`}</span>
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    {/* Footer Actions */}
+                    <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-800">
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="px-6 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <RotateCcw className="w-4 h-4 animate-spin" />
+                                    <span>Saving...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>{initialData ? 'Save Changes' : `Create ${formData.type === 'student' ? 'Student' : 'Employee'}`}</span>
+                                    <Check className="w-4 h-4" />
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
 }
+

@@ -18,14 +18,16 @@ import {
     Briefcase,
     PlusCircle,
     X,
-    Zap
+    Zap,
+    ChevronLeft,
+    ChevronRight,
+    RotateCcw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Employee } from '@/types/employee.types';
 import { getFullImageUrl } from '@/utils/url.utils';
 import { PayrollService } from '@/services/payroll.service';
 import toast from 'react-hot-toast';
-
 
 export default function PayrollPage() {
     const [loading, setLoading] = useState(true);
@@ -73,7 +75,6 @@ export default function PayrollPage() {
         }
     };
 
-
     useEffect(() => {
         fetchData();
     }, []);
@@ -101,9 +102,9 @@ export default function PayrollPage() {
     };
 
     const statCards = [
-        { label: 'Owner Executive Vault', value: `$${(stats.masterBalance || 0).toLocaleString()}`, icon: Briefcase, color: 'text-indigo-400', bg: 'bg-indigo-500/10', trend: 'Master Fund' },
-        { label: 'Disbursed', value: `$${stats.disbursed.toLocaleString()}`, icon: Banknote, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: 'Secured' },
-        { label: 'Payroll Expense', value: `$${stats.totalPayroll.toLocaleString()}`, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: 'Monthly Burn' },
+        { label: 'Executive Vault', value: `$${(stats.masterBalance || 0).toLocaleString()}`, icon: Briefcase, color: 'text-indigo-400', bg: 'bg-indigo-500/10', trend: 'Master Fund' },
+        { label: 'Disbursed Funds', value: `$${stats.disbursed.toLocaleString()}`, icon: Banknote, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: 'Paid Out' },
+        { label: 'Payroll Expense', value: `$${stats.totalPayroll.toLocaleString()}`, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: 'Monthly Total' },
         { label: 'Owner Residual', value: `$${(stats.ownerResidual || 0).toLocaleString()}`, icon: Wallet, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: 'Remaining' },
     ];
 
@@ -224,7 +225,6 @@ export default function PayrollPage() {
         const approvedOnly = ledger.filter(item => item.payroll.status === 'approved' || item.payroll.status === 'disbursed');
         if (approvedOnly.length === 0) return toast.error('No approved payroll to export');
 
-        // ABA Batch Format: Debit Account, Credit Account, Amount, Currency, Remark, Beneficiary Name
         const headers = ['Debit Account', 'Credit Account', 'Amount', 'Currency', 'Remark', 'Beneficiary Name'];
 
         const rows = approvedOnly.map(item => [
@@ -267,309 +267,268 @@ export default function PayrollPage() {
         setShowPayslipModal(true);
     };
 
-
     return (
-        <div className="space-y-8 pb-12">
-            <div className="print:hidden space-y-8">
+        <div className="space-y-6 pb-12">
+            <div className="print:hidden space-y-6">
                 {/* Header Area */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                    <div className="space-y-1">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-2">
-                            <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                            <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Secured Transaction Environment</span>
-                        </div>
-                        <h1 className="text-4xl font-black text-white tracking-tight italic">Payroll Liquidity</h1>
-                        <p className="text-slate-400 font-medium tracking-tight">Enterprise fund distribution and compensation analytics</p>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
+                    <div>
+                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Payroll & Financial Management</h1>
+                        <p className="text-xs sm:text-sm text-slate-400 mt-1">Enterprise salary disbursement, balance tracking, and ledger records</p>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             onClick={() => setShowBankSettings(true)}
-                            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/5 text-slate-400 hover:text-white transition-all border border-white/10"
-                            title="Bank Connectivity"
+                            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors"
+                            title="Bank Settings"
                         >
-                            <ShieldCheck className={`w-5 h-5 ${bankDetails.accountNumber ? 'text-emerald-400' : 'text-slate-500'}`} />
+                            <ShieldCheck className={`w-4 h-4 ${bankDetails.accountNumber ? 'text-emerald-400' : 'text-slate-400'}`} />
                         </button>
                         <button
                             onClick={handleGenerate}
                             disabled={refreshing}
-                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 text-slate-400 font-black text-xs tracking-widest hover:bg-white/10 transition-all border border-white/10 uppercase"
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors disabled:opacity-50"
                         >
-                            {refreshing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                            {refreshing ? <RotateCcw className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
                             Generate Cycle
                         </button>
                         <button
                             onClick={() => setShowDepositModal(true)}
-                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 text-indigo-400 font-black text-xs tracking-widest hover:bg-white/10 transition-all border border-indigo-500/20 uppercase"
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold border border-indigo-500/30 transition-colors"
                         >
-                            <PlusCircle className="w-4 h-4" />
+                            <PlusCircle className="w-3.5 h-3.5" />
                             Deposit Funds
                         </button>
                         <button
                             onClick={handleApprove}
                             disabled={isApproving}
-                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 text-amber-400 font-black text-xs tracking-widest hover:bg-white/10 transition-all border border-amber-500/20 uppercase"
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 text-xs font-semibold border border-amber-500/30 transition-colors disabled:opacity-50"
                         >
-                            {isApproving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                            Approve Cycle
+                            {isApproving ? <RotateCcw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                            Approve
                         </button>
                         <button
                             onClick={handleDisburse}
                             disabled={isDisbursing}
-                            className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-blue-600 text-white font-black text-xs tracking-[0.2em] hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/30 active:scale-95 disabled:opacity-50 uppercase italic"
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
                         >
-                            {isDisbursing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                            Execute Multi-Pay
+                            {isDisbursing ? <RotateCcw className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                            Disburse
                         </button>
                     </div>
-
                 </div>
 
                 {/* Financial Overview Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {statCards.map((stat, index) => (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.1 }}
+                        <div
                             key={index}
-                            className="glass-pane p-6 rounded-3xl border border-white/10 relative group hover:border-blue-500/30 transition-all hover:shadow-2xl hover:shadow-blue-500/5"
+                            className="bg-slate-900 border border-slate-800 p-5 rounded-2xl"
                         >
-                            <div className="flex items-center justify-between mb-4">
-                                <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} border border-white/5`}>
-                                    <stat.icon className="w-6 h-6" />
+                            <div className="flex items-center justify-between mb-3">
+                                <div className={`p-2.5 rounded-xl ${stat.bg} ${stat.color}`}>
+                                    <stat.icon className="w-5 h-5" />
                                 </div>
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</span>
-                                    <div className="flex items-center gap-1 text-[10px] font-black text-emerald-400">
-                                        <ArrowUpRight className="w-3 h-3" />
-                                        {stat.trend}
-                                    </div>
-                                </div>
+                                <span className="text-xs font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">
+                                    {stat.trend}
+                                </span>
                             </div>
-                            <div className="text-3xl font-black text-white tracking-tight">{stat.value}</div>
-                        </motion.div>
+                            <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{stat.value}</div>
+                            <div className="text-xs text-slate-400 mt-1">{stat.label}</div>
+                        </div>
                     ))}
                 </div>
 
-
                 {/* Main Ledger */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="glass-pane rounded-[2.5rem] border border-white/10 overflow-hidden"
-                >
-                    <div className="p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/[0.02]">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 text-blue-400">
-                                <Wallet className="w-6 h-6" />
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                    <div className="p-4 sm:p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/40">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400">
+                                <Wallet className="w-5 h-5" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-black text-white uppercase tracking-widest italic">Compensation Ledger</h2>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Cycle: February 2026</p>
+                                <h2 className="text-sm sm:text-base font-bold text-white">Compensation Ledger</h2>
+                                <p className="text-xs text-slate-400">Payroll cycle breakdown</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                        <div className="flex items-center gap-2">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                                 <input
                                     type="text"
-                                    placeholder="Search Ledger..."
+                                    placeholder="Search by name..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="bg-slate-950/50 border border-white/5 text-white pl-11 pr-4 py-3 rounded-2xl outline-none focus:border-blue-500/50 transition-all w-64 text-[10px] font-black uppercase tracking-[0.2em] placeholder:text-slate-700"
+                                    className="bg-slate-950 border border-slate-800 text-slate-100 pl-9 pr-3 py-1.5 rounded-xl outline-none focus:border-blue-500 transition-colors w-48 sm:w-60 text-xs"
                                 />
                             </div>
                             <button
                                 onClick={handleDownloadCSV}
-                                className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+                                className="p-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition-colors"
                                 title="Export to CSV"
                             >
-                                <Download className="w-5 h-5" />
+                                <Download className="w-4 h-4" />
                             </button>
                             <button
                                 onClick={handleExportABA}
-                                className="flex items-center gap-2 px-4 py-3 bg-indigo-600/10 border border-indigo-500/30 rounded-2xl text-indigo-400 hover:bg-indigo-600/20 transition-all font-black text-[10px] uppercase tracking-widest"
-                                title="Export ABA iBusiness Batch"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-indigo-300 hover:bg-indigo-600/30 transition-colors text-xs font-semibold"
+                                title="Export ABA Batch"
                             >
-                                <CreditCard className="w-4 h-4" />
-                                ABA Batch
+                                <CreditCard className="w-3.5 h-3.5" />
+                                ABA
                             </button>
                         </div>
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[1000px] lg:min-w-full">
+                        <table className="w-full min-w-[850px] text-left">
                             <thead>
-                                <tr className="bg-white/[0.01]">
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Personnel Agent</th>
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Base Compensation</th>
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Compliance Score</th>
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Bank Destination</th>
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Entity Status</th>
-                                    <th className="px-8 py-5 text-right text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Protocol</th>
+                                <tr className="bg-slate-950/60 border-b border-slate-800">
+                                    <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Employee</th>
+                                    <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Base Pay</th>
+                                    <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Bank Details</th>
+                                    <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Compliance</th>
+                                    <th className="px-5 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                                    <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Payslip</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/[0.02]">
+                            <tbody className="divide-y divide-slate-800/60">
                                 {loading ? (
                                     [1, 2, 3].map(i => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan={5} className="px-8 py-10">
-                                                <div className="h-12 bg-white/5 rounded-2xl w-full" />
+                                            <td colSpan={6} className="px-5 py-4">
+                                                <div className="h-10 bg-slate-800 rounded-lg w-full" />
                                             </td>
                                         </tr>
                                     ))
-                                ) : paginatedLedger.map((item, index) => (
-                                    <tr key={item.employee._id} className="hover:bg-white/[0.02] transition-colors group">
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className="relative">
-                                                    <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-white/10 overflow-hidden shadow-2xl">
-                                                        {item.employee.photoUrl ? (
-                                                            <img
-                                                                src={getFullImageUrl(item.employee.photoUrl)}
-                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                                                alt=""
-                                                            />
-                                                        ) : <UserCircle className="w-full h-full text-slate-700 p-2" />}
-                                                    </div>
-                                                    <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-900 shadow-[0_0_10px_rgba(16,185,129,0.5)] 
-                                                    ${item.payroll.status === 'disbursed' ? 'bg-emerald-500' :
-                                                            item.payroll.status === 'approved' ? 'bg-blue-500' :
-                                                                'bg-amber-500'}`} />
+                                ) : paginatedLedger.map((item) => (
+                                    <tr key={item.employee._id} className="hover:bg-slate-800/40 transition-colors">
+                                        <td className="px-5 py-3.5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center text-slate-400 font-semibold text-xs">
+                                                    {item.employee.photoUrl ? (
+                                                        <img
+                                                            src={getFullImageUrl(item.employee.photoUrl)}
+                                                            className="w-full h-full object-cover"
+                                                            alt=""
+                                                        />
+                                                    ) : <UserCircle className="w-5 h-5 text-slate-400" />}
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-white leading-tight mb-0.5">{item.employee.firstName} {item.employee.lastName}</p>
-                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{item.employee.position || 'Specialist'}</p>
+                                                    <p className="text-xs sm:text-sm font-semibold text-white">{item.employee.firstName} {item.employee.lastName}</p>
+                                                    <p className="text-[11px] text-slate-400">{item.employee.position || 'Specialist'}</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div className="space-y-1">
-                                                <p className="text-sm font-black text-white">${item.payroll.baseAmount.toLocaleString()}.00</p>
+                                        <td className="px-5 py-3.5">
+                                            <div className="space-y-0.5">
+                                                <p className="text-xs sm:text-sm font-semibold text-white">${item.payroll.baseAmount?.toLocaleString() || 0}.00</p>
                                                 {item.payroll.deductions > 0 && (
-                                                    <p className="text-[10px] font-bold text-rose-400 uppercase tracking-tighter">
-                                                        -${item.payroll.deductions.toFixed(2)} (Late: ${item.payroll.lateDeductions || 0})
+                                                    <p className="text-[10px] text-rose-400 font-medium">
+                                                        -${item.payroll.deductions.toFixed(2)} deductions
                                                     </p>
                                                 )}
-                                                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">Final Compensation</p>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] font-black text-white">{item.employee.bankDetails?.bankName || 'CASH'}</p>
-                                                <p className="text-[9px] font-bold text-slate-500 font-mono">{item.employee.bankDetails?.accountNumber || 'Manual execution'}</p>
+                                        <td className="px-5 py-3.5">
+                                            <div className="space-y-0.5 text-xs">
+                                                <p className="font-semibold text-slate-200">{item.employee.bankDetails?.bankName || 'CASH'}</p>
+                                                <p className="text-slate-400 font-mono text-[11px]">{item.employee.bankDetails?.accountNumber || 'Manual Execution'}</p>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex-1 max-w-[100px] h-1.5 rounded-full bg-white/5 overflow-hidden">
-                                                    <motion.div
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${item.payroll.complianceScore}%` }}
-                                                        transition={{ duration: 1, delay: index * 0.1 }}
-                                                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                                        <td className="px-5 py-3.5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                                                    <div
+                                                        style={{ width: `${item.payroll.complianceScore || 0}%` }}
+                                                        className="h-full bg-blue-500"
                                                     />
                                                 </div>
-                                                <span className="text-[10px] font-black text-slate-400">{item.payroll.complianceScore}%</span>
+                                                <span className="text-xs font-semibold text-slate-300">{item.payroll.complianceScore || 0}%</span>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 
-                                                ${item.payroll.status === 'disbursed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                                                        item.payroll.status === 'approved' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-                                                            'bg-amber-500/10 border-amber-500/20 text-amber-400'}`}>
-                                                    <div className={`w-1.5 h-1.5 rounded-full animate-pulse 
-                                                    ${item.payroll.status === 'disbursed' ? 'bg-emerald-400' :
-                                                            item.payroll.status === 'approved' ? 'bg-blue-400' :
-                                                                'bg-amber-400'}`} />
-                                                    {item.payroll.status === 'disbursed' ? 'Verified' :
-                                                        item.payroll.status === 'approved' ? 'Approved' :
-                                                            'Pending'}
-                                                </div>
-                                            </div>
+                                        <td className="px-5 py-3.5">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold capitalize border ${
+                                                item.payroll.status === 'disbursed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                                item.payroll.status === 'approved' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                                'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                                            }`}>
+                                                {item.payroll.status === 'disbursed' ? 'Disbursed' :
+                                                item.payroll.status === 'approved' ? 'Approved' : 'Pending'}
+                                            </span>
                                         </td>
-                                        <td className="px-8 py-6 text-right">
+                                        <td className="px-5 py-3.5 text-right">
                                             <button
                                                 onClick={() => handleViewPayslip(item)}
-                                                className="p-2.5 rounded-xl bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+                                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
                                                 title="View Payslip"
                                             >
-                                                <FileText className="w-5 h-5" />
+                                                <FileText className="w-4 h-4" />
                                             </button>
                                         </td>
                                     </tr>
                                 ))}
-
                             </tbody>
                         </table>
                     </div>
 
                     {/* Footer Controls */}
-                    <div className="p-8 bg-white/[0.01] border-t border-white/5 flex items-center justify-between">
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Ledger contains {filteredLedger.length} unique financial entities</p>
+                    <div className="p-4 bg-slate-950/40 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                        <span>Showing {filteredLedger.length} entities</span>
 
-                        <div className="flex items-center gap-4">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase">Page {currentPage} of {Math.max(1, totalPages)}</span>
-                            <div className="flex gap-2">
+                        <div className="flex items-center gap-2">
+                            <span>Page {currentPage} of {Math.max(1, totalPages)}</span>
+                            <div className="flex gap-1">
                                 <button
                                     onClick={handlePrevPage}
                                     disabled={currentPage === 1}
-                                    className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-slate-400 text-xs font-black uppercase transition-all"
+                                    className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded-lg text-slate-300 transition-colors"
                                 >
-                                    Prev
+                                    <ChevronLeft className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={handleNextPage}
                                     disabled={currentPage >= totalPages}
-                                    className="px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-slate-400 text-xs font-black uppercase transition-all"
+                                    className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded-lg text-slate-300 transition-colors"
                                 >
-                                    Next
+                                    <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
                     </div>
-                </motion.div>
+                </div>
             </div>
 
             {/* Deposit Modal */}
             {showDepositModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="w-full max-w-md glass-pane p-8 rounded-[2rem] border border-white/10 shadow-2xl relative"
-                    >
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative">
                         <button
                             onClick={() => setShowDepositModal(false)}
-                            className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 text-slate-500 hover:text-white transition-colors"
+                            className="absolute top-5 right-5 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-4 h-4" />
                         </button>
 
-                        <div className="mb-8">
-                            <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6">
-                                <PlusCircle className="w-7 h-7" />
-                            </div>
-                            <h2 className="text-2xl font-black text-white italic">Top Up Executive Vault</h2>
-                            <p className="text-slate-400 text-sm font-medium mt-1 uppercase tracking-tight">Injection of Business Capital</p>
+                        <div className="mb-6">
+                            <h2 className="text-lg font-bold text-white">Deposit Business Funds</h2>
+                            <p className="text-xs text-slate-400 mt-0.5">Top-up company master liquidity vault</p>
                         </div>
 
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Deposit Amount (USD)</label>
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Deposit Amount (USD)</label>
                                 <div className="relative">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl font-black text-indigo-400 opacity-50">$</div>
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
                                     <input
                                         type="number"
                                         placeholder="0.00"
                                         value={depositAmount}
                                         onChange={(e) => setDepositAmount(e.target.value)}
                                         autoFocus
-                                        className="w-full bg-slate-950/50 border border-white/5 text-white pl-12 pr-6 py-5 rounded-2xl outline-none focus:border-indigo-500/50 transition-all text-2xl font-black"
+                                        className="w-full bg-slate-950 border border-slate-800 text-white pl-8 pr-4 py-2.5 rounded-xl outline-none focus:border-blue-500 transition-colors text-lg font-bold"
                                     />
                                 </div>
                             </div>
@@ -577,195 +536,141 @@ export default function PayrollPage() {
                             <button
                                 onClick={handleDeposit}
                                 disabled={isDepositing || !depositAmount}
-                                className="w-full py-5 rounded-2xl bg-indigo-600 text-white font-black text-xs tracking-[0.2em] hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20 active:scale-[0.98] disabled:opacity-50 uppercase italic flex items-center justify-center gap-3"
+                                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
                             >
-                                {isDepositing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-                                Initialize Deposit Protocol
+                                {isDepositing ? <RotateCcw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                                Confirm Deposit
                             </button>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             )}
 
             {/* Bank Settings Modal */}
             {showBankSettings && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="w-full max-w-lg glass-pane p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative"
-                    >
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative">
                         <button
                             onClick={() => setShowBankSettings(false)}
-                            className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 text-slate-500 hover:text-white transition-colors"
+                            className="absolute top-5 right-5 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-4 h-4" />
                         </button>
 
-                        <div className="mb-10">
-                            <h2 className="text-2xl font-black text-white italic mb-2">Corporate Bank Link</h2>
-                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Configuring ABA / Acleda Merchant Gateway</p>
+                        <div className="mb-6">
+                            <h2 className="text-lg font-bold text-white">Company Bank Credentials</h2>
+                            <p className="text-xs text-slate-400 mt-0.5">Used for ABA / Acleda batch exports</p>
                         </div>
 
-                        <div className="space-y-6">
-                            <div className="p-6 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 mb-8">
-                                <div className="flex items-start gap-4">
-                                    <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
-                                    <p className="text-xs text-emerald-200/70 font-medium leading-relaxed">
-                                        These credentials are used to generate the **Debit Account** column in your bank batch files. Ensure they match your Corporate iBusiness profile.
-                                    </p>
-                                </div>
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Company Account Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. ARI ICU TECH LTD"
+                                    value={bankDetails.accountName}
+                                    onChange={(e) => setBankDetails({ ...bankDetails, accountName: e.target.value })}
+                                    className="w-full bg-slate-950 border border-slate-800 text-white px-3 py-2 rounded-xl outline-none focus:border-blue-500 transition-colors text-xs sm:text-sm font-medium uppercase"
+                                />
                             </div>
-
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Company Account Name</label>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. ARI ICU TECH LTD"
-                                        value={bankDetails.accountName}
-                                        onChange={(e) => setBankDetails({ ...bankDetails, accountName: e.target.value })}
-                                        className="w-full bg-slate-950/50 border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:border-blue-500/50 transition-all font-bold uppercase tracking-wider"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Corporate Account Number</label>
-                                    <input
-                                        type="text"
-                                        placeholder="000 000 000"
-                                        value={bankDetails.accountNumber}
-                                        onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })}
-                                        className="w-full bg-slate-950/50 border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:border-blue-500/50 transition-all font-mono text-xl"
-                                    />
-                                </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-400">Corporate Account Number</label>
+                                <input
+                                    type="text"
+                                    placeholder="000 000 000"
+                                    value={bankDetails.accountNumber}
+                                    onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })}
+                                    className="w-full bg-slate-950 border border-slate-800 text-white px-3 py-2 rounded-xl outline-none focus:border-blue-500 transition-colors font-mono text-sm"
+                                />
                             </div>
 
                             <button
                                 onClick={handleSaveBankSettings}
-                                className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-xs tracking-[0.2em] hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98] uppercase italic mt-4"
+                                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm mt-2"
                             >
-                                Synchronize Bank Protocol
+                                Save Bank Credentials
                             </button>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             )}
+
             {/* Payslip Modal */}
             {showPayslipModal && selectedPayslip && (
-                <div id="payslip-modal" className="fixed inset-0 z-[110] flex items-center justify-center p-0 md:p-4 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300 print:absolute print:inset-0 print:z-[200] print:p-0 print:bg-white print:backdrop-blur-none transition-all">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="w-full max-w-2xl h-full md:h-auto md:max-h-[90vh] bg-slate-900 md:rounded-[2.5rem] border-x border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative flex flex-col print:shadow-none print:border-none print:rounded-none print:max-w-none print:h-auto print:max-h-none print:bg-white"
-                    >
+                <div id="payslip-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm print:absolute print:inset-0 print:p-0 print:bg-white print:backdrop-blur-none">
+                    <div className="w-full max-w-xl bg-slate-900 rounded-2xl border border-slate-800 shadow-xl overflow-hidden flex flex-col print:border-none print:shadow-none print:bg-white">
                         {/* Header controls (Hidden on print) */}
-                        <div className="p-4 md:p-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between print:hidden shrink-0">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400">
-                                    <FileText size={18} />
-                                </div>
-                                <h2 className="text-[10px] md:text-sm font-black text-white uppercase tracking-widest italic truncate">Electronic Payslip Receipt</h2>
+                        <div className="p-4 border-b border-slate-800 bg-slate-950/40 flex items-center justify-between print:hidden">
+                            <div className="flex items-center gap-2.5">
+                                <FileText className="w-4 h-4 text-blue-400" />
+                                <h2 className="text-sm font-bold text-white">Payslip Receipt</h2>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => window.print()}
-                                    className="px-3 md:px-4 py-2 bg-blue-600 rounded-xl text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center gap-2"
+                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
                                 >
-                                    <Download size={14} className="hidden sm:block" />
-                                    PDF
+                                    <Download size={13} />
+                                    Print / PDF
                                 </button>
                                 <button
                                     onClick={() => setShowPayslipModal(false)}
-                                    className="p-2 rounded-xl bg-white/5 text-slate-500 hover:text-white transition-colors"
+                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
 
-                        {/* Payslip Content (Optimized for both screen and print) */}
-                        <div id="payslip-content" className="flex-1 overflow-y-auto md:overflow-y-visible p-6 md:p-12 space-y-8 md:space-y-12 bg-white text-slate-950 print:p-0 print:overflow-visible custom-scrollbar">
-                            {/* Watermark branding */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 border-b-4 border-slate-900 pb-8 print:items-center print:text-center print:justify-center">
-                                <div className="space-y-4 print:flex print:flex-col print:items-center">
-                                    <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-950 rounded-2xl flex items-center justify-center shadow-2xl">
-                                        <span className="text-white font-black text-xl md:text-2xl">AI</span>
-                                    </div>
-                                    <div>
-                                        <h1 className="text-xl md:text-2xl font-black italic tracking-tighter text-slate-900">ARI ICU TECH LTD</h1>
-                                        <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Quantum Systems Division</p>
-                                    </div>
+                        {/* Payslip Content */}
+                        <div id="payslip-content" className="p-6 md:p-8 space-y-6 bg-white text-slate-950 print:p-0">
+                            <div className="flex justify-between items-start border-b-2 border-slate-900 pb-4">
+                                <div>
+                                    <h1 className="text-xl font-bold tracking-tight text-slate-950">ARI ICU TECH LTD</h1>
+                                    <p className="text-xs text-slate-500">Salary Disbursement Slip</p>
                                 </div>
-                                <div className="text-left sm:text-right space-y-1 w-full sm:w-auto print:text-center print:mt-4">
-                                    <div className="px-3 py-1 bg-slate-950 text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest inline-block mb-2 md:mb-4">Official Payment Record</div>
-                                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400">Transaction ID: <span className="text-slate-900">{selectedPayslip.payroll.transactionId || 'PENDING'}</span></p>
-                                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400">Cycle: <span className="text-slate-900">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span></p>
+                                <div className="text-right text-xs">
+                                    <p className="font-semibold text-slate-900">ID: {selectedPayslip.payroll.transactionId || 'PENDING'}</p>
+                                    <p className="text-slate-500">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 print:text-center">
-                                <div className="space-y-4 md:space-y-6">
-                                    <h3 className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 print:border-none">Personnel Entity</h3>
-                                    <div className="space-y-1">
-                                        <p className="text-lg md:text-xl font-black text-slate-900 leading-tight">{selectedPayslip.employee.firstName} {selectedPayslip.employee.lastName}</p>
-                                        <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-wider">{selectedPayslip.employee.position || 'Specialist'}</p>
-                                        <p className="text-[10px] md:text-[11px] font-bold text-slate-500 mt-2 truncate">ID: {selectedPayslip.employee._id}</p>
-                                    </div>
+                            <div className="grid grid-cols-2 gap-4 text-xs">
+                                <div>
+                                    <p className="text-slate-400 uppercase font-semibold text-[10px]">Employee</p>
+                                    <p className="text-sm font-bold text-slate-900 mt-0.5">{selectedPayslip.employee.firstName} {selectedPayslip.employee.lastName}</p>
+                                    <p className="text-slate-500">{selectedPayslip.employee.position || 'Specialist'}</p>
                                 </div>
-                                <div className="space-y-4 md:space-y-6">
-                                    <h3 className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 print:border-none">Financial Destination</h3>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-black text-slate-900">{selectedPayslip.employee.bankDetails?.bankName || 'Direct Cash Disbursement'}</p>
-                                        <p className="text-[10px] md:text-[11px] font-bold text-slate-500 font-mono truncate">{selectedPayslip.employee.bankDetails?.accountNumber || '---'}</p>
-                                        <p className="text-[10px] md:text-[11px] font-bold text-slate-500 truncate">{selectedPayslip.employee.bankDetails?.accountName || '---'}</p>
-                                    </div>
+                                <div>
+                                    <p className="text-slate-400 uppercase font-semibold text-[10px]">Bank / Account</p>
+                                    <p className="text-sm font-bold text-slate-900 mt-0.5">{selectedPayslip.employee.bankDetails?.bankName || 'Cash Disbursement'}</p>
+                                    <p className="text-slate-500 font-mono">{selectedPayslip.employee.bankDetails?.accountNumber || '---'}</p>
                                 </div>
                             </div>
 
-                            <div className="space-y-6 md:space-y-8">
-                                <h3 className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 print:border-none print:text-center">Computation Ledger</h3>
-                                <div className="space-y-3 md:space-y-4">
-                                    <div className="flex justify-between items-center text-xs md:text-sm">
-                                        <span className="font-bold text-slate-600">Base Compensation Protocol</span>
-                                        <span className="font-black text-slate-900">${selectedPayslip.payroll.baseAmount.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs md:text-sm">
-                                        <span className="font-bold text-slate-600">Neural Efficiency Bonus</span>
-                                        <span className="font-black text-emerald-600">+${(selectedPayslip.payroll.bonus || 0).toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs md:text-sm">
-                                        <span className="font-bold text-slate-600">Attendance Deductions</span>
-                                        <span className="font-black text-rose-600">-${(selectedPayslip.payroll.deductions || 0).toFixed(2)}</span>
-                                    </div>
-                                    <div className="pt-4 md:pt-6 border-t-2 border-slate-900 flex justify-between items-center gap-4 print:flex-col print:text-center print:justify-center">
-                                        <div className="space-y-1 grow">
-                                            <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Net Liquidity Released</p>
-                                            <p className="text-2xl md:text-3xl font-black text-slate-950 italic tracking-tighter">USD ${selectedPayslip.payroll.netAmount.toFixed(2)}</p>
-                                        </div>
-                                        <div className="hidden sm:block shrink-0">
-                                            <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-100 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center opacity-50">
-                                                <Zap size={24} className="text-slate-300" />
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div className="border-t border-slate-200 pt-4 space-y-2 text-xs">
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600">Base Salary</span>
+                                    <span className="font-semibold text-slate-900">${(selectedPayslip.payroll.baseAmount || 0).toFixed(2)}</span>
                                 </div>
-                            </div>
-
-                            <div className="pt-8 md:pt-12 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 items-end print:flex print:flex-col print:items-center print:text-center">
-                                <div className="space-y-4 md:space-y-6 print:flex print:flex-col print:items-center">
-                                    <div className="w-24 md:w-32 h-1 bg-slate-900" />
-                                    <p className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Authorized Digital Signature</p>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600">Bonus & Performance</span>
+                                    <span className="font-semibold text-emerald-600">+${(selectedPayslip.payroll.bonus || 0).toFixed(2)}</span>
                                 </div>
-                                <div className="text-left sm:text-right print:text-center print:mt-4">
-                                    <p className="text-[7px] md:text-[8px] font-bold text-slate-300 uppercase leading-relaxed max-w-[200px] sm:ml-auto print:mx-auto">
-                                        This document is an electronic representation of salary disbursement and is strictly confidential. Generated by Quantum Core Intelligence.
-                                    </p>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600">Attendance Deductions</span>
+                                    <span className="font-semibold text-rose-600">-${(selectedPayslip.payroll.deductions || 0).toFixed(2)}</span>
+                                </div>
+                                <div className="pt-3 border-t-2 border-slate-900 flex justify-between items-baseline">
+                                    <span className="font-bold text-slate-950 text-sm">Net Pay Released</span>
+                                    <span className="text-xl font-bold text-slate-950">USD ${(selectedPayslip.payroll.netAmount || 0).toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             )}
         </div>
     );
 }
+

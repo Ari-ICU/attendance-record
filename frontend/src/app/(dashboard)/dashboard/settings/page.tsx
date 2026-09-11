@@ -34,9 +34,7 @@ import toast from 'react-hot-toast';
 import { SettingsService } from '@/services/settings.service';
 import { BackupService, Backup } from '@/services/backup.service';
 
-
 type TabType = 'general' | 'attendance' | 'personnel' | 'security' | 'system' | 'backup';
-
 
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState<TabType>('general');
@@ -57,7 +55,6 @@ export default function SettingsPage() {
         master_api_key: ''
     });
 
-
     // Users state
     const [users, setUsers] = useState<any[]>([]);
     const [backups, setBackups] = useState<Backup[]>([]);
@@ -67,14 +64,10 @@ export default function SettingsPage() {
     const [isRotating, setIsRotating] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
-
-
-
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                // Fetch settings and users independently to prevent hard crash on permission issues
                 const [settingsData, usersData] = await Promise.allSettled([
                     SettingsService.getSettings(),
                     SettingsService.getAllUsers()
@@ -91,7 +84,6 @@ export default function SettingsPage() {
                     setUsers(usersData.value);
                 } else {
                     console.warn('Personnel access list suppressed (insufficient clearance)');
-                    // We don't toast error here to keep the UI clean if they aren't an admin
                 }
 
                 try {
@@ -110,10 +102,7 @@ export default function SettingsPage() {
                 } catch (err) {
                     console.warn('System stats restricted');
                 }
-
             } catch (err) {
-
-
                 console.error(err);
                 toast.error('Failed to load system configuration');
             } finally {
@@ -127,9 +116,9 @@ export default function SettingsPage() {
         try {
             setIsSaving(true);
             await SettingsService.updateSettings(settings);
-            toast.success('System configuration synchronized');
+            toast.success('System configuration saved successfully');
         } catch (err) {
-            toast.error('Failed to sync state');
+            toast.error('Failed to save settings');
         } finally {
             setIsSaving(false);
         }
@@ -181,20 +170,18 @@ export default function SettingsPage() {
         }
     };
 
-
     const [selectedTheme, setSelectedTheme] = useState<'cyber' | 'solar'>('cyber');
 
     const handleThemeChange = (theme: 'cyber' | 'solar') => {
         if (theme === 'solar') {
-            toast('Solar White mode is coming soon!', {
+            toast('Light theme is coming soon!', {
                 icon: '☀️',
                 style: {
-                    borderRadius: '16px',
-                    background: '#fff',
-                    color: '#020617',
-                    fontWeight: 'bold',
-                    fontSize: '12px',
-                    textTransform: 'uppercase'
+                    borderRadius: '12px',
+                    background: '#1e293b',
+                    color: '#f8fafc',
+                    fontWeight: 600,
+                    fontSize: '13px'
                 },
             });
             return;
@@ -202,15 +189,14 @@ export default function SettingsPage() {
         setSelectedTheme(theme);
     };
 
-    const tabs: { id: TabType; label: string; icon: any }[] = [
-        { id: 'general', label: 'Organization', icon: Globe },
-        { id: 'attendance', label: 'Work Schedule', icon: Clock },
-        { id: 'personnel', label: 'Personnel Access', icon: Users },
-        { id: 'security', label: 'Security Protocols', icon: Shield },
-        { id: 'system', label: 'Environment', icon: Cpu },
-        { id: 'backup', label: 'Backup & Recovery', icon: Database },
+    const tabs: { id: TabType; label: string; icon: any; description: string }[] = [
+        { id: 'general', label: 'Organization', icon: Globe, description: 'Identity & preferences' },
+        { id: 'attendance', label: 'Work Schedule', icon: Clock, description: 'Hours & geofence rules' },
+        { id: 'personnel', label: 'Personnel Access', icon: Users, description: 'Role clearance matrix' },
+        { id: 'security', label: 'Security & API', icon: Shield, description: 'Keys & access controls' },
+        { id: 'system', label: 'System Health', icon: Cpu, description: 'Telemetry & server nodes' },
+        { id: 'backup', label: 'Backup & Recovery', icon: Database, description: 'State snapshots' },
     ];
-
 
     const handleRotateKey = async () => {
         if (!confirm('WARNING: Rotating the Master API Key will invalidate all existing integrations. Continue?')) return;
@@ -218,9 +204,9 @@ export default function SettingsPage() {
             setIsRotating(true);
             const data = await SettingsService.rotateApiKey();
             setSettings(prev => ({ ...prev, master_api_key: data.master_api_key }));
-            toast.success('Security seed rotated successfully');
+            toast.success('Security key rotated successfully');
         } catch (err) {
-            toast.error('Failed to rotate security seed');
+            toast.error('Failed to rotate security key');
         } finally {
             setIsRotating(false);
         }
@@ -239,14 +225,13 @@ export default function SettingsPage() {
         }
     };
 
-
     const handleGetCurrentLocation = () => {
         if (!navigator.geolocation) {
-            toast.error('Local telemetry capture unsupported');
+            toast.error('Geolocation is not supported by your browser');
             return;
         }
 
-        toast.loading('Acquiring GPS anchor...', { id: 'geo-sync' });
+        toast.loading('Acquiring GPS coordinates...', { id: 'geo-sync' });
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 setSettings({
@@ -257,518 +242,575 @@ export default function SettingsPage() {
                 toast.success('Coordinates synchronized', { id: 'geo-sync' });
             },
             (error) => {
-                toast.error(`Telemetry failed: ${error.message}`, { id: 'geo-sync' });
+                toast.error(`Geolocation error: ${error.message}`, { id: 'geo-sync' });
             },
             { enableHighAccuracy: true }
         );
     };
 
     if (loading) return (
-        <div className="h-96 flex items-center justify-center">
-            <RotateCcw className="w-8 h-8 text-blue-500 animate-spin" />
+        <div className="h-96 flex flex-col items-center justify-center gap-3">
+            <RotateCcw className="w-7 h-7 text-blue-500 animate-spin" />
+            <p className="text-slate-400 text-sm font-medium">Loading system configurations...</p>
         </div>
     );
 
-
     return (
-        <div className="space-y-8 pb-12">
+        <div className="space-y-6 pb-12">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-white tracking-tight italic uppercase">System Control</h1>
-                    <p className="text-slate-400 font-medium tracking-tight">Enterprise Configuration Console</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">System Settings</h1>
+                    <p className="text-xs sm:text-sm text-slate-400 mt-1">Manage enterprise configuration, security protocols, and operational parameters.</p>
                 </div>
                 <button
                     onClick={handleSaveSettings}
                     disabled={isSaving}
-                    className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-blue-600 text-white font-black text-sm tracking-[0.1em] hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 active:scale-95 disabled:opacity-50 uppercase italic"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm transition-all shadow-sm active:scale-95 disabled:opacity-50"
                 >
                     {isSaving ? (
                         <>
                             <RotateCcw className="w-4 h-4 animate-spin" />
-                            Syncing...
+                            <span>Saving Changes...</span>
                         </>
                     ) : (
                         <>
                             <Save className="w-4 h-4" />
-                            Sync State
+                            <span>Save Configuration</span>
                         </>
                     )}
                 </button>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Sidebar Navigation */}
-                <div className="w-full lg:w-72 space-y-2">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl border transition-all duration-300 group ${activeTab === tab.id
-                                ? 'bg-blue-600 border-blue-500 text-white shadow-xl shadow-blue-500/20'
-                                : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10'
-                                }`}
-                        >
-                            <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">{tab.label}</span>
-                        </button>
-                    ))}
+                <div className="lg:col-span-4 xl:col-span-3 space-y-1.5">
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 space-y-1">
+                        {tabs.map((tab) => {
+                            const isActive = activeTab === tab.id;
+                            const IconComponent = tab.icon;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-left group ${
+                                        isActive
+                                            ? 'bg-blue-600 text-white shadow-sm'
+                                            : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'
+                                    }`}
+                                >
+                                    <div className={`p-1.5 rounded-lg transition-colors ${
+                                        isActive ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400 group-hover:text-blue-400'
+                                    }`}>
+                                        <IconComponent className="w-4 h-4" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className={`text-xs sm:text-sm font-semibold truncate ${isActive ? 'text-white' : 'text-slate-300'}`}>
+                                            {tab.label}
+                                        </div>
+                                        <div className={`text-[11px] truncate ${isActive ? 'text-blue-100' : 'text-slate-500'}`}>
+                                            {tab.description}
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.3 }}
-                            className="glass-pane p-8 rounded-[2.5rem] border border-white/10"
-                        >
-                            {activeTab === 'general' && (
-                                <div className="space-y-8">
-                                    <div className="flex items-center gap-4 mb-2">
-                                        <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-400 border border-blue-500/20">
-                                            <Globe className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Operational Profile</h2>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Global Organizational Identity</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Entity Alias</label>
-                                            <input
-                                                type="text"
-                                                value={settings.organization_name}
-                                                onChange={(e) => setSettings({ ...settings, organization_name: e.target.value })}
-                                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3.5 px-5 text-sm font-bold text-white outline-none focus:border-blue-500/50 transition-all font-mono"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Control Domain</label>
-                                            <input
-                                                type="text"
-                                                value={settings.domain}
-                                                onChange={(e) => setSettings({ ...settings, domain: e.target.value })}
-                                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3.5 px-5 text-sm font-bold text-white outline-none focus:border-blue-500/50 transition-all font-mono"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4 pt-4">
-                                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-white/5 pb-2">Visual Core Protocol</h3>
-                                        <div className="flex gap-4">
-                                            <div
-                                                onClick={() => handleThemeChange('cyber')}
-                                                className={`flex-1 p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center gap-3 ${selectedTheme === 'cyber' ? 'bg-blue-600/10 border-blue-600 shadow-lg shadow-blue-500/10' : 'bg-white/5 border-transparent hover:border-white/10'}`}
-                                            >
-                                                <Moon className={`w-6 h-6 ${selectedTheme === 'cyber' ? 'text-blue-400' : 'text-slate-500'}`} />
-                                                <span className={`text-[10px] font-black uppercase tracking-widest ${selectedTheme === 'cyber' ? 'text-white' : 'text-slate-500'}`}>Cyber Blue</span>
+                <div className="lg:col-span-8 xl:col-span-9">
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-7 shadow-sm">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.15 }}
+                            >
+                                {/* General / Organization Tab */}
+                                {activeTab === 'general' && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+                                            <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-400 border border-blue-500/20">
+                                                <Globe className="w-5 h-5" />
                                             </div>
-                                            <div
-                                                onClick={() => handleThemeChange('solar')}
-                                                className={`flex-1 p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center gap-3 ${selectedTheme === 'solar' ? 'bg-white/10 border-white/30' : 'bg-white/5 border-transparent hover:border-white/10 opacity-60 hover:opacity-100'}`}
-                                            >
-                                                <Sun className="w-6 h-6 text-slate-500" />
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Solar White</span>
+                                            <div>
+                                                <h2 className="text-base sm:text-lg font-bold text-white">Organizational Identity</h2>
+                                                <p className="text-xs text-slate-400">Configure corporate identity and public domain info</p>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
 
-                            {activeTab === 'attendance' && (
-                                <div className="space-y-8">
-                                    <div className="flex items-center gap-4 mb-2">
-                                        <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400 border border-emerald-500/20">
-                                            <Clock className="w-6 h-6" />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-300">Organization Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.organization_name}
+                                                    onChange={(e) => setSettings({ ...settings, organization_name: e.target.value })}
+                                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-3.5 text-xs sm:text-sm font-medium text-white outline-none focus:border-blue-500 transition-colors"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-300">Domain Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.domain}
+                                                    onChange={(e) => setSettings({ ...settings, domain: e.target.value })}
+                                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-3.5 text-xs sm:text-sm font-medium text-white outline-none focus:border-blue-500 transition-colors"
+                                                />
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Attendance Parameters</h2>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Temporal Access Constraints</p>
+
+                                        <div className="space-y-3 pt-3">
+                                            <label className="text-xs font-semibold text-slate-300">Interface Theme</label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div
+                                                    onClick={() => handleThemeChange('cyber')}
+                                                    className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center gap-3.5 ${
+                                                        selectedTheme === 'cyber'
+                                                            ? 'bg-blue-500/10 border-blue-500 text-white'
+                                                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                                                    }`}
+                                                >
+                                                    <div className="p-2 rounded-lg bg-blue-500/20 text-blue-400">
+                                                        <Moon className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs sm:text-sm font-bold text-white">Dark Onyx (Active)</div>
+                                                        <div className="text-[11px] text-slate-400">Optimized high-contrast dark theme</div>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    onClick={() => handleThemeChange('solar')}
+                                                    className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center gap-3.5 ${
+                                                        selectedTheme === 'solar'
+                                                            ? 'bg-white/10 border-white text-white'
+                                                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 opacity-70 hover:opacity-100'
+                                                    }`}
+                                                >
+                                                    <div className="p-2 rounded-lg bg-slate-800 text-slate-400">
+                                                        <Sun className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs sm:text-sm font-bold text-slate-300">Light Slate</div>
+                                                        <div className="text-[11px] text-slate-500">Coming soon in next release</div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+                                )}
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Check-in Threshold</label>
-                                            <div className="relative group/input">
+                                {/* Attendance & Schedule Tab */}
+                                {activeTab === 'attendance' && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+                                            <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400 border border-emerald-500/20">
+                                                <Clock className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-base sm:text-lg font-bold text-white">Work Schedules & Shifts</h2>
+                                                <p className="text-xs text-slate-400">Configure standard working hours and grace period rules</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-300">Work Start Time</label>
                                                 <input
                                                     type="time"
                                                     value={settings.work_start_time}
                                                     onChange={(e) => setSettings({ ...settings, work_start_time: e.target.value })}
-                                                    className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-5 px-6 text-xl font-black text-white outline-none focus:border-emerald-500/50 transition-all font-mono tracking-widest"
+                                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-3.5 text-xs sm:text-sm font-semibold text-white outline-none focus:border-emerald-500 transition-colors font-mono"
                                                 />
-                                                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 uppercase text-[9px] font-black tracking-widest pointer-events-none group-hover/input:text-emerald-400 transition-colors italic">Arrival</div>
                                             </div>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Check-out Threshold</label>
-                                            <div className="relative group/input">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-300">Work End Time</label>
                                                 <input
                                                     type="time"
                                                     value={settings.work_end_time}
                                                     onChange={(e) => setSettings({ ...settings, work_end_time: e.target.value })}
-                                                    className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-5 px-6 text-xl font-black text-white outline-none focus:border-emerald-500/50 transition-all font-mono tracking-widest"
-                                                />
-                                                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 uppercase text-[9px] font-black tracking-widest pointer-events-none group-hover/input:text-emerald-400 transition-colors italic">Departure</div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <p className="text-xs font-black text-white uppercase tracking-tight italic">Temporal Grace Window</p>
-                                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">Minutes allowed before marked as LATE</p>
-                                            </div>
-                                            <div className="flex items-center gap-6">
-                                                <span className="text-lg font-black text-emerald-400 font-mono w-12 text-right">{settings.grace_period_minutes}m</span>
-                                                <input
-                                                    type="range"
-                                                    min="0" max="60"
-                                                    value={settings.grace_period_minutes}
-                                                    onChange={(e) => setSettings({ ...settings, grace_period_minutes: parseInt(e.target.value) })}
-                                                    className="w-48 accent-emerald-500 h-1 bg-slate-900 rounded-full"
+                                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-3.5 text-xs sm:text-sm font-semibold text-white outline-none focus:border-emerald-500 transition-colors font-mono"
                                                 />
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-2 mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <Globe className="w-4 h-4 text-emerald-400" />
-                                            <h3 className="text-xs font-black text-white uppercase tracking-widest italic">Biometric Boundaries (Geofencing)</h3>
-                                        </div>
-                                        <button
-                                            onClick={handleGetCurrentLocation}
-                                            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/10 active:scale-95"
-                                        >
-                                            <MapPin size={10} />
-                                            Sync to My Location
-                                        </button>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Ref. Latitude</label>
-                                            <input
-                                                type="number"
-                                                step="0.000001"
-                                                value={settings.office_latitude}
-                                                onChange={(e) => setSettings({ ...settings, office_latitude: parseFloat(e.target.value) })}
-                                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3 px-5 text-sm font-bold text-white outline-none focus:border-emerald-500/50 transition-all font-mono"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Ref. Longitude</label>
-                                            <input
-                                                type="number"
-                                                step="0.000001"
-                                                value={settings.office_longitude}
-                                                onChange={(e) => setSettings({ ...settings, office_longitude: parseFloat(e.target.value) })}
-                                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3 px-5 text-sm font-bold text-white outline-none focus:border-emerald-500/50 transition-all font-mono"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <p className="text-xs font-black text-white uppercase tracking-tight italic">Scanning Radius</p>
-                                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">Max distance (meters) for valid authentication</p>
-                                            </div>
-                                            <div className="flex items-center gap-6">
-                                                <span className="text-lg font-black text-blue-400 font-mono w-16 text-right">{settings.geofence_range_meters}m</span>
-                                                <input
-                                                    type="range"
-                                                    min="10" max="1000" step="10"
-                                                    value={settings.geofence_range_meters}
-                                                    onChange={(e) => setSettings({ ...settings, geofence_range_meters: parseInt(e.target.value) })}
-                                                    className="w-48 accent-blue-500 h-1 bg-slate-900 rounded-full"
-                                                />
+                                        <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                <div>
+                                                    <div className="text-xs sm:text-sm font-bold text-white">Late Arrival Grace Window</div>
+                                                    <div className="text-xs text-slate-400 mt-0.5">Tolerance minutes allowed after start time before marked late</div>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-sm font-bold text-emerald-400 font-mono w-10 text-right">{settings.grace_period_minutes}m</span>
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max="60"
+                                                        value={settings.grace_period_minutes}
+                                                        onChange={(e) => setSettings({ ...settings, grace_period_minutes: parseInt(e.target.value) || 0 })}
+                                                        className="w-36 sm:w-44 accent-emerald-500 h-1.5 bg-slate-800 rounded-full cursor-pointer"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
 
-                            {activeTab === 'personnel' && (
-                                <div className="space-y-8">
-                                    <div className="flex items-center gap-4 mb-2">
-                                        <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-400 border border-blue-500/20">
-                                            <Users className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Access Governance</h2>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Security Permissions & User Matrix</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="overflow-hidden border border-white/5 rounded-3xl bg-slate-950/30">
-                                        <table className="w-full text-left">
-                                            <thead>
-                                                <tr className="border-b border-white/5 bg-white/5">
-                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Operator</th>
-                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Identity Hash</th>
-                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Clearance Level</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-white/5">
-                                                {users.map(user => (
-                                                    <tr key={user._id} className="group hover:bg-white/[0.02] transition-colors">
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center font-black text-xs text-blue-400 border border-blue-500/20">{user.username[0].toUpperCase()}</div>
-                                                                <div>
-                                                                    <div className="text-xs font-black text-white uppercase tracking-tight">{user.username}</div>
-                                                                    <div className="text-[9px] font-bold text-slate-500 lowercase font-mono">{user.email}</div>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 font-mono text-[9px] text-slate-600 uppercase tracking-widest">{user._id.substring(0, 16)}</td>
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex gap-1.5">
-                                                                {['admin', 'employee', 'student'].map(role => (
-                                                                    <button
-                                                                        key={role}
-                                                                        onClick={() => handleUpdateUserRole(user._id, role)}
-                                                                        className={`
-                                                                            px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all
-                                                                            ${user.role === role
-                                                                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                                                                : 'bg-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/10'}
-                                                                        `}
-                                                                    >
-                                                                        {role === 'admin' && <Shield className="w-3 h-3 inline mr-1 -mt-0.5" />}
-                                                                        {role}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'security' && (
-                                <div className="space-y-8">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400 border border-rose-500/20">
-                                            <Shield className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Defense Matrix</h2>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Encrypted Access Handlers</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Master API Key</label>
-                                            <div className="relative">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"><Key className="w-4 h-4" /></div>
-                                                <input
-                                                    type={showApiKey ? 'text' : 'password'}
-                                                    value={settings.master_api_key || 'Loading secure key...'}
-                                                    readOnly
-                                                    className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-sm font-mono text-blue-400/80 outline-none"
-                                                />
-
+                                        {/* Geofence Rules */}
+                                        <div className="pt-2 space-y-4">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800">
+                                                <div className="flex items-center gap-2">
+                                                    <MapPin className="w-4 h-4 text-emerald-400" />
+                                                    <h3 className="text-xs sm:text-sm font-bold text-white">Office Coordinates & Geofencing</h3>
+                                                </div>
                                                 <button
-                                                    onClick={() => setShowApiKey(!showApiKey)}
-                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                                                    onClick={handleGetCurrentLocation}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all text-xs font-semibold self-start sm:self-auto"
                                                 >
-                                                    {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                    <MapPin size={12} />
+                                                    Sync Current Location
                                                 </button>
                                             </div>
-                                        </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <button
-                                                onClick={handleRotateKey}
-                                                disabled={isRotating}
-                                                className="flex items-center justify-center gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] hover:bg-white/10 hover:text-blue-400 transition-all shadow-xl disabled:opacity-50 disabled:cursor-wait"
-                                            >
-                                                {isRotating ? <RotateCcw className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                                                {isRotating ? 'Rotating Seed...' : 'Rotate Security Seed'}
-                                            </button>
-                                            <button
-                                                onClick={handleExportLog}
-                                                disabled={isExporting}
-                                                className="flex items-center justify-center gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] hover:bg-white/10 hover:text-rose-400 transition-all shadow-xl disabled:opacity-50 disabled:cursor-wait"
-                                            >
-                                                {isExporting ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                                                {isExporting ? 'Exporting Log...' : 'Export System Log'}
-                                            </button>
-                                        </div>
-
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'system' && (
-                                <div className="space-y-8">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-400 border border-amber-500/20">
-                                            <Cpu className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Core Environment</h2>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Computational Node Status</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {[
-                                            { label: 'Latency', value: latency, status: parseInt(latency) > 100 ? 'Degraded' : 'Healthy', color: parseInt(latency) > 100 ? 'text-amber-400' : 'text-emerald-400', dot: parseInt(latency) > 100 ? 'bg-amber-500' : 'bg-emerald-500' },
-                                            { label: 'Storage', value: systemStats?.storage || '---', status: systemStats?.storage_status || 'Checking', color: systemStats?.storage_status === 'Warning' ? 'text-amber-400' : 'text-emerald-400', dot: systemStats?.storage_status === 'Warning' ? 'bg-amber-500' : 'bg-emerald-500' },
-                                            { label: 'Active Nodes', value: systemStats?.active_nodes?.toString() || '1', status: systemStats?.node_status || 'Cluster', color: 'text-emerald-400', dot: 'bg-emerald-500' },
-                                        ].map((stat, i) => (
-
-                                            <div key={i} className="p-6 rounded-3xl bg-slate-950/40 border border-white/5 space-y-1 group hover:border-amber-500/30 transition-all hover:scale-[1.05]">
-                                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">{stat.label}</p>
-                                                <p className="text-3xl font-black text-white tracking-tighter font-mono">{stat.value}</p>
-                                                <div className="flex items-center gap-1.5 pt-1">
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${stat.dot} animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]`} />
-                                                    <span className={`text-[9px] font-black ${stat.color} uppercase tracking-widest`}>{stat.status}</span>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-1.5">
+                                                    <label className="text-xs font-semibold text-slate-300">Office Latitude</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.000001"
+                                                        value={settings.office_latitude}
+                                                        onChange={(e) => setSettings({ ...settings, office_latitude: parseFloat(e.target.value) || 0 })}
+                                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-3.5 text-xs sm:text-sm font-medium text-white outline-none focus:border-emerald-500 transition-colors font-mono"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-xs font-semibold text-slate-300">Office Longitude</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.000001"
+                                                        value={settings.office_longitude}
+                                                        onChange={(e) => setSettings({ ...settings, office_longitude: parseFloat(e.target.value) || 0 })}
+                                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-3.5 text-xs sm:text-sm font-medium text-white outline-none focus:border-emerald-500 transition-colors font-mono"
+                                                    />
                                                 </div>
                                             </div>
 
-                                        ))}
-                                    </div>
-
-                                    <div className="p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/20 group hover:bg-indigo-500/10 transition-all">
-                                        <div className="flex items-center gap-4 mb-5">
-                                            <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-400 group-hover:scale-110 transition-transform">
-                                                <Command className="w-5 h-5" />
+                                            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                    <div>
+                                                        <div className="text-xs sm:text-sm font-bold text-white">Geofence Allowed Radius</div>
+                                                        <div className="text-xs text-slate-400 mt-0.5">Maximum valid distance (meters) for attendance check-in</div>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-sm font-bold text-blue-400 font-mono w-14 text-right">{settings.geofence_range_meters}m</span>
+                                                        <input
+                                                            type="range"
+                                                            min="10"
+                                                            max="1000"
+                                                            step="10"
+                                                            value={settings.geofence_range_meters}
+                                                            onChange={(e) => setSettings({ ...settings, geofence_range_meters: parseInt(e.target.value) || 10 })}
+                                                            className="w-36 sm:w-44 accent-blue-500 h-1.5 bg-slate-800 rounded-full cursor-pointer"
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <p className="text-[10px] font-black text-white uppercase tracking-[0.2em] italic">Deep Trace Manual Node Override</p>
                                         </div>
-                                        <div className="bg-slate-950 font-mono text-[10px] p-6 rounded-2xl text-indigo-400/80 leading-relaxed border border-white/5 shadow-inner">
-                                            <div className="text-slate-600 mb-1">// System state re-indexing...</div>
-                                            <div>$ systemctl check-status --unit=attendance-core</div>
-                                            <div>&gt; MongoDB Connection... <span className="text-emerald-400">[ESTABLISHED]</span> v{systemStats?.mongo_version || '?.?.?'}</div>
-                                            <div>&gt; Memory Allocation... <span className="text-blue-400">[{systemStats?.memory || '---'}]</span></div>
-                                            <div>&gt; System Uptime... <span className="text-amber-400">[{Math.floor((systemStats?.uptime || 0) / 60)}m {(Math.floor(systemStats?.uptime || 0) % 60)}s]</span></div>
-                                            <div>&gt; <span className="text-emerald-400">SYSTEM_OPERATIONAL_STATUS_CODE_200</span></div>
-                                        </div>
-
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {activeTab === 'backup' && (
-                                <div className="space-y-8">
-                                    <div className="flex items-center justify-between gap-4 mb-2">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20">
-                                                <Database className="w-6 h-6" />
+                                {/* Personnel Access Tab */}
+                                {activeTab === 'personnel' && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+                                            <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-400 border border-blue-500/20">
+                                                <Users className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Backup Ledger</h2>
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">System state archives & snapshots</p>
+                                                <h2 className="text-base sm:text-lg font-bold text-white">Access Governance</h2>
+                                                <p className="text-xs text-slate-400">Manage user clearance levels and system role authorizations</p>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={handleCreateBackup}
-                                            disabled={isBackingUp}
-                                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 text-white font-black text-[10px] tracking-widest hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20 active:scale-95 disabled:opacity-50 uppercase italic"
-                                        >
-                                            {isBackingUp ? (
-                                                <>
-                                                    <RotateCcw className="w-3 h-3 animate-spin" />
-                                                    Creating Snapshot...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Database className="w-3 h-3" />
-                                                    Create Snapshot
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
 
-                                    <div className="overflow-hidden border border-white/5 rounded-3xl bg-slate-950/30">
-                                        <table className="w-full text-left">
-                                            <thead>
-                                                <tr className="border-b border-white/5 bg-white/5">
-                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Archive Identifier</th>
-                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Temporal Stamp</th>
-                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Payload Size</th>
-                                                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Protocol</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-white/5">
-                                                {backups.length === 0 ? (
-                                                    <tr>
-                                                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">No archives detected in current cluster</td>
-                                                    </tr>
-                                                ) : (
-                                                    backups.map(backup => (
-                                                        <tr key={backup.filename} className="group hover:bg-white/[0.02] transition-colors">
-                                                            <td className="px-6 py-4">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
-                                                                        <Database className="w-3 h-3" />
-                                                                    </div>
-                                                                    <div className="text-[10px] font-mono font-bold text-white uppercase tracking-tight">{backup.filename}</div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4">
-                                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
-                                                                    {new Date(backup.createdAt).toLocaleString()}
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4">
-                                                                <div className="text-[10px] font-mono font-bold text-slate-500">
-                                                                    {(backup.size / (1024 * 1024)).toFixed(2)} MB
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-right">
-                                                                <div className="flex justify-end gap-2">
-                                                                    <button
-                                                                        onClick={() => BackupService.downloadBackup(backup.filename)}
-                                                                        className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all"
-                                                                        title="Download Archive"
-                                                                    >
-                                                                        <Download className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleRestoreBackup(backup.filename)}
-                                                                        className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all"
-                                                                        title="Restore System State"
-                                                                    >
-                                                                        <RotateCcw className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteBackup(backup.filename)}
-                                                                        className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all"
-                                                                        title="Purge Archive"
-                                                                    >
-                                                                        <Lock className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                </div>
-                                                            </td>
+                                        <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="border-b border-slate-800 bg-slate-900/80">
+                                                            <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">User</th>
+                                                            <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">User ID</th>
+                                                            <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Role Level</th>
                                                         </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                                                        {users.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan={3} className="px-4 py-8 text-center text-slate-500 font-medium">No user records loaded</td>
+                                                            </tr>
+                                                        ) : (
+                                                            users.map(user => (
+                                                                <tr key={user._id} className="hover:bg-slate-900/50 transition-colors">
+                                                                    <td className="px-4 py-3">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center font-bold text-xs text-blue-400 border border-blue-500/20">
+                                                                                {user.username?.[0]?.toUpperCase() || 'U'}
+                                                                            </div>
+                                                                            <div>
+                                                                                <div className="font-semibold text-white">{user.username}</div>
+                                                                                <div className="text-xs text-slate-400 font-mono">{user.email}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 font-mono text-xs text-slate-400">
+                                                                        {user._id?.substring(0, 12)}...
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right">
+                                                                        <div className="inline-flex gap-1.5">
+                                                                            {['admin', 'employee', 'student'].map(role => (
+                                                                                <button
+                                                                                    key={role}
+                                                                                    onClick={() => handleUpdateUserRole(user._id, role)}
+                                                                                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all capitalize ${
+                                                                                        user.role === role
+                                                                                            ? 'bg-blue-600 text-white shadow-sm'
+                                                                                            : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
+                                                                                    }`}
+                                                                                >
+                                                                                    {role === 'admin' && <Shield className="w-3 h-3 inline mr-1 -mt-0.5" />}
+                                                                                    {role}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </motion.div>
+                                )}
 
-                    </AnimatePresence>
+                                {/* Security & API Tab */}
+                                {activeTab === 'security' && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+                                            <div className="p-2.5 bg-rose-500/10 rounded-xl text-rose-400 border border-rose-500/20">
+                                                <Shield className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-base sm:text-lg font-bold text-white">Security & API Keys</h2>
+                                                <p className="text-xs text-slate-400">Manage encryption keys, rotate access tokens, and export logs</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-300">Master Integration API Key</label>
+                                                <div className="relative">
+                                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                                                        <Key className="w-4 h-4" />
+                                                    </div>
+                                                    <input
+                                                        type={showApiKey ? 'text' : 'password'}
+                                                        value={settings.master_api_key || 'Loading API key...'}
+                                                        readOnly
+                                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-10 text-xs sm:text-sm font-mono text-blue-400 outline-none"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowApiKey(!showApiKey)}
+                                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                                                    >
+                                                        {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                                <button
+                                                    onClick={handleRotateKey}
+                                                    disabled={isRotating}
+                                                    className="inline-flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs sm:text-sm font-semibold text-slate-300 hover:text-blue-400 hover:border-slate-700 transition-all disabled:opacity-50"
+                                                >
+                                                    <RotateCcw className={`w-4 h-4 ${isRotating ? 'animate-spin' : ''}`} />
+                                                    <span>{isRotating ? 'Rotating Key...' : 'Rotate API Key'}</span>
+                                                </button>
+                                                <button
+                                                    onClick={handleExportLog}
+                                                    disabled={isExporting}
+                                                    className="inline-flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs sm:text-sm font-semibold text-slate-300 hover:text-emerald-400 hover:border-slate-700 transition-all disabled:opacity-50"
+                                                >
+                                                    <Download className="w-4 h-4" />
+                                                    <span>{isExporting ? 'Exporting...' : 'Export Audit Logs'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* System Health Tab */}
+                                {activeTab === 'system' && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+                                            <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-400 border border-amber-500/20">
+                                                <Cpu className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-base sm:text-lg font-bold text-white">System Diagnostics</h2>
+                                                <p className="text-xs text-slate-400">Real-time telemetry, memory allocation, and database nodes</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Latency</p>
+                                                <p className="text-2xl font-bold text-white font-mono">{latency}</p>
+                                                <div className="flex items-center gap-1.5 pt-1">
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                                    <span className="text-xs font-semibold text-emerald-400">Healthy</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Storage</p>
+                                                <p className="text-2xl font-bold text-white font-mono">{systemStats?.storage || 'Optimal'}</p>
+                                                <div className="flex items-center gap-1.5 pt-1">
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                                    <span className="text-xs font-semibold text-emerald-400">Normal</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cluster Nodes</p>
+                                                <p className="text-2xl font-bold text-white font-mono">{systemStats?.active_nodes?.toString() || '1'}</p>
+                                                <div className="flex items-center gap-1.5 pt-1">
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                                    <span className="text-xs font-semibold text-emerald-400">Online</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                                            <div className="flex items-center gap-2">
+                                                <Command className="w-4 h-4 text-blue-400" />
+                                                <span className="text-xs font-bold text-white uppercase tracking-wider">Node Status Report</span>
+                                            </div>
+                                            <div className="bg-slate-900 font-mono text-xs p-4 rounded-lg text-slate-300 leading-relaxed border border-slate-800/80 space-y-1">
+                                                <div className="text-slate-500">// Attendance Engine Heartbeat</div>
+                                                <div>&gt; MongoDB Connection: <span className="text-emerald-400">[CONNECTED]</span> v{systemStats?.mongo_version || '6.0'}</div>
+                                                <div>&gt; Memory In-Use: <span className="text-blue-400">{systemStats?.memory || '64 MB'}</span></div>
+                                                <div>&gt; Process Uptime: <span className="text-amber-400">{Math.floor((systemStats?.uptime || 0) / 60)}m {(Math.floor(systemStats?.uptime || 0) % 60)}s</span></div>
+                                                <div>&gt; Status: <span className="text-emerald-400">ALL_SYSTEMS_OPERATIONAL</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Backup & Recovery Tab */}
+                                {activeTab === 'backup' && (
+                                    <div className="space-y-6">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-400 border border-blue-500/20">
+                                                    <Database className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-base sm:text-lg font-bold text-white">Database Backup & Recovery</h2>
+                                                    <p className="text-xs text-slate-400">Create snapshots and restore database state</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={handleCreateBackup}
+                                                disabled={isBackingUp}
+                                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-all disabled:opacity-50 self-start sm:self-auto"
+                                            >
+                                                {isBackingUp ? (
+                                                    <>
+                                                        <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                                                        <span>Creating...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Database className="w-3.5 h-3.5" />
+                                                        <span>Create Snapshot</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+
+                                        <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="border-b border-slate-800 bg-slate-900/80">
+                                                            <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Archive Name</th>
+                                                            <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Created At</th>
+                                                            <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Size</th>
+                                                            <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                                                        {backups.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan={4} className="px-4 py-8 text-center text-slate-500 font-medium">No archive snapshots found</td>
+                                                            </tr>
+                                                        ) : (
+                                                            backups.map(backup => (
+                                                                <tr key={backup.filename} className="hover:bg-slate-900/50 transition-colors">
+                                                                    <td className="px-4 py-3 font-mono text-xs text-white">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Database className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                                                                            <span className="truncate max-w-[200px]">{backup.filename}</span>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-xs text-slate-400">
+                                                                        {new Date(backup.createdAt).toLocaleString()}
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-xs text-slate-400 font-mono">
+                                                                        {(backup.size / (1024 * 1024)).toFixed(2)} MB
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right">
+                                                                        <div className="inline-flex gap-1.5">
+                                                                            <button
+                                                                                onClick={() => BackupService.downloadBackup(backup.filename)}
+                                                                                className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                                                                                title="Download Archive"
+                                                                            >
+                                                                                <Download className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleRestoreBackup(backup.filename)}
+                                                                                className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-colors"
+                                                                                title="Restore Snapshot"
+                                                                            >
+                                                                                <RotateCcw className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleDeleteBackup(backup.filename)}
+                                                                                className="p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white transition-colors"
+                                                                                title="Delete Archive"
+                                                                            >
+                                                                                <Lock className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
-

@@ -19,20 +19,20 @@ export default function ComingSoon({ title, description, icon: Icon }: ComingSoo
                 className="relative mb-8"
             >
                 <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
-                <div className="relative w-24 h-24 bg-gradient-to-br from-blue-500/20 to-indigo-600/20 border border-white/10 rounded-3xl flex items-center justify-center backdrop-blur-xl">
-                    <Icon size={48} className="text-blue-400" />
+                <div className="relative w-20 h-20 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center shadow-sm">
+                    <Icon size={40} className="text-blue-500" />
                 </div>
             </motion.div>
 
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.15 }}
             >
-                <h1 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-slate-500 tracking-tight mb-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">
                     {title}
                 </h1>
-                <p className="text-slate-400 text-lg max-w-md font-medium">
+                <p className="text-slate-400 text-sm sm:text-base max-w-md font-normal leading-relaxed">
                     {description}
                 </p>
             </motion.div>
@@ -40,13 +40,13 @@ export default function ComingSoon({ title, description, icon: Icon }: ComingSoo
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="mt-12 flex flex-wrap gap-4 justify-center"
+                transition={{ delay: 0.3 }}
+                className="mt-8 flex flex-wrap gap-3 justify-center"
             >
-                <div className="px-6 py-2 bg-white/5 border border-white/5 rounded-full text-sm font-bold text-slate-500 uppercase tracking-widest">
+                <div className="px-4 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     Coming Soon
                 </div>
-                <div className="px-6 py-2 glass-pane rounded-full text-sm font-bold text-blue-400 uppercase tracking-widest">
+                <div className="px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs font-semibold text-blue-400 uppercase tracking-wider">
                     In Development
                 </div>
             </motion.div>

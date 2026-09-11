@@ -118,10 +118,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <AHeader sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
                 </div>
 
-                {/* Background ambient glow */}
-                <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-transparent pointer-events-none opacity-50 blur-3xl z-0 print:hidden" />
-
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto print:p-0">
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto print:p-0 max-w-7xl w-full mx-auto">
                     {children}
                 </main>
             </div>

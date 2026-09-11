@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import EmployeeList from '@/components/employee/EmployeeList';
 import { Employee } from '@/types/employee.types';
 import { EmployeeService } from '@/services/employee.service';
@@ -43,20 +44,21 @@ export default function EmployeePage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6">
                 <div>
-                    <h1 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-slate-500 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                         {typeFilter === 'student' ? 'Student Management' : typeFilter === 'employee' ? 'Employee Management' : 'People Management'}
                     </h1>
-                    <p className="text-slate-400 mt-1 font-medium">
-                        {typeFilter === 'student' ? 'Manage your students, classes, and academic records.' : 'Manage your team, roles, and access controls.'}
+                    <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                        {typeFilter === 'student' ? 'Manage your students, classes, and attendance records.' : 'Manage personnel directory, roles, and status.'}
                     </p>
                 </div>
 
                 <Link
                     href={`/dashboard/management/employee/create?type=${typeFilter || 'employee'}`}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl shadow-lg shadow-blue-500/30 transition-all transform hover:scale-[1.02] active:scale-[0.98] font-medium"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-sm transition-colors text-xs sm:text-sm font-semibold active:scale-95 whitespace-nowrap"
                 >
+                    <Plus className="w-4 h-4" />
                     <span>Add {typeFilter === 'student' ? 'Student' : 'Employee'}</span>
                 </Link>
             </div>
@@ -69,3 +71,4 @@ export default function EmployeePage() {
         </div>
     );
 }
+

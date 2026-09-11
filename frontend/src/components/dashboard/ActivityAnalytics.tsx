@@ -28,14 +28,12 @@ export default function ActivityAnalytics() {
         fetchData();
     }, []);
 
-    if (loading) {
         return (
-            <div className="glass-pane rounded-3xl shadow-xl p-8 flex flex-col items-center justify-center min-h-[300px] text-center relative overflow-hidden">
-                <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4" />
-                <p className="text-slate-400 font-medium">Synchronizing reports...</p>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 flex flex-col items-center justify-center min-h-[300px] text-center relative overflow-hidden">
+                <div className="w-10 h-10 border-3 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4" />
+                <p className="text-slate-400 font-medium text-sm">Synchronizing reports...</p>
             </div>
         );
-    }
 
     const attendanceDelta = analytics?.attendanceDelta || [];
     const maxCount = Math.max(...attendanceDelta.map((d: any) => d.count), 1);

@@ -601,28 +601,28 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
             </div>
 
             {/* Bottom Status Bar */}
-            <div className="w-full p-5 bg-slate-900/90 border-t border-white/10 flex items-center justify-between backdrop-blur-md">
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-2.5 h-2.5 rounded-full ${isSuccess ? 'bg-emerald-500' : (status.includes('No') || status.includes('Multiple') ? 'bg-rose-500' : 'bg-blue-500')} animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]`} />
-                        <span className={`text-xs font-black uppercase tracking-[0.15em] ${isSuccess ? 'text-emerald-400' : (status.includes('No') || status.includes('Multiple') ? 'text-rose-400' : 'text-blue-400')}`}>
+            <div className="w-full p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-between">
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2.5">
+                        <div className={`w-2 h-2 rounded-full ${isSuccess ? 'bg-emerald-500' : (status.includes('No') || status.includes('Multiple') ? 'bg-rose-500' : 'bg-blue-500')} animate-pulse`} />
+                        <span className={`text-xs font-bold uppercase tracking-wider ${isSuccess ? 'text-emerald-400' : (status.includes('No') || status.includes('Multiple') ? 'text-rose-400' : 'text-blue-400')}`}>
                             {status}
                         </span>
                     </div>
-                    <div className="flex items-center gap-6 mt-1">
-                        <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${(blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness) ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-rose-500/50'}`} />
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Liveness: {(blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness) ? 'VERIFIED' : 'PENDING'}</span>
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-400">
+                        <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full ${(blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness) ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                            <span className="text-[11px]">Liveness: {(blinkCount > 0 || BIOMETRIC_CONFIG.bypassLiveness) ? 'VERIFIED' : 'PENDING'}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${userLocation ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : (locationError ? 'bg-rose-500' : 'bg-amber-500/50')}`} />
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pr-2">
+                        <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full ${userLocation ? 'bg-emerald-500' : (locationError ? 'bg-rose-500' : 'bg-amber-500')}`} />
+                            <span className="text-[11px]">
                                 Geofence: {userLocation ? 'SECURED' : (locationError || 'SYNCING')}
                             </span>
                             {!userLocation && (
                                 <button
                                     onClick={requestLocation}
-                                    className="px-2 py-0.5 bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 rounded text-[7px] font-black text-blue-400 uppercase transition-all"
+                                    className="px-1.5 py-0.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded text-[10px] font-bold text-blue-400 uppercase transition-all"
                                 >
                                     Retry
                                 </button>
@@ -630,12 +630,12 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-2">
-                        <Scan className="w-4 h-4 text-slate-600" />
-                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Biometric-V1.2</span>
+                <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-1.5">
+                        <Scan className="w-3.5 h-3.5 text-slate-500" />
+                        <span className="text-xs font-bold text-slate-400">Biometric v1.2</span>
                     </div>
-                    <div className="text-[8px] font-mono text-slate-700 uppercase">Secure Auth Protocol</div>
+                    <div className="text-[10px] text-slate-500">Secure Protocol</div>
                 </div>
             </div>
 
@@ -646,21 +646,21 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg flex items-center justify-between w-full"
+                        className="mt-3 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-between w-full"
                     >
-                        <div className="flex items-center gap-3">
-                            <ShieldAlert className="w-5 h-5 text-rose-400" />
+                        <div className="flex items-center gap-2.5">
+                            <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest leading-none">Access Restricted</span>
-                                <span className="text-[9px] font-medium text-rose-400/60 mt-0.5">{locationError === 'Location Access Denied' ? 'Geolocation permission is blocked. Reset site permissions in browser.' : locationError}</span>
+                                <span className="text-xs font-bold text-rose-400">Location Access Required</span>
+                                <span className="text-[11px] text-rose-400/80">{locationError === 'Location Access Denied' ? 'Geolocation permission is blocked. Reset site permissions in browser.' : locationError}</span>
                             </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 shrink-0">
                             <button
                                 onClick={requestLocation}
-                                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-rose-500/25"
+                                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold transition-all shadow-sm"
                             >
-                                Retry Link
+                                Retry
                             </button>
                             {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
                                 <button
@@ -669,7 +669,7 @@ const FaceVerify: React.FC<FaceVerifyProps> = ({ employeeId, mode = 'verify-only
                                         setLocationError(null);
                                         toast.success('Developer Bypass Active');
                                     }}
-                                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-md text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-all"
+                                    className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition-all"
                                 >
                                     Dev Bypass
                                 </button>
