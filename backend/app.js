@@ -1,17 +1,42 @@
 process.env.TZ = 'Asia/Phnom_Penh';
 require('dotenv').config();
 
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const { Server } = require('socket.io');
 const { connectToMongoDB, checkMongoDBHealth } = require('./config/mongo.config');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+const PORT = process.env.PORT || 4000;
+
+// Socket.io Server Setup
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST'],
+        credentials: true
+    },
+    transports: ['websocket', 'polling']
+});
+
+io.on('connection', (socket) => {
+    console.log(`🔌 Socket connected: ${socket.id}`);
+
+    socket.on('authenticate', (data) => {
+        socket.emit('authenticated', { success: true, message: 'Authenticated successfully' });
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`🔌 Socket disconnected: ${socket.id}`);
+    });
+});
 
 // Core Middlewares
 app.use(cors({
-    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
+    origin: '*',
     credentials: true,
 }));
 app.use(express.json({ limit: '50mb' }));
@@ -60,9 +85,10 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
     try {
         await connectToMongoDB();
-        app.listen(PORT, () => {
+        server.listen(PORT, () => {
             console.log(`🚀 Server listening on http://localhost:${PORT}`);
-            console.log(`🏥 Health check available at http://localhost:${PORT}/health`);
+            console.log(`🔌 WebSocket active on ws://localhost:${PORT}`);
+            console.log(`🏥 Health check at http://localhost:${PORT}/health`);
         });
     } catch (error) {
         console.error('Failed to start server:', error.message);
@@ -72,4 +98,4 @@ const startServer = async () => {
 
 startServer();
 
-module.exports = app;
+module.exports = { app, server, io };

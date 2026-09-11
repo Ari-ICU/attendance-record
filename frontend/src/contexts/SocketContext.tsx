@@ -49,18 +49,18 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         const newSocket = io(socketUrl, {
             path: '/socket.io/',
-            transports: ['websocket', 'polling'],
+            transports: ['polling', 'websocket'],
             auth: {
                 token: token
             },
             reconnection: true,
             reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
+            reconnectionDelay: 3000,
+            timeout: 5000,
         });
 
         // Connection handlers
         newSocket.on('connect', () => {
-            console.log('Socket connected:', newSocket.id);
             setIsConnected(true);
 
             // Authenticate immediately upon connection
@@ -73,12 +73,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         });
 
         newSocket.on('disconnect', () => {
-            console.log('Socket disconnected');
             setIsConnected(false);
         });
 
-        newSocket.on('connect_error', (err) => {
-            console.error('Socket connection error:', err);
+        newSocket.on('connect_error', () => {
             setIsConnected(false);
         });
 
