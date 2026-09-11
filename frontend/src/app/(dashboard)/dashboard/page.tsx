@@ -57,17 +57,17 @@ export default function DashboardPage() {
                     return (
                         <div
                             key={idx}
-                            className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow"
+                            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow"
                         >
                             <div className="flex items-center justify-between mb-3">
-                                <span className="text-xs font-semibold text-slate-500">{stat.label}</span>
+                                <span className="text-xs font-bold text-black uppercase tracking-wider">{stat.label}</span>
                                 <div className={`p-2.5 rounded-xl ${stat.bg} ${stat.color}`}>
                                     <Icon size={18} />
                                 </div>
                             </div>
-                            <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
-                            <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1 font-medium">
-                                <ArrowUpRight size={12} className="text-emerald-500" />
+                            <div className="text-3xl font-black text-black">{stat.value}</div>
+                            <p className="text-xs text-slate-800 mt-1.5 flex items-center gap-1 font-bold">
+                                <ArrowUpRight size={13} className="text-emerald-600" />
                                 <span>{stat.change}</span>
                             </p>
                         </div>
@@ -80,10 +80,10 @@ export default function DashboardPage() {
                 <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
                     <Layers size={28} />
                 </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-1">
+                <h3 className="text-xl font-black text-black mb-1">
                     New Dashboard Canvas Ready
                 </h3>
-                <p className="text-sm text-slate-500 max-w-md mb-6">
+                <p className="text-sm font-semibold text-slate-800 max-w-md mb-6">
                     Start designing your brand new UI widgets, tables, charts, or operational feeds here.
                 </p>
             </div>

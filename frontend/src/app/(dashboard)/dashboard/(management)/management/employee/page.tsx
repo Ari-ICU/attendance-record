@@ -48,13 +48,13 @@ export default function EmployeePage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                    <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
                         <span>{isStudent ? 'Student Directory' : 'Faculty & Staff Roster'}</span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-200">
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200">
                             {employees.length} Enrolled
                         </span>
                     </h1>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                    <p className="text-xs sm:text-sm text-slate-800 font-semibold mt-1">
                         {isStudent ? 'Manage student IDs, class enrollments, and biometric templates.' : 'Manage employee profiles, departmental roles, and access clearances.'}
                     </p>
                 </div>
