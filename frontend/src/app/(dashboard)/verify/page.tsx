@@ -94,7 +94,7 @@ export default function VerifyPage() {
 
     return (
         <main className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 bg-slate-50">
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="w-full space-y-6">
                 {/* Header Section */}
                 <div className="text-center max-w-2xl mx-auto space-y-2">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-600 text-xs font-semibold">

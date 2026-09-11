@@ -41,7 +41,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
     const isStudent = employee.type === 'student';
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 pb-12">
+        <div className="w-full space-y-6 pb-12">
             {/* Action Bar */}
             <div className="flex justify-between items-center">
                 <button

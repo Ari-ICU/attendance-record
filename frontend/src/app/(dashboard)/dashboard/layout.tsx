@@ -12,13 +12,9 @@ import {
     Users,
     BookOpen,
     Bell,
-    Layers,
     UserCheck,
     Calendar,
-    FileSpreadsheet,
-    Building2,
-    Clock,
-    FileText
+    Clock
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -50,7 +46,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             items: [
                 { name: 'Take Attendance', href: '/dashboard/attendance/monitor', icon: <Clock size={15} /> },
                 { name: 'Attendance Records', href: '/dashboard/attendance/records', icon: <Calendar size={15} /> },
-                { name: 'Attendance History', href: '/dashboard/attendance/records', icon: <FileText size={15} /> },
             ],
         },
 
@@ -63,34 +58,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             items: [
                 { name: 'Students', href: '/dashboard/management/employee?type=student', icon: <Users size={15} /> },
                 { name: 'Teachers / Staff', href: '/dashboard/management/employee?type=employee', icon: <UserCheck size={15} /> },
-                { name: 'Departments', href: '/dashboard/management/departments', icon: <Building2 size={15} /> },
             ],
         },
 
-        // CLASSES
+        // CLASSES / ACADEMIC
         {
-            section: 'CLASSES',
-            name: 'Classes',
+            section: 'ACADEMIC',
+            name: 'Classes & Depts',
+            href: '/dashboard/management/departments',
             icon: <BookOpen size={17} />,
-            group: true,
-            items: [
-                { name: 'All Classes', href: '/dashboard/management/departments', icon: <BookOpen size={15} /> },
-                { name: 'Schedules', href: '/dashboard/management/departments', icon: <Layers size={15} /> },
-                { name: 'Class Attendance', href: '/dashboard/attendance/records', icon: <Calendar size={15} /> },
-            ],
         },
 
         // REPORTS
         {
-            section: 'REPORTS',
-            name: 'Reports',
+            section: 'INSIGHTS',
+            name: 'Reports & Analytics',
+            href: '/dashboard/reports/analytics',
             icon: <BarChart3 size={17} />,
-            group: true,
-            items: [
-                { name: 'Analytics', href: '/dashboard/reports/analytics', icon: <BarChart3 size={15} /> },
-                { name: 'Attendance Reports', href: '/dashboard/reports/analytics', icon: <FileText size={15} /> },
-                { name: 'Export', href: '/dashboard/attendance/records', icon: <FileSpreadsheet size={15} /> },
-            ],
         },
 
         // SYSTEM
@@ -150,7 +134,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <AHeader sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
                 </div>
 
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 max-w-7xl w-full mx-auto">
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 w-full">
                     {children}
                 </main>
             </div>

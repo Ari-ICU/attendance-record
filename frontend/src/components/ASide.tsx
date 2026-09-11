@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
     ChevronDown,
     ChevronLeft,
@@ -50,9 +50,47 @@ export default function Sidebar({
 }: SidebarProps) {
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { user, logout } = useAuth();
     const { isConnected } = useSocket();
     const [mounted, setMounted] = useState(false);
+
+    const isItemActive = (href?: string) => {
+        if (!href) return false;
+        const [targetPath, targetQuery] = href.split('?');
+
+        if (targetPath === '/dashboard') {
+            return pathname === '/dashboard';
+        }
+
+        if (targetQuery) {
+            const targetParams = new URLSearchParams(targetQuery);
+            if (pathname !== targetPath) return false;
+            for (const [key, value] of targetParams.entries()) {
+                if (searchParams.get(key) !== value) return false;
+            }
+            return true;
+        }
+
+        if (pathname === targetPath) {
+            if (searchParams.toString()) {
+                const hasQuerySibling = menuItems.some(
+                    (m) =>
+                        m.href?.startsWith(targetPath + '?') ||
+                        m.items?.some((sub) => sub.href?.startsWith(targetPath + '?'))
+                );
+                if (hasQuerySibling) return false;
+            }
+            return true;
+        }
+
+        return pathname.startsWith(targetPath + '/');
+    };
+
+    const isGroupActive = (item: MenuItem) => {
+        if (!item.items) return false;
+        return item.items.some((sub) => isItemActive(sub.href));
+    };
 
     // Auto-expand group if current route is active inside
     useEffect(() => {
@@ -60,9 +98,7 @@ export default function Sidebar({
         const activeGroups: string[] = [];
         menuItems.forEach((item) => {
             if (item.group && item.items) {
-                const isChildActive = item.items.some(
-                    (sub) => sub.href && (pathname === sub.href || (sub.href !== '/dashboard' && pathname.startsWith(sub.href.split('?')[0])))
-                );
+                const isChildActive = item.items.some((sub) => isItemActive(sub.href));
                 if (isChildActive) {
                     activeGroups.push(item.name);
                 }
@@ -71,7 +107,7 @@ export default function Sidebar({
         if (activeGroups.length > 0) {
             setExpandedGroups((prev) => Array.from(new Set([...prev, ...activeGroups])));
         }
-    }, [pathname, menuItems]);
+    }, [pathname, searchParams, menuItems]);
 
     const toggleGroup = (name: string) => {
         if (collapsed) {
@@ -85,18 +121,6 @@ export default function Sidebar({
     };
 
     if (!mounted) return null;
-
-    const isItemActive = (href?: string) => {
-        if (!href) return false;
-        const [cleanHref] = href.split('?');
-        if (cleanHref === '/dashboard') return pathname === '/dashboard';
-        return pathname === cleanHref || pathname.startsWith(cleanHref);
-    };
-
-    const isGroupActive = (item: MenuItem) => {
-        if (!item.items) return false;
-        return item.items.some((sub) => isItemActive(sub.href));
-    };
 
     const renderMenuContent = () => {
         // Group items by section
