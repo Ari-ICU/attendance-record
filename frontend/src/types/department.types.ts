@@ -4,7 +4,7 @@ export interface Department {
     _id: string;
     name: string;
     code: string;
-    headOfDepartment: {};
+    headOfDepartment?: { _id?: string; firstName?: string; lastName?: string } | any;
     description?: string;
     head?: Employee;
     memberCount?: number;
