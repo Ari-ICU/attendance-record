@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, LogIn, Eye, EyeOff, School } from 'lucide-react';
+import { Mail, Lock, LogIn, Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginForm() {
@@ -20,7 +20,7 @@ export default function LoginForm() {
         setIsLoading(true);
 
         if (!identifier || !password) {
-            setError('Please fill in all fields');
+            setError('Please enter your email/username and password');
             setIsLoading(false);
             return;
         }
@@ -37,58 +37,70 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
-            <div className="w-full max-w-md bg-white border border-slate-200/80 rounded-2xl p-7 sm:p-8 shadow-sm">
+        <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-slate-100 font-sans select-none">
+            <div className="w-full max-w-md bg-white border border-slate-300 rounded-3xl p-8 sm:p-10 shadow-xs">
+                {/* Brand Header */}
                 <div className="text-center mb-8">
-                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white font-bold text-lg shadow-xs">
-                        <School size={22} />
+                    <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center mx-auto mb-4 font-black text-base shadow-xs">
+                        SF
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Attendance System</h1>
-                    <p className="text-xs text-slate-500 mt-1">Sign in with your campus account</p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
+                        StaffFlow Portal
+                    </h1>
+                    <p className="text-xs sm:text-sm font-bold text-slate-800 mt-1">
+                        Sign in to access your administrative management center
+                    </p>
                 </div>
 
+                {/* Error Banner */}
                 {error && (
-                    <div className="mb-5 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold">
-                        {error}
+                    <div className="mb-6 p-3.5 bg-rose-50 border border-rose-300 text-rose-900 rounded-2xl text-xs font-bold flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
+                        <span>{error}</span>
                     </div>
                 )}
 
+                {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-1.5">
-                        <label htmlFor="identifier" className="text-xs font-semibold text-slate-700">
+                        <label htmlFor="identifier" className="text-xs font-black text-black uppercase tracking-wider">
                             Email or Username
                         </label>
-                        <div className="flex items-center bg-slate-50 border border-slate-200/80 rounded-xl focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/10 transition-colors">
-                            <Mail size={16} className="ml-3 text-slate-400" />
+                        <div className="flex items-center bg-slate-50 border border-slate-300 rounded-2xl focus-within:bg-white focus-within:border-black focus-within:ring-2 focus-within:ring-black/10 transition-all">
+                            <Mail size={16} className="ml-3.5 text-black shrink-0" />
                             <input
                                 id="identifier"
                                 type="text"
                                 value={identifier}
                                 onChange={(e) => setIdentifier(e.target.value)}
-                                className="w-full px-3 py-2.5 bg-transparent text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
-                                placeholder="admin@campus.edu"
+                                className="w-full px-3 py-3 bg-transparent text-xs sm:text-sm font-bold text-black placeholder-slate-500 focus:outline-hidden"
+                                placeholder="admin@system.com"
+                                autoFocus
                             />
                         </div>
                     </div>
 
                     <div className="space-y-1.5">
-                        <label htmlFor="password" className="text-xs font-semibold text-slate-700">
-                            Password
-                        </label>
-                        <div className="flex items-center bg-slate-50 border border-slate-200/80 rounded-xl focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/10 transition-colors">
-                            <Lock size={16} className="ml-3 text-slate-400" />
+                        <div className="flex items-center justify-between">
+                            <label htmlFor="password" className="text-xs font-black text-black uppercase tracking-wider">
+                                Password
+                            </label>
+                        </div>
+                        <div className="flex items-center bg-slate-50 border border-slate-300 rounded-2xl focus-within:bg-white focus-within:border-black focus-within:ring-2 focus-within:ring-black/10 transition-all">
+                            <Lock size={16} className="ml-3.5 text-black shrink-0" />
                             <input
                                 id="password"
                                 type={showPassword ? 'text' : 'password'}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-3 py-2.5 bg-transparent text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
+                                className="w-full px-3 py-3 bg-transparent text-xs sm:text-sm font-bold text-black placeholder-slate-500 focus:outline-hidden"
                                 placeholder="••••••••"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="pr-3 text-slate-400 hover:text-slate-600 transition-colors"
+                                className="pr-3.5 text-slate-700 hover:text-black transition-colors cursor-pointer"
+                                tabIndex={-1}
                             >
                                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
@@ -98,18 +110,24 @@ export default function LoginForm() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full mt-3 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-xs disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full mt-2 py-3 bg-black hover:bg-slate-900 text-white text-xs sm:text-sm font-black rounded-2xl transition-all shadow-xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                     >
                         {isLoading ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
                             <>
-                                <span>Sign In to Portal</span>
-                                <LogIn size={15} />
+                                <span>Sign In to Dashboard</span>
+                                <ArrowRight size={15} />
                             </>
                         )}
                     </button>
                 </form>
+
+                {/* Footer Security Notice */}
+                <div className="mt-8 pt-6 border-t border-slate-200 flex items-center justify-center gap-2 text-[11px] font-bold text-slate-800">
+                    <ShieldCheck size={14} className="text-black" />
+                    <span>256-bit Encrypted Session • Enterprise Security</span>
+                </div>
             </div>
         </div>
     );
