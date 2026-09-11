@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Zap, Globe, Cpu, UserCheck } from 'lucide-react';
 
@@ -68,27 +69,50 @@ export default function LandingPulse() {
 
 function AnimateParticles() {
     const Icons = [Zap, Cpu, UserCheck, Shield];
+    const [particles, setParticles] = useState<Array<{
+        id: number;
+        iconIndex: number;
+        initialLeft: string;
+        initialTop: string;
+        animateTop: string;
+        duration: number;
+    }>>([]);
+
+    useEffect(() => {
+        const generated = Array.from({ length: 6 }).map((_, i) => ({
+            id: i,
+            iconIndex: i % Icons.length,
+            initialLeft: `${Math.random() * 100}%`,
+            initialTop: `${Math.random() * 100}%`,
+            animateTop: `${Math.random() * 100}%`,
+            duration: 10 + Math.random() * 10,
+        }));
+        setParticles(generated);
+    }, []);
+
+    if (particles.length === 0) return null;
+
     return (
         <>
-            {[...Array(6)].map((_, i) => {
-                const Icon = Icons[i % Icons.length];
+            {particles.map((p) => {
+                const Icon = Icons[p.iconIndex];
                 return (
                     <motion.div
-                        key={i}
+                        key={p.id}
                         className="absolute text-slate-800 pointer-events-none"
                         initial={{
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
+                            left: p.initialLeft,
+                            top: p.initialTop,
                             opacity: 0,
                             scale: 0.5
                         }}
                         animate={{
-                            top: `${Math.random() * 100}%`,
+                            top: p.animateTop,
                             opacity: [0, 0.2, 0],
                             scale: [0.5, 1, 0.5]
                         }}
                         transition={{
-                            duration: 10 + Math.random() * 10,
+                            duration: p.duration,
                             repeat: Infinity,
                             ease: "linear"
                         }}
