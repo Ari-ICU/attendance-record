@@ -41,35 +41,28 @@ export default function ActivityAnalytics() {
     const maxCount = Math.max(...attendanceDelta.map((d: any) => d.count), 1);
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-pane rounded-3xl shadow-xl p-8 flex flex-col min-h-[400px] relative overflow-hidden group"
-        >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-50 pointer-events-none" />
-
-            <div className="flex items-center justify-between mb-8 relative z-10">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 text-blue-400 group-hover:scale-110 transition-transform duration-500">
-                        <TrendingUp className="w-6 h-6" />
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col min-h-[380px]">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400">
+                        <TrendingUp className="w-5 h-5" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black text-white italic tracking-tight">Active Insights</h3>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">
-                            Attendance trends last 7 days
+                        <h3 className="text-base font-bold text-slate-100">Attendance Analytics</h3>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                            Check-in activity over the last 7 days
                         </p>
                     </div>
                 </div>
-                <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                        <Zap size={10} className="text-emerald-400 animate-pulse" />
-                        <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Live</span>
-                    </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 font-medium">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>7 Days</span>
                 </div>
             </div>
 
-            {/* Simple Bar Chart */}
-            <div className="flex-1 flex items-end justify-between gap-1 sm:gap-2 mb-8 h-40 relative z-10">
+            {/* Flat Bar Chart */}
+            <div className="flex-1 flex items-end justify-between gap-2 mb-6 h-36 border-b border-slate-800 pb-2">
                 {attendanceDelta.length > 0 ? (
                     attendanceDelta.map((data: any, i: number) => {
                         const height = (data.count / maxCount) * 100;
@@ -77,53 +70,42 @@ export default function ActivityAnalytics() {
                         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
 
                         return (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-3 group/bar h-full">
+                            <div key={i} className="flex-1 flex flex-col items-center gap-2 group/bar h-full">
                                 <div className="relative w-full flex flex-col items-center justify-end h-full">
                                     {/* Tooltip */}
-                                    <div className="absolute -top-10 scale-0 group-hover/bar:scale-100 transition-all duration-200 bg-slate-900 border border-white/10 px-2 py-1 rounded text-[10px] font-black text-white whitespace-nowrap z-20">
-                                        {data.count} Scans
+                                    <div className="absolute -top-8 scale-0 group-hover/bar:scale-100 transition-all duration-150 bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-[11px] font-semibold text-slate-200 whitespace-nowrap z-20">
+                                        {data.count} scans
                                     </div>
 
-                                    <motion.div
-                                        initial={{ height: 0 }}
-                                        animate={{ height: `${Math.max(10, height)}%` }}
-                                        transition={{ duration: 1, delay: i * 0.1, ease: "easeOut" }}
-                                        className={`w-full max-w-[24px] rounded-t-lg bg-gradient-to-t from-blue-600/50 to-blue-400 group-hover/bar:from-blue-500 group-hover/bar:to-blue-300 transition-all shadow-[0_0_15px_rgba(59,130,246,0.2)]`}
+                                    <div
+                                        style={{ height: `${Math.max(8, height)}%` }}
+                                        className="w-full max-w-[28px] rounded-t bg-blue-600 group-hover/bar:bg-blue-500 transition-colors"
                                     />
                                 </div>
-                                <span className="text-[9px] font-black text-slate-500 group-hover/bar:text-blue-400 transition-colors uppercase">
-                                    {dayName[0]}
+                                <span className="text-[11px] font-medium text-slate-400 group-hover/bar:text-slate-200 transition-colors">
+                                    {dayName}
                                 </span>
                             </div>
                         );
                     })
                 ) : (
-                    <div className="w-full flex items-center justify-center text-slate-500 text-xs font-medium italic">
-                        Insufficient data for telemetry visualization
+                    <div className="w-full flex items-center justify-center text-slate-500 text-xs">
+                        No activity data available for this period
                     </div>
                 )}
             </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-4 mt-auto relative z-10">
-                <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1 group/stat hover:bg-white/[0.06] transition-colors">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Efficiency</p>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xl font-black text-white italic">{analytics?.summary?.systemEfficiency || '95.0'}%</span>
-                        <BarChart3 className="w-3.5 h-3.5 text-blue-400 opacity-0 group-hover/stat:opacity-100 transition-opacity" />
-                    </div>
+            {/* Flat Quick Stats */}
+            <div className="grid grid-cols-2 gap-3 mt-auto">
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <p className="text-xs text-slate-400 font-medium">Average Efficiency</p>
+                    <p className="text-xl font-bold text-slate-100 mt-1">{analytics?.summary?.systemEfficiency || '95.0'}%</p>
                 </div>
-                <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1 group/stat hover:bg-white/[0.06] transition-colors">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Compliance</p>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xl font-black text-white italic">{analytics?.summary?.avgCompliance || '88.5'}%</span>
-                        <Activity className="w-3.5 h-3.5 text-emerald-400 opacity-0 group-hover/stat:opacity-100 transition-opacity" />
-                    </div>
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <p className="text-xs text-slate-400 font-medium">On-Time Compliance</p>
+                    <p className="text-xl font-bold text-emerald-400 mt-1">{analytics?.summary?.avgCompliance || '88.5'}%</p>
                 </div>
             </div>
-
-            {/* Animated background lines */}
-            <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent animate-pulse" />
-        </motion.div>
+        </div>
     );
 }

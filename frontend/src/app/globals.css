@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #020617;
+  --background: #090d16;
   --foreground: #f8fafc;
+  --card-bg: #0f172a;
+  --card-border: #1e293b;
   --font-geist-sans: "Geist", "Geist Fallback";
   --font-geist-mono: "Geist Mono", "Geist Mono Fallback";
 }
@@ -12,10 +14,28 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Flat Minimalist */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: #334155 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* Fix browser autofill colors */
@@ -26,7 +46,7 @@ input:-webkit-autofill:active {
   -webkit-background-clip: text;
   -webkit-text-fill-color: #ffffff !important;
   transition: background-color 5000s ease-in-out 0s;
-  box-shadow: inset 0 0 0px 1000px #020617 !important;
+  box-shadow: inset 0 0 0px 1000px #090d16 !important;
 }
 
 body {
@@ -40,88 +60,21 @@ body {
   overflow-x: hidden;
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
+/* Modern Flat Panel Surfaces */
+.glass-pane,
+.flat-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: none;
 }
 
-/* Star Background */
-.stars-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  background: radial-gradient(ellipse at bottom, #0c1421 0%, #020617 100%);
-  overflow: hidden;
+.flat-card-hover {
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
-.star {
-  position: absolute;
-  background: white;
-  border-radius: 50%;
-  opacity: 0.3;
-  pointer-events: none;
-  animation-iteration-count: infinite;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-}
-
-.star-1 {
-  width: 1px;
-  height: 1px;
-  animation: twinkle 3s infinite ease-in-out, drift 20s linear infinite;
-}
-
-.star-2 {
-  width: 2px;
-  height: 2px;
-  animation: twinkle 4s infinite ease-in-out, drift 35s linear infinite;
-}
-
-.star-3 {
-  width: 3px;
-  height: 3px;
-  animation: twinkle 5s infinite ease-in-out, drift 50s linear infinite;
-}
-
-@keyframes twinkle {
-
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.2);
-  }
-}
-
-@keyframes drift {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(-100px);
-  }
-}
-
-/* Background cards glassmorphism */
-.glass-pane {
-  background: rgba(30, 41, 59, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+.flat-card-hover:hover {
+  border-color: #3b82f6;
+  background-color: #131d35;
 }
 
 @media print {

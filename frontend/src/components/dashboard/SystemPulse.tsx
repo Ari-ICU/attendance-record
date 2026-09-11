@@ -1,7 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Shield, Zap, Terminal, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Activity, Shield, Zap, AlertCircle, CheckCircle2, Radio } from 'lucide-react';
 import { useSocket } from '@/contexts/SocketContext';
 import { useEffect, useState } from 'react';
 
@@ -16,99 +15,81 @@ export default function SystemPulse() {
         return () => clearInterval(timer);
     }, []);
 
-    const pulseItems = notifications.slice(0, 8); // Show only top 8
+    const pulseItems = notifications.slice(0, 8);
 
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-pane rounded-[2rem] border border-white/10 overflow-hidden flex flex-col h-full lg:h-[400px]"
-        >
-            <div className="p-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl flex flex-col h-full lg:h-[400px] overflow-hidden">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-800 bg-slate-950/40 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`} />
-                        <div className={`absolute inset-0 w-3 h-3 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-rose-500'} animate-ping opacity-50`} />
+                    <div className="relative flex items-center justify-center">
+                        <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                     </div>
                     <div>
-                        <h2 className="text-sm font-black text-white uppercase tracking-widest italic flex items-center gap-2">
-                            System Hub Pulse
-                            <Terminal size={14} className="text-blue-400" />
+                        <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                            Live Activity Stream
                         </h2>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                            {isConnected ? 'Neural Connection Active' : 'Offline Mode'} • {currentTime}
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                            {isConnected ? 'Real-time sync active' : 'Offline'} · {currentTime}
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/20" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/60" />
+                <div className="p-1.5 bg-slate-800 rounded-lg text-slate-400">
+                    <Radio size={14} className={isConnected ? 'text-emerald-400' : 'text-slate-500'} />
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                <AnimatePresence mode="popLayout">
-                    {pulseItems.length > 0 ? (
-                        pulseItems.map((item, i) => (
-                            <motion.div
-                                key={item.id}
-                                initial={{ opacity: 0, x: -20, filter: 'blur(10px)' }}
-                                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                                exit={{ opacity: 0, x: 20, filter: 'blur(10px)' }}
-                                transition={{ duration: 0.4, delay: i * 0.05 }}
-                                className={`p-4 rounded-2xl border flex gap-4 items-start group transition-all duration-300
-                                    ${item.type === 'error' ? 'bg-rose-500/5 border-rose-500/20' :
-                                        item.type === 'success' ? 'bg-emerald-500/5 border-emerald-500/20' :
-                                            'bg-blue-500/5 border-blue-500/20'}
-                                    hover:bg-white/[0.03]`}
-                            >
-                                <div className={`p-2 rounded-xl shrink-0 mt-0.5
-                                    ${item.type === 'error' ? 'bg-rose-500/10 text-rose-400' :
-                                        item.type === 'success' ? 'bg-emerald-500/10 text-emerald-400' :
-                                            'bg-blue-500/10 text-blue-400'}`}>
-                                    {item.type === 'error' ? <AlertCircle size={14} /> :
-                                        item.type === 'success' ? <CheckCircle2 size={14} /> :
-                                            <Zap size={14} />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-0.5">
-                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                                            {item.type.toUpperCase()} PROTOCOL
-                                        </span>
-                                        <span className="text-[8px] font-bold text-slate-600">
-                                            {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs font-medium text-slate-300 line-clamp-2 leading-relaxed tracking-tight">
-                                        {item.message}
-                                    </p>
-                                </div>
-                            </motion.div>
-                        ))
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
-                            <div className="relative">
-                                <Activity className="w-12 h-12 text-slate-800 animate-pulse" />
-                                <div className="absolute inset-0 w-12 h-12 text-blue-500/20 animate-ping" />
+            {/* Notifications Feed */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+                {pulseItems.length > 0 ? (
+                    pulseItems.map((item) => (
+                        <div
+                            key={item.id}
+                            className={`p-3 rounded-xl border flex gap-3 items-start transition-colors
+                                ${item.type === 'error' ? 'bg-rose-950/20 border-rose-800/40 text-rose-300' :
+                                    item.type === 'success' ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300' :
+                                        'bg-slate-950 border-slate-800 text-slate-300'}`}
+                        >
+                            <div className="shrink-0 mt-0.5">
+                                {item.type === 'error' ? <AlertCircle size={14} className="text-rose-400" /> :
+                                    item.type === 'success' ? <CheckCircle2 size={14} className="text-emerald-400" /> :
+                                        <Zap size={14} className="text-blue-400" />}
                             </div>
-                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">
-                                Listening for system telemetry...
-                            </p>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-0.5">
+                                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                        {item.type || 'Event'}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-slate-500">
+                                        {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-slate-200 line-clamp-2 leading-relaxed">
+                                    {item.message}
+                                </p>
+                            </div>
                         </div>
-                    )}
-                </AnimatePresence>
+                    ))
+                ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-2">
+                        <Activity className="w-8 h-8 text-slate-700" />
+                        <p className="text-xs text-slate-400">
+                            Waiting for real-time events...
+                        </p>
+                    </div>
+                )}
             </div>
 
-            <div className="p-4 bg-white/[0.01] border-t border-white/5">
-                <div className="flex items-center justify-between px-2">
-                    <div className="flex items-center gap-2">
-                        <Shield size={10} className="text-emerald-500" />
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">End-to-End Encrypted</span>
-                    </div>
-                    <span className="text-[8px] font-black text-blue-500/50 uppercase tracking-widest">v4.0.2-STABLE</span>
+            {/* Footer */}
+            <div className="p-3.5 bg-slate-950/60 border-t border-slate-800">
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                        <Shield size={12} className="text-emerald-500" />
+                        Encrypted Stream
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500">Auto-refresh: ON</span>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }

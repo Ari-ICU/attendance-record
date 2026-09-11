@@ -1,13 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MapPin, Shield, Zap, Globe, Compass } from 'lucide-react';
+import { MapPin, Shield, Globe, Compass } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function GeofenceVisualizer() {
     const [scans, setScans] = useState<{ id: number, x: number, y: number, color: string }[]>([]);
 
-    // Simulate live scans for the "wow" factor
     useEffect(() => {
         const interval = setInterval(() => {
             if (Math.random() > 0.7) {
@@ -15,7 +14,7 @@ export default function GeofenceVisualizer() {
                     id: Date.now(),
                     x: 40 + Math.random() * 20,
                     y: 40 + Math.random() * 20,
-                    color: Math.random() > 0.2 ? 'text-emerald-500' : 'text-amber-500'
+                    color: Math.random() > 0.2 ? 'bg-emerald-500' : 'bg-amber-500'
                 };
                 setScans(prev => [...prev.slice(-4), newScan]);
             }
@@ -24,61 +23,37 @@ export default function GeofenceVisualizer() {
     }, []);
 
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-pane rounded-[2.5rem] border border-white/10 overflow-hidden h-full flex flex-col relative"
-        >
-            <div className="p-6 border-b border-white/5 flex items-center justify-between relative z-10 bg-white/[0.02]">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden h-full flex flex-col">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-emerald-400">
-                        <MapPin size={18} />
+                    <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-400">
+                        <MapPin size={16} />
                     </div>
                     <div>
-                        <h2 className="text-sm font-black text-white uppercase tracking-widest italic">Live Geofence Radar</h2>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Active Perimeter: 150m Radius</p>
+                        <h2 className="text-sm font-bold text-slate-100">Geofence Radar</h2>
+                        <p className="text-[11px] text-slate-400">Perimeter: 150m Radius</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                    <Shield size={10} className="text-emerald-400 animate-pulse" />
-                    <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Secured</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    <Shield size={12} />
+                    <span className="text-[11px] font-semibold">Active</span>
                 </div>
             </div>
 
-            <div className="flex-1 relative flex items-center justify-center overflow-hidden p-8">
-                {/* Radar background grid */}
-                <div className="absolute inset-0 opacity-20 pointer-events-none">
-                    <div className="absolute inset-0 grid grid-cols-12 gap-0 border-white/5">
-                        {[...Array(12)].map((_, i) => (
-                            <div key={i} className="border-r border-white/5 h-full" />
-                        ))}
-                    </div>
-                    <div className="absolute inset-0 grid grid-rows-12 gap-0 border-white/5">
-                        {[...Array(12)].map((_, i) => (
-                            <div key={i} className="border-b border-white/5 w-full" />
-                        ))}
-                    </div>
-                </div>
-
-                {/* Concentric Radar Rings */}
-                <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+            {/* Radar Center */}
+            <div className="flex-1 relative flex items-center justify-center overflow-hidden p-6 bg-slate-950/20 min-h-[260px]">
+                {/* Concentric Circles */}
+                <div className="relative w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center">
                     {[1, 2, 3].map((ring) => (
                         <div
                             key={ring}
-                            className={`absolute border rounded-full border-blue-500/10`}
+                            className="absolute border border-slate-800 rounded-full"
                             style={{
                                 width: `${ring * 33.3}%`,
                                 height: `${ring * 33.3}%`
                             }}
-                        >
-                            {ring === 3 && (
-                                <motion.div
-                                    className="absolute inset-0 border-2 border-dashed border-emerald-500/30 rounded-full"
-                                    animate={{ rotate: 360 }}
-                                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                                />
-                            )}
-                        </div>
+                        />
                     ))}
 
                     {/* Radar Sweep */}
@@ -89,53 +64,41 @@ export default function GeofenceVisualizer() {
                         transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                     />
 
-                    {/* Center Point */}
-                    <div className="relative z-10">
-                        <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-blue-500/40 shadow-[0_0_30px_rgba(59,130,246,0.5)]">
-                            <Globe size={24} className="text-blue-400 animate-pulse" />
-                        </div>
+                    {/* Center Pin */}
+                    <div className="relative z-10 w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-none">
+                        <Globe size={18} />
                     </div>
 
-                    {/* Simulated Personnel Scans */}
+                    {/* Scans */}
                     {scans.map((scan) => (
-                        <motion.div
+                        <div
                             key={scan.id}
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className={`absolute w-3 h-3 rounded-full flex items-center justify-center`}
+                            className={`absolute w-2.5 h-2.5 ${scan.color} rounded-full`}
                             style={{ left: `${scan.x}%`, top: `${scan.y}%` }}
-                        >
-                            <div className={`w-full h-full ${scan.color.replace('text', 'bg')} rounded-full animate-ping opacity-75`} />
-                            <div className={`absolute inset-0 ${scan.color.replace('text', 'bg')} rounded-full`} />
-                        </motion.div>
+                        />
                     ))}
                 </div>
 
-                {/* Coordinates overlay */}
-                <div className="absolute bottom-6 left-6 flex flex-col gap-1">
-                    <div className="flex items-center gap-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">
-                        <Compass size={10} className="text-blue-400" />
-                        Lat: 11.5564° N
-                    </div>
-                    <div className="flex items-center gap-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">
-                        <Zap size={10} className="text-amber-400" />
-                        Long: 104.9282° E
+                {/* Coordinates */}
+                <div className="absolute bottom-4 left-4 flex flex-col gap-0.5 text-[10px] font-mono text-slate-400">
+                    <div className="flex items-center gap-1.5">
+                        <Compass size={11} className="text-blue-400" />
+                        <span>11.5564° N, 104.9282° E</span>
                     </div>
                 </div>
             </div>
 
-            <div className="p-6 bg-white/[0.01] border-t border-white/5 flex items-center justify-between">
-                <div className="flex gap-4">
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-black text-white italic tracking-widest uppercase">Office HQ</p>
-                        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">Verified Cluster 01</p>
-                    </div>
+            {/* Footer */}
+            <div className="p-4 bg-slate-950/60 border-t border-slate-800 flex items-center justify-between text-xs">
+                <div>
+                    <p className="font-semibold text-slate-200">Main Headquarters</p>
+                    <p className="text-[11px] text-slate-400">Zone Alpha</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-[10px] font-black text-emerald-400 italic">GEOFENCE ACTIVE</p>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Signal Strength: 100%</p>
+                    <p className="font-semibold text-emerald-400">In Range</p>
+                    <p className="text-[11px] text-slate-400">Accuracy: ±2m</p>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }

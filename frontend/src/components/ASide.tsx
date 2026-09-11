@@ -4,20 +4,26 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    Home, Menu, ChevronDown, ChevronLeft, ChevronRight,
-    LogOut, User, Zap, Activity, ShieldCheck,
-    PlusCircle, QrCode, Bell, Settings, Terminal, Map
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    LogOut,
+    QrCode,
+    PlusCircle,
+    UserCheck,
+    Radio
 } from 'lucide-react';
-import { getFullImageUrl } from '@/utils/url.utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/contexts/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getFullImageUrl } from '@/utils/url.utils';
 
 interface MenuItem {
     name: string;
     href?: string;
     icon: React.ReactNode;
     group?: boolean;
+    badge?: string | number;
     items?: MenuItem[];
 }
 
@@ -32,7 +38,11 @@ interface SidebarProps {
 export default function Sidebar({
     menuItems,
     brandName = 'Smart Attendance',
-    brandIcon = <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-600 to-emerald-400 flex items-center justify-center text-white font-black text-sm shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-transform group-hover:rotate-12">ARI</div>,
+    brandIcon = (
+        <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-none shrink-0">
+            ARI
+        </div>
+    ),
     collapsed = false,
     setCollapsed = () => { },
 }: SidebarProps) {
@@ -42,12 +52,29 @@ export default function Sidebar({
     const { isConnected } = useSocket();
     const [mounted, setMounted] = useState(false);
 
+    // Initialize and auto-expand group if current route is inside it
     useEffect(() => {
         setMounted(true);
-    }, []);
+        const activeGroups: string[] = [];
+        menuItems.forEach((item) => {
+            if (item.group && item.items) {
+                const isChildActive = item.items.some((sub) => sub.href && (pathname === sub.href || (sub.href !== '/dashboard' && pathname.startsWith(sub.href))));
+                if (isChildActive) {
+                    activeGroups.push(item.name);
+                }
+            }
+        });
+        if (activeGroups.length > 0) {
+            setExpandedGroups((prev) => Array.from(new Set([...prev, ...activeGroups])));
+        }
+    }, [pathname, menuItems]);
 
     const toggleGroup = (name: string) => {
-        if (collapsed) return;
+        if (collapsed) {
+            setCollapsed(false);
+            setExpandedGroups([name]);
+            return;
+        }
         setExpandedGroups((prev) =>
             prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
         );
@@ -55,41 +82,63 @@ export default function Sidebar({
 
     if (!mounted) return null;
 
+    const isItemActive = (href?: string) => {
+        if (!href) return false;
+        if (href === '/dashboard') return pathname === '/dashboard';
+        return pathname === href || pathname.startsWith(href);
+    };
+
+    const isGroupActive = (item: MenuItem) => {
+        if (!item.items) return false;
+        return item.items.some((sub) => isItemActive(sub.href));
+    };
+
     const RenderMenuItem = ({ item, level = 0 }: { item: MenuItem; level?: number }) => {
-        const active = item.href && pathname === item.href;
+        const active = isItemActive(item.href);
+        const groupActive = isGroupActive(item);
         const isExpanded = expandedGroups.includes(item.name);
         const hasChildren = item.group && item.items && item.items.length > 0;
 
         if (hasChildren) {
             return (
-                <div key={item.name} className="px-2 mb-2">
+                <div key={item.name} className="px-2 mb-1 relative group/item">
                     <button
                         onClick={() => toggleGroup(item.name)}
-                        className={`flex items-center justify-between w-full p-3 rounded-2xl transition-all duration-300 group
-                            ${isExpanded ? 'bg-white/[0.03] shadow-inner' : 'hover:bg-white/[0.02]'}
-                            ${collapsed ? 'justify-center' : ''}
+                        className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-colors text-xs font-semibold
+                            ${groupActive ? 'text-slate-100 bg-slate-900/90' : isExpanded ? 'bg-slate-900/60 text-slate-200' : 'text-slate-400 hover:bg-slate-900/50 hover:text-slate-200'}
+                            ${collapsed ? 'justify-center px-0 h-10 w-10 mx-auto' : ''}
                         `}
                     >
-                        <div className={`flex items-center gap-3 ${active ? 'text-indigo-400' : 'text-slate-500'}`}>
-                            <span className={`p-2 rounded-xl transition-colors ${isExpanded ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-900 text-slate-600 group-hover:text-slate-400'}`}>
+                        <div className="flex items-center gap-2.5">
+                            <span className={`shrink-0 transition-colors ${groupActive ? 'text-blue-400' : isExpanded ? 'text-slate-300' : 'text-slate-400'}`}>
                                 {item.icon}
                             </span>
-                            {!collapsed && <span className="font-black text-[10px] uppercase tracking-[0.2em]">{item.name}</span>}
+                            {!collapsed && <span className="truncate">{item.name}</span>}
                         </div>
                         {!collapsed && (
-                            <ChevronDown size={14} className={`text-slate-600 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-indigo-400' : ''}`} />
+                            <ChevronDown
+                                size={14}
+                                className={`text-slate-500 transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : ''}`}
+                            />
                         )}
                     </button>
 
+                    {/* Collapsed Tooltip / Dropdown indicator */}
+                    {collapsed && (
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-slate-900 border border-slate-700 text-xs font-medium text-slate-100 rounded-lg shadow-xl opacity-0 group-hover/item:opacity-100 pointer-events-none transition-opacity duration-150 z-50 whitespace-nowrap">
+                            {item.name}
+                        </div>
+                    )}
+
+                    {/* Expanded child menu */}
                     <AnimatePresence>
                         {isExpanded && !collapsed && (
                             <motion.div
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden ml-9 mt-1 space-y-1 relative"
+                                className="overflow-hidden ml-5 pl-2.5 border-l border-slate-800/90 mt-1 space-y-0.5"
                             >
-                                <div className="absolute left-0 top-0 bottom-2 w-[1px] bg-gradient-to-b from-indigo-500/50 to-transparent" />
                                 {item.items!.map((subItem) => (
                                     <RenderMenuItem key={subItem.name} item={subItem} level={level + 1} />
                                 ))}
@@ -101,123 +150,161 @@ export default function Sidebar({
         }
 
         return (
-            <Link
-                key={item.name}
-                href={item.href || '#'}
-                className={`flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 mb-1 relative group
-                    ${active ? 'text-white shadow-[0_0_20px_rgba(79,70,229,0.15)]' : 'text-slate-500 hover:text-slate-200'}
-                    ${collapsed ? 'justify-center mx-2' : 'mx-2'}
-                `}
-            >
-                {active && (
-                    <motion.div
-                        layoutId="active-pill"
-                        className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 via-blue-600/10 to-transparent border-l-2 border-indigo-500 rounded-2xl"
-                        transition={{ type: "spring", stiffness: 350, damping: 35 }}
-                    />
-                )}
-                <span className={`z-10 transition-transform group-hover:scale-110 ${active ? 'text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.5)]' : 'group-hover:text-white'}`}>
-                    {item.icon}
-                </span>
-                {!collapsed && <span className={`z-10 text-xs font-bold tracking-tight ${active ? 'text-white' : ''}`}>{item.name}</span>}
+            <div key={item.name} className="px-2 mb-1 relative group/item">
+                <Link
+                    href={item.href || '#'}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-colors text-xs font-semibold relative
+                        ${active
+                            ? 'bg-blue-600 text-white'
+                            : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                        }
+                        ${collapsed ? 'justify-center px-0 h-10 w-10 mx-auto' : ''}
+                    `}
+                >
+                    <span className={`shrink-0 ${active ? 'text-white' : 'text-slate-400'}`}>
+                        {item.icon}
+                    </span>
+                    {!collapsed && (
+                        <span className="truncate flex-1">{item.name}</span>
+                    )}
+                    {item.badge && !collapsed && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                            {item.badge}
+                        </span>
+                    )}
+                </Link>
 
-                {active && !collapsed && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"
-                    />
+                {/* Collapsed Tooltip */}
+                {collapsed && (
+                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1 bg-slate-900 border border-slate-700 text-xs font-medium text-slate-100 rounded-lg shadow-xl opacity-0 group-hover/item:opacity-100 pointer-events-none transition-opacity duration-150 z-50 whitespace-nowrap">
+                        {item.name}
+                    </div>
                 )}
-            </Link>
+            </div>
         );
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#050505] border-r border-white/5 relative overflow-hidden group/sidebar">
-            {/* Visual Backdrops */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(79,70,229,0.08),transparent_50%)]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-60 h-60 bg-indigo-600/5 blur-[100px] rounded-full pointer-events-none" />
-
+        <div className="flex flex-col h-full bg-slate-950 border-r border-slate-800 select-none">
             {/* Branding Header */}
-            <div className={`p-8 flex items-center ${collapsed ? 'justify-center' : 'justify-start'} gap-4 relative z-10 shrink-0`}>
-                <Link href="/" className="group flex items-center gap-4">
+            <div className={`h-16 px-4 flex items-center ${collapsed ? 'justify-center' : 'justify-between'} border-b border-slate-800 shrink-0`}>
+                <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
                     {brandIcon}
                     {!collapsed && (
-                        <div className="flex flex-col">
-                            <h1 className="text-xl font-black tracking-tighter text-white italic leading-none">
-                                VANGUARD<span className="text-indigo-500">.</span>
-                            </h1>
-                            <p className="text-[7px] font-black text-slate-500 uppercase tracking-[0.5em] mt-1">Tactical OS v1.3</p>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-bold text-slate-100 leading-tight truncate">
+                                {brandName}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-medium">Enterprise Hub</span>
                         </div>
                     )}
                 </Link>
+
+                {/* Desktop Collapse Toggle */}
+                {!collapsed && (
+                    <button
+                        onClick={() => setCollapsed(true)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-900 hover:text-slate-200 transition-colors hidden lg:flex items-center justify-center"
+                        title="Collapse sidebar"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
+                )}
             </div>
 
-            {/* Quick Access Grid - Tactical Style */}
+            {/* Quick Actions (Full mode) */}
             {!collapsed && (
-                <div className="px-6 mb-8 space-y-4 relative z-10">
-                    <div className="flex items-center gap-2 px-1">
-                        <Terminal size={10} className="text-indigo-500" />
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Direct Command</span>
-                    </div>
+                <div className="p-3 border-b border-slate-800/80">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1 mb-2">Direct Access</p>
                     <div className="grid grid-cols-2 gap-2">
-                        <Link href="/verify" className="flex flex-col items-center p-3 rounded-3xl bg-slate-900/50 border border-white/5 hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-all group/btn">
-                            <QrCode size={18} className="text-slate-500 group-hover/btn:text-indigo-400 mb-2 transition-colors" />
-                            <span className="text-[8px] font-black text-slate-600 group-hover/btn:text-white uppercase italic">Intercept</span>
+                        <Link
+                            href="/verify"
+                            className="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-850 text-slate-300 hover:text-white transition-colors"
+                        >
+                            <QrCode size={15} className="text-blue-400 shrink-0" />
+                            <span className="text-xs font-semibold">Scanner</span>
                         </Link>
-                        <Link href="/dashboard/management/employee" className="flex flex-col items-center p-3 rounded-3xl bg-slate-900/50 border border-white/5 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all group/btn">
-                            <PlusCircle size={18} className="text-slate-500 group-hover/btn:text-emerald-400 mb-2 transition-colors" />
-                            <span className="text-[8px] font-black text-slate-600 group-hover/btn:text-white uppercase italic">Deploy</span>
+                        <Link
+                            href="/dashboard/management/employee?type=employee"
+                            className="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-850 text-slate-300 hover:text-white transition-colors"
+                        >
+                            <PlusCircle size={15} className="text-emerald-400 shrink-0" />
+                            <span className="text-xs font-semibold">Staff</span>
                         </Link>
                     </div>
                 </div>
             )}
 
-            {/* Navigation Flow */}
-            <nav className="flex-1 overflow-y-auto pt-2 pb-6 scrollbar-hide relative z-10">
+            {/* Navigation Menu */}
+            <nav className="flex-1 overflow-y-auto py-3 custom-scrollbar">
                 {menuItems.map((item) => (
                     <RenderMenuItem key={item.name} item={item} />
                 ))}
             </nav>
 
-            {/* Tactical Footer */}
-            <div className="p-6 bg-slate-950/80 border-t border-white/5 relative z-20 space-y-6">
-
-                {/* Health/Auth Widget */}
-                {!collapsed && (
-                    <div className="p-4 rounded-[2rem] bg-indigo-600/5 border border-indigo-500/10 flex flex-col gap-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Sys Integrity</span>
-                            <span className="text-[8px] font-mono text-indigo-300">SEC_OP_OK</span>
-                        </div>
-                        <div className="h-1 w-full bg-slate-900 rounded-full overflow-hidden flex gap-0.5">
-                            {[...Array(8)].map((_, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0.3 }}
-                                    animate={{ opacity: i < 6 ? 1 : 0.2 }}
-                                    className={`h-full flex-1 ${i < 6 ? 'bg-indigo-500' : 'bg-slate-700'}`}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                <div className="flex gap-2">
-                    <button onClick={() => logout()} className={`flex-1 flex items-center gap-3 p-3.5 rounded-3xl bg-rose-500/5 border border-rose-500/10 hover:bg-rose-500/10 text-rose-500 transition-all ${collapsed ? 'justify-center aspect-square' : 'px-5'}`}>
-                        <LogOut size={18} />
-                        {!collapsed && <span className="text-[10px] font-black uppercase tracking-[0.2em]">Eject</span>}
+            {/* Expand button for collapsed mode */}
+            {collapsed && (
+                <div className="p-2 border-t border-slate-800/80 hidden lg:flex justify-center">
+                    <button
+                        onClick={() => setCollapsed(false)}
+                        className="p-2 rounded-xl text-slate-400 hover:bg-slate-900 hover:text-slate-200 transition-colors"
+                        title="Expand sidebar"
+                    >
+                        <ChevronRight size={18} />
                     </button>
                 </div>
+            )}
 
-                {/* Local Grid Metadata */}
-                {!collapsed && (
-                    <div className="flex items-center justify-between px-2 pt-2">
-                        <div className="flex items-center gap-1.5 font-mono text-[7px] font-bold text-slate-700 uppercase">
-                            <Map size={8} />
-                            <span>Grid: 41.40338 / 2.17403</span>
+            {/* Footer / User & System Status */}
+            <div className="p-3 bg-slate-950 border-t border-slate-800 space-y-2.5">
+                {!collapsed ? (
+                    <>
+                        {/* User Compact Card */}
+                        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-900 border border-slate-800/90">
+                            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden">
+                                {user?.photoUrl ? (
+                                    <img
+                                        src={getFullImageUrl(user.photoUrl) || ''}
+                                        alt=""
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span>{user?.firstName?.[0]}{user?.lastName?.[0]}</span>
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-slate-200 truncate leading-tight">
+                                    {user?.firstName} {user?.lastName}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                    <span className="text-[10px] text-slate-400 capitalize">{user?.role || 'Admin'} · {isConnected ? 'Online' : 'Offline'}</span>
+                                </div>
+                            </div>
                         </div>
-                        <span className="text-[7px] font-mono font-bold text-slate-700">L_REQ: 12ms</span>
+
+                        {/* Sign Out Button */}
+                        <button
+                            onClick={() => logout()}
+                            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-colors"
+                        >
+                            <LogOut size={14} />
+                            <span>Sign out</span>
+                        </button>
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center gap-2">
+                        <div
+                            className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                            title={isConnected ? 'Online' : 'Offline'}
+                        />
+                        <button
+                            onClick={() => logout()}
+                            className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/15 transition-colors"
+                            title="Sign out"
+                        >
+                            <LogOut size={16} />
+                        </button>
                     </div>
                 )}
             </div>
