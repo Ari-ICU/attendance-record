@@ -84,42 +84,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             ],
         },
 
-        // SCHEDULE
+        // SCHEDULE & CALENDAR
         {
             section: 'SCHEDULE',
-            name: 'Schedule',
+            name: 'Calendar',
+            href: '/dashboard/calendar',
+            icon: <CalendarDays size={17} />,
+        },
+        {
+            name: 'Work Schedule',
+            href: '/dashboard/schedule',
             icon: <Clock size={17} />,
-            group: true,
-            items: [
-                { name: 'Work Schedule', href: '/dashboard/schedule', icon: <Clock size={15} /> },
-                { name: 'Shifts', href: '/dashboard/schedule?view=shifts', icon: <Layers size={15} /> },
-                { name: 'Calendar', href: '/dashboard/calendar', icon: <CalendarDays size={15} /> },
-            ],
         },
 
-        // LEAVE
+        // LEAVE & OVERTIME
         {
-            section: 'LEAVE',
+            section: 'TIME OFF & EXTRA',
             name: 'Leave',
+            href: '/dashboard/leave',
             icon: <FileText size={17} />,
-            group: true,
-            items: [
-                { name: 'Requests', href: '/dashboard/leave/requests', icon: <FileText size={15} /> },
-                { name: 'Leave Types', href: '/dashboard/leave/types', icon: <Bookmark size={15} /> },
-                { name: 'Leave Balance', href: '/dashboard/leave/balance', icon: <PieChart size={15} /> },
-            ],
         },
-
-        // OVERTIME
         {
-            section: 'OVERTIME',
             name: 'Overtime',
+            href: '/dashboard/overtime',
             icon: <Timer size={17} />,
-            group: true,
-            items: [
-                { name: 'Requests', href: '/dashboard/overtime', icon: <Timer size={15} /> },
-                { name: 'Overtime Records', href: '/dashboard/overtime/records', icon: <Award size={15} /> },
-            ],
         },
 
         // PAYROLL
