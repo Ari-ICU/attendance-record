@@ -9,8 +9,7 @@ import {
     ChevronRight,
     LogOut,
     QrCode,
-    PlusCircle,
-    GraduationCap,
+    UserPlus,
     School
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,18 +17,20 @@ import { useSocket } from '@/contexts/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFullImageUrl } from '@/utils/url.utils';
 
-interface MenuItem {
+export interface MenuItem {
     name: string;
     href?: string;
     icon: React.ReactNode;
     group?: boolean;
     badge?: string | number;
     items?: MenuItem[];
+    section?: string;
 }
 
 interface SidebarProps {
     menuItems: MenuItem[];
     brandName?: string;
+    brandSubtitle?: string;
     brandIcon?: React.ReactNode;
     collapsed?: boolean;
     setCollapsed?: (collapsed: boolean) => void;
@@ -38,9 +39,10 @@ interface SidebarProps {
 export default function Sidebar({
     menuItems,
     brandName = 'Attendance System',
+    brandSubtitle = 'Campus Portal',
     brandIcon = (
         <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
-            <School size={16} />
+            <School size={17} />
         </div>
     ),
     collapsed = false,
@@ -58,7 +60,9 @@ export default function Sidebar({
         const activeGroups: string[] = [];
         menuItems.forEach((item) => {
             if (item.group && item.items) {
-                const isChildActive = item.items.some((sub) => sub.href && (pathname === sub.href || (sub.href !== '/dashboard' && pathname.startsWith(sub.href))));
+                const isChildActive = item.items.some(
+                    (sub) => sub.href && (pathname === sub.href || (sub.href !== '/dashboard' && pathname.startsWith(sub.href.split('?')[0])))
+                );
                 if (isChildActive) {
                     activeGroups.push(item.name);
                 }
@@ -84,8 +88,9 @@ export default function Sidebar({
 
     const isItemActive = (href?: string) => {
         if (!href) return false;
-        if (href === '/dashboard') return pathname === '/dashboard';
-        return pathname === href || pathname.startsWith(href);
+        const [cleanHref] = href.split('?');
+        if (cleanHref === '/dashboard') return pathname === '/dashboard';
+        return pathname === cleanHref || pathname.startsWith(cleanHref);
     };
 
     const isGroupActive = (item: MenuItem) => {
@@ -93,103 +98,146 @@ export default function Sidebar({
         return item.items.some((sub) => isItemActive(sub.href));
     };
 
-    const RenderMenuItem = ({ item, level = 0 }: { item: MenuItem; level?: number }) => {
-        const active = isItemActive(item.href);
-        const groupActive = isGroupActive(item);
-        const isExpanded = expandedGroups.includes(item.name);
-        const hasChildren = item.group && item.items && item.items.length > 0;
+    const renderMenuContent = () => {
+        // Group items by section
+        let lastSection: string | undefined = undefined;
 
-        if (hasChildren) {
+        return menuItems.map((item, idx) => {
+            const showSectionHeader = item.section && item.section !== lastSection;
+            if (item.section) lastSection = item.section;
+
+            const active = isItemActive(item.href);
+            const groupActive = isGroupActive(item);
+            const isExpanded = expandedGroups.includes(item.name);
+            const hasChildren = item.group && item.items && item.items.length > 0;
+
             return (
-                <div key={item.name} className="px-3 mb-1 relative group/item">
-                    <button
-                        onClick={() => toggleGroup(item.name)}
-                        className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-all text-xs font-semibold
-                            ${groupActive ? 'text-blue-600 bg-blue-50/70' : isExpanded ? 'bg-slate-100/70 text-slate-800' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'}
-                            ${collapsed ? 'justify-center px-0 h-10 w-10 mx-auto' : ''}
-                        `}
-                    >
-                        <div className="flex items-center gap-2.5">
-                            <span className={`shrink-0 transition-colors ${groupActive ? 'text-blue-600' : 'text-slate-500 group-hover/item:text-slate-800'}`}>
-                                {item.icon}
-                            </span>
-                            {!collapsed && <span className="truncate">{item.name}</span>}
-                        </div>
-                        {!collapsed && (
-                            <ChevronDown
-                                size={14}
-                                className={`text-slate-400 transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-600' : ''}`}
-                            />
-                        )}
-                    </button>
-
-                    {/* Collapsed Tooltip */}
-                    {collapsed && (
-                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg shadow-lg opacity-0 group-hover/item:opacity-100 pointer-events-none transition-opacity duration-150 z-50 whitespace-nowrap">
-                            {item.name}
+                <div key={item.name + idx}>
+                    {showSectionHeader && (
+                        <div className="mt-3 mb-1">
+                            {!collapsed ? (
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3.5 pt-1">
+                                    {item.section}
+                                </p>
+                            ) : (
+                                <div className="border-t border-slate-100 my-2 mx-3" />
+                            )}
                         </div>
                     )}
 
-                    {/* Expanded child menu */}
-                    <AnimatePresence>
-                        {isExpanded && !collapsed && (
-                            <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden ml-5 pl-2.5 border-l border-slate-200 mt-1 space-y-0.5"
+                    {hasChildren ? (
+                        <div className="px-2.5 mb-0.5 relative group/item">
+                            <button
+                                onClick={() => toggleGroup(item.name)}
+                                className={`flex items-center justify-between w-full px-2.5 py-2 rounded-xl transition-all text-xs font-semibold
+                                    ${groupActive
+                                        ? 'text-blue-600 bg-blue-50/80 font-bold'
+                                        : isExpanded
+                                            ? 'bg-slate-100/70 text-slate-800'
+                                            : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                                    }
+                                    ${collapsed ? 'justify-center px-0 h-9 w-9 mx-auto' : ''}
+                                `}
                             >
-                                {item.items!.map((subItem) => (
-                                    <RenderMenuItem key={subItem.name} item={subItem} level={level + 1} />
-                                ))}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <span className={`shrink-0 transition-colors ${groupActive ? 'text-blue-600' : 'text-slate-400 group-hover/item:text-slate-700'}`}>
+                                        {item.icon}
+                                    </span>
+                                    {!collapsed && <span className="truncate">{item.name}</span>}
+                                </div>
+                                {!collapsed && (
+                                    <ChevronDown
+                                        size={14}
+                                        className={`text-slate-400 transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-600' : ''}`}
+                                    />
+                                )}
+                            </button>
+
+                            {/* Collapsed Tooltip */}
+                            {collapsed && (
+                                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg shadow-lg opacity-0 group-hover/item:opacity-100 pointer-events-none transition-opacity duration-150 z-50 whitespace-nowrap">
+                                    {item.name}
+                                </div>
+                            )}
+
+                            {/* Submenu */}
+                            <AnimatePresence>
+                                {isExpanded && !collapsed && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden ml-4 pl-2.5 border-l border-slate-200 my-1 space-y-0.5"
+                                    >
+                                        {item.items!.map((subItem) => {
+                                            const subActive = isItemActive(subItem.href);
+                                            return (
+                                                <Link
+                                                    key={subItem.name}
+                                                    href={subItem.href || '#'}
+                                                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+                                                        subActive
+                                                            ? 'text-blue-600 bg-blue-50 font-bold'
+                                                            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'
+                                                    }`}
+                                                >
+                                                    <span className="truncate">{subItem.name}</span>
+                                                    {subItem.badge && (
+                                                        <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-md bg-blue-50 text-blue-600 border border-blue-200">
+                                                            {subItem.badge}
+                                                        </span>
+                                                    )}
+                                                </Link>
+                                            );
+                                        })}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    ) : (
+                        <div className="px-2.5 mb-0.5 relative group/item">
+                            <Link
+                                href={item.href || '#'}
+                                className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all text-xs font-semibold relative
+                                    ${active
+                                        ? 'bg-blue-600 text-white shadow-xs'
+                                        : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                                    }
+                                    ${collapsed ? 'justify-center px-0 h-9 w-9 mx-auto' : ''}
+                                `}
+                            >
+                                <span className={`shrink-0 ${active ? 'text-white' : 'text-slate-400 group-hover/item:text-slate-700'}`}>
+                                    {item.icon}
+                                </span>
+                                {!collapsed && (
+                                    <span className="truncate flex-1">{item.name}</span>
+                                )}
+                                {item.badge && !collapsed && (
+                                    <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${
+                                        active ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600 border border-blue-200'
+                                    }`}>
+                                        {item.badge}
+                                    </span>
+                                )}
+                            </Link>
+
+                            {/* Collapsed Tooltip */}
+                            {collapsed && (
+                                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg shadow-lg opacity-0 group-hover/item:opacity-100 pointer-events-none transition-opacity duration-150 z-50 whitespace-nowrap">
+                                    {item.name}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             );
-        }
-
-        return (
-            <div key={item.name} className="px-3 mb-1 relative group/item">
-                <Link
-                    href={item.href || '#'}
-                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-xs font-semibold relative
-                        ${active
-                            ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                            : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-                        }
-                        ${collapsed ? 'justify-center px-0 h-10 w-10 mx-auto' : ''}
-                    `}
-                >
-                    <span className={`shrink-0 ${active ? 'text-white' : 'text-slate-500 group-hover/item:text-slate-800'}`}>
-                        {item.icon}
-                    </span>
-                    {!collapsed && (
-                        <span className="truncate flex-1">{item.name}</span>
-                    )}
-                    {item.badge && !collapsed && (
-                        <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${
-                            active ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600 border border-blue-200'
-                        }`}>
-                            {item.badge}
-                        </span>
-                    )}
-                </Link>
-
-                {/* Collapsed Tooltip */}
-                {collapsed && (
-                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg shadow-lg opacity-0 group-hover/item:opacity-100 pointer-events-none transition-opacity duration-150 z-50 whitespace-nowrap">
-                        {item.name}
-                    </div>
-                )}
-            </div>
-        );
+        });
     };
 
     return (
-        <div className="flex flex-col h-full bg-white border-r border-slate-200/80 select-none">
+        <aside className="flex flex-col h-full bg-white border-r border-slate-200/80 select-none">
             {/* Branding Header */}
-            <div className={`h-16 px-4 flex items-center ${collapsed ? 'justify-center' : 'justify-between'} border-b border-slate-100 shrink-0`}>
+            <div className={`h-16 px-3.5 flex items-center ${collapsed ? 'justify-center' : 'justify-between'} border-b border-slate-100 shrink-0`}>
                 <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
                     {brandIcon}
                     {!collapsed && (
@@ -197,7 +245,7 @@ export default function Sidebar({
                             <span className="text-sm font-bold text-slate-900 leading-tight truncate">
                                 {brandName}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-medium">Campus Portal</span>
+                            <span className="text-[10px] text-slate-400 font-medium">{brandSubtitle}</span>
                         </div>
                     )}
                 </Link>
@@ -217,31 +265,31 @@ export default function Sidebar({
             {/* Quick Actions (Full mode) */}
             {!collapsed && (
                 <div className="p-3 border-b border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-2">Quick Actions</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-0.5 mb-2">
+                        Quick Actions
+                    </p>
                     <div className="grid grid-cols-2 gap-2">
                         <Link
                             href="/verify"
-                            className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200/70 hover:border-blue-500/40 hover:bg-blue-50/40 text-slate-700 hover:text-blue-600 transition-all text-xs font-semibold"
+                            className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 hover:text-blue-600 transition-all text-xs font-semibold"
                         >
-                            <QrCode size={15} className="text-blue-600 shrink-0" />
+                            <QrCode size={14} className="text-blue-600 shrink-0" />
                             <span>Scan ID</span>
                         </Link>
                         <Link
                             href="/dashboard/management/employee?type=student"
-                            className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200/70 hover:border-emerald-500/40 hover:bg-emerald-50/40 text-slate-700 hover:text-emerald-700 transition-all text-xs font-semibold"
+                            className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 hover:text-blue-600 transition-all text-xs font-semibold"
                         >
-                            <PlusCircle size={15} className="text-emerald-600 shrink-0" />
-                            <span>Student</span>
+                            <UserPlus size={14} className="text-blue-600 shrink-0" />
+                            <span>+ Student</span>
                         </Link>
                     </div>
                 </div>
             )}
 
             {/* Navigation Menu */}
-            <nav className="flex-1 overflow-y-auto py-3 custom-scrollbar">
-                {menuItems.map((item) => (
-                    <RenderMenuItem key={item.name} item={item} />
-                ))}
+            <nav className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+                {renderMenuContent()}
             </nav>
 
             {/* Expand button for collapsed mode */}
@@ -258,12 +306,11 @@ export default function Sidebar({
             )}
 
             {/* Footer / User & System Status */}
-            <div className="p-3 bg-slate-50/60 border-t border-slate-100 space-y-2">
+            <div className="p-3 bg-slate-50/70 border-t border-slate-100">
                 {!collapsed ? (
-                    <>
-                        {/* User Compact Card */}
-                        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80 shadow-xs">
-                            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden shadow-2xs">
                                 {user?.photoUrl ? (
                                     <img
                                         src={getFullImageUrl(user.photoUrl) || ''}
@@ -275,25 +322,27 @@ export default function Sidebar({
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-slate-800 truncate leading-tight">
-                                    {user?.firstName} {user?.lastName}
+                                <p className="text-xs font-bold text-slate-900 truncate leading-tight">
+                                    {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'thoeurn ratha'}
                                 </p>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                     <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                                    <span className="text-[10px] text-slate-400 capitalize">{user?.role || 'Admin'} · {isConnected ? 'Online' : 'Offline'}</span>
+                                    <span className="text-[10px] text-slate-500 font-medium capitalize">
+                                        {user?.role || 'Admin'} • {isConnected ? 'Online' : 'Offline'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Sign Out Button */}
+                        {/* Sign Out Action */}
                         <button
                             onClick={() => logout()}
-                            className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200/60 hover:bg-rose-100 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0"
+                            title="Sign out"
                         >
-                            <LogOut size={13} />
-                            <span>Sign out</span>
+                            <LogOut size={15} />
                         </button>
-                    </>
+                    </div>
                 ) : (
                     <div className="flex flex-col items-center gap-2">
                         <div
@@ -302,7 +351,7 @@ export default function Sidebar({
                         />
                         <button
                             onClick={() => logout()}
-                            className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                             title="Sign out"
                         >
                             <LogOut size={16} />
@@ -310,6 +359,6 @@ export default function Sidebar({
                     </div>
                 )}
             </div>
-        </div>
+        </aside>
     );
 }

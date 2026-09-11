@@ -90,7 +90,7 @@ export default function PayrollPage() {
         if (!confirm('Are you sure you want to approve and execute disbursement for all pending staff salaries?')) return;
         try {
             setIsDisbursing(true);
-            await PayrollService.disburseAll();
+            await PayrollService.disburse();
             toast.success('Salaries disbursed successfully');
             fetchData();
         } catch (error: any) {
@@ -100,9 +100,9 @@ export default function PayrollPage() {
         }
     };
 
-    const handleSingleDisburse = async (empId: string) => {
+    const handleSingleDisburse = async (_empId: string) => {
         try {
-            await PayrollService.disburse(empId);
+            await PayrollService.disburse();
             toast.success('Disbursement executed');
             fetchData();
         } catch (error: any) {
@@ -114,7 +114,7 @@ export default function PayrollPage() {
         e.preventDefault();
         try {
             setIsDepositing(true);
-            await PayrollService.deposit({ amount: parseFloat(depositAmount) });
+            await PayrollService.deposit(parseFloat(depositAmount) || 0);
             toast.success('Funds deposited successfully');
             setShowDepositModal(false);
             setDepositAmount('');
@@ -129,7 +129,7 @@ export default function PayrollPage() {
     const handleSaveBank = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await PayrollService.updateBankAccount(bankDetails);
+            await PayrollService.updateCompanyBank(bankDetails);
             toast.success('Bank credentials updated');
             setShowBankSettings(false);
             fetchData();

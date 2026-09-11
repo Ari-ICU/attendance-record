@@ -15,11 +15,14 @@ interface EmployeeListProps {
 export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeListProps) {
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredEmployees = employees.filter(emp =>
-        (emp?.fullName || `${emp?.firstName || ''} ${emp?.lastName || ''}`).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (emp?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (emp?.department?.name || emp?.position || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredEmployees = employees.filter(emp => {
+        const deptName = typeof emp?.department === 'object' ? (emp?.department as any)?.name : emp?.department;
+        return (
+            (emp?.fullName || `${emp?.firstName || ''} ${emp?.lastName || ''}`).toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (emp?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (deptName || emp?.position || '').toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    });
 
     const handleDelete = async (id: string, fullName: string) => {
         if (confirm(`Are you sure you want to delete ${fullName || 'this record'}?`)) {
@@ -63,67 +66,71 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
                             {filteredEmployees.length > 0 ? (
-                                filteredEmployees.map((employee) => (
-                                    <tr
-                                        key={employee._id}
-                                        className="hover:bg-slate-50/70 transition-colors"
-                                    >
-                                        <td className="px-5 py-3.5 whitespace-nowrap">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200/80 overflow-hidden flex items-center justify-center text-slate-700 font-bold text-xs shrink-0">
-                                                    {employee.photoUrl ? (
-                                                        <img
-                                                            src={getFullImageUrl(employee.photoUrl) || ''}
-                                                            alt=""
-                                                            className="w-full h-full object-cover"
-                                                            onError={(e) => {
-                                                                (e.target as HTMLImageElement).style.display = 'none';
-                                                                (e.target as HTMLImageElement).parentElement!.innerText = (employee.firstName?.[0] || '') + (employee.lastName?.[0] || '');
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <span>{employee.firstName?.[0]}{employee.lastName?.[0]}</span>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-slate-900 text-xs sm:text-sm">
-                                                        {employee.fullName || `${employee.firstName} ${employee.lastName}`}
+                                filteredEmployees.map((employee) => {
+                                    const deptName = typeof employee.department === 'object' ? (employee.department as any)?.name : employee.department;
+                                    const hasBio = employee.faceDescriptor && employee.faceDescriptor.length > 0;
+
+                                    return (
+                                        <tr
+                                            key={employee._id}
+                                            className="hover:bg-slate-50/70 transition-colors"
+                                        >
+                                            <td className="px-5 py-3.5 whitespace-nowrap">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200/80 overflow-hidden flex items-center justify-center text-slate-700 font-bold text-xs shrink-0">
+                                                        {employee.photoUrl ? (
+                                                            <img
+                                                                src={getFullImageUrl(employee.photoUrl) || ''}
+                                                                alt=""
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                                    (e.target as HTMLImageElement).parentElement!.innerText = (employee.firstName?.[0] || '') + (employee.lastName?.[0] || '');
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <span>{employee.firstName?.[0]}{employee.lastName?.[0]}</span>
+                                                        )}
                                                     </div>
-                                                    <div className="text-[11px] text-slate-400 font-mono">ID: {employee._id.substring(0, 8)}</div>
+                                                    <div>
+                                                        <div className="font-bold text-slate-900 text-xs sm:text-sm">
+                                                            {employee.fullName || `${employee.firstName} ${employee.lastName}`}
+                                                        </div>
+                                                        <div className="text-[11px] text-slate-400 font-mono">ID: {employee._id.substring(0, 8)}</div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
+                                            </td>
 
-                                        <td className="px-5 py-3.5 whitespace-nowrap">
-                                            <div className="font-semibold text-slate-800 text-xs">{employee.position || 'Student'}</div>
-                                            <div className="text-[11px] text-slate-400">{employee.department?.name || 'Academic Core'}</div>
-                                        </td>
+                                            <td className="px-5 py-3.5 whitespace-nowrap">
+                                                <div className="font-semibold text-slate-800 text-xs">{employee.position || 'Student'}</div>
+                                                <div className="text-[11px] text-slate-400">{deptName || 'Academic Core'}</div>
+                                            </td>
 
-                                        <td className="px-5 py-3.5 whitespace-nowrap">
-                                            <div className="text-xs text-slate-700">{employee.email}</div>
-                                            <div className="text-[11px] text-slate-400">{employee.phoneNumber || '--'}</div>
-                                        </td>
+                                            <td className="px-5 py-3.5 whitespace-nowrap">
+                                                <div className="text-xs text-slate-700">{employee.email}</div>
+                                                <div className="text-[11px] text-slate-400">{employee.phone || '--'}</div>
+                                            </td>
 
-                                        <td className="px-5 py-3.5 whitespace-nowrap">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                                employee.faceDescriptors && employee.faceDescriptors.length > 0
-                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                            }`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${employee.faceDescriptors && employee.faceDescriptors.length > 0 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                                                <span>{employee.faceDescriptors && employee.faceDescriptors.length > 0 ? 'Face Bio Active' : 'Face Pending'}</span>
-                                            </span>
-                                        </td>
+                                            <td className="px-5 py-3.5 whitespace-nowrap">
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                                    hasBio
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${hasBio ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                                    <span>{hasBio ? 'Face Bio Active' : 'Face Pending'}</span>
+                                                </span>
+                                            </td>
 
-                                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                                            <div className="flex items-center justify-end gap-1.5">
-                                                <Link
-                                                    href={`/dashboard/management/employee/${employee._id}`}
-                                                    className="p-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors"
-                                                    title="View Profile"
-                                                >
-                                                    <Eye size={14} />
-                                                </Link>
+                                            <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <Link
+                                                        href={`/dashboard/management/employee/${employee._id}`}
+                                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                                                        title="View Profile"
+                                                    >
+                                                        <Eye size={14} />
+                                                    </Link>
                                                 <button
                                                     onClick={() => onEdit(employee)}
                                                     className="p-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-slate-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors"
@@ -141,7 +148,8 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                                             </div>
                                         </td>
                                     </tr>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <tr>
                                     <td colSpan={5} className="py-12 text-center text-slate-400">

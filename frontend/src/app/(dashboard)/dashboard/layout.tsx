@@ -2,19 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Sidebar from '@/components/ASide';
+import Sidebar, { MenuItem } from '@/components/ASide';
 import AHeader from '@/components/AHeader';
 import {
     Home,
-    User,
     Settings,
-    Calendar,
     BarChart3,
-    CreditCard,
-    Clock,
-    ShieldCheck,
+    CheckSquare,
     Users,
-    Bell
+    BookOpen,
+    Bell,
+    Layers,
+    UserCheck,
+    Calendar,
+    FileSpreadsheet,
+    Building2,
+    Clock,
+    FileText
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -28,47 +32,76 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const router = useRouter();
     const pathname = usePathname();
 
-    const menuItems = [
+    const menuItems: MenuItem[] = [
+        // MAIN
         {
+            section: 'MAIN',
             name: 'Dashboard',
             href: '/dashboard',
-            icon: <Home size={19} />,
+            icon: <Home size={17} />,
         },
+
+        // ATTENDANCE
         {
+            section: 'ATTENDANCE',
             name: 'Attendance',
-            icon: <ShieldCheck size={19} />,
+            icon: <CheckSquare size={17} />,
             group: true,
             items: [
-                { name: 'Live Monitor', href: '/dashboard/attendance/monitor', icon: <Clock size={18} /> },
-                { name: 'Records', href: '/dashboard/attendance/records', icon: <Calendar size={18} /> },
+                { name: 'Take Attendance', href: '/dashboard/attendance/monitor', icon: <Clock size={15} /> },
+                { name: 'Attendance Records', href: '/dashboard/attendance/records', icon: <Calendar size={15} /> },
+                { name: 'Attendance History', href: '/dashboard/attendance/records', icon: <FileText size={15} /> },
             ],
         },
+
+        // PEOPLE
         {
-            name: 'Management',
-            icon: <Users size={19} />,
+            section: 'PEOPLE',
+            name: 'People',
+            icon: <Users size={17} />,
             group: true,
             items: [
-                { name: 'Students', href: '/dashboard/management/employee?type=student', icon: <Users size={18} /> },
-                { name: 'Teachers / Staff', href: '/dashboard/management/employee?type=employee', icon: <User size={18} /> },
-                { name: 'Classes / Depts', href: '/dashboard/management/departments', icon: <Users size={18} /> },
+                { name: 'Students', href: '/dashboard/management/employee?type=student', icon: <Users size={15} /> },
+                { name: 'Teachers / Staff', href: '/dashboard/management/employee?type=employee', icon: <UserCheck size={15} /> },
+                { name: 'Departments', href: '/dashboard/management/departments', icon: <Building2 size={15} /> },
             ],
         },
+
+        // CLASSES
         {
-            name: 'Reports & Finance',
-            icon: <BarChart3 size={19} />,
+            section: 'CLASSES',
+            name: 'Classes',
+            icon: <BookOpen size={17} />,
             group: true,
             items: [
-                { name: 'Reports', href: '/dashboard/reports/analytics', icon: <BarChart3 size={18} /> },
-                { name: 'Payroll', href: '/dashboard/finance/payroll', icon: <CreditCard size={18} /> },
+                { name: 'All Classes', href: '/dashboard/management/departments', icon: <BookOpen size={15} /> },
+                { name: 'Schedules', href: '/dashboard/management/departments', icon: <Layers size={15} /> },
+                { name: 'Class Attendance', href: '/dashboard/attendance/records', icon: <Calendar size={15} /> },
             ],
         },
+
+        // REPORTS
         {
+            section: 'REPORTS',
+            name: 'Reports',
+            icon: <BarChart3 size={17} />,
+            group: true,
+            items: [
+                { name: 'Analytics', href: '/dashboard/reports/analytics', icon: <BarChart3 size={15} /> },
+                { name: 'Attendance Reports', href: '/dashboard/reports/analytics', icon: <FileText size={15} /> },
+                { name: 'Export', href: '/dashboard/attendance/records', icon: <FileSpreadsheet size={15} /> },
+            ],
+        },
+
+        // SYSTEM
+        {
+            section: 'SYSTEM',
             name: 'System',
-            icon: <Settings size={19} />,
+            icon: <Settings size={17} />,
             group: true,
             items: [
-                { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={18} /> },
-                { name: 'Notifications', href: '/dashboard/notifications', icon: <Bell size={18} /> },
+                { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={15} /> },
+                { name: 'Notifications', href: '/dashboard/notifications', icon: <Bell size={15} /> },
             ],
         },
     ];

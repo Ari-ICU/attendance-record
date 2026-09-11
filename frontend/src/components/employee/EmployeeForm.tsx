@@ -123,10 +123,11 @@ export default function EmployeeForm({ initialData, initialType = 'employee', on
                 toast.error('Image size must be less than 5MB');
                 return;
             }
-            setFormData((prev) => ({ ...prev, image: file }));
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreview(reader.result as string);
+                const base64 = reader.result as string;
+                setImagePreview(base64);
+                setFormData((prev) => ({ ...prev, image: base64 }));
             };
             reader.readAsDataURL(file);
         }
