@@ -20,6 +20,7 @@ import {
 import { AttendanceService } from '@/services/attendance.service';
 import { AttendanceRecord } from '@/types/attendance.types';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function AttendanceRecordsPage() {
     const [records, setRecords] = useState<AttendanceRecord[]>([]);
@@ -116,18 +117,18 @@ export default function AttendanceRecordsPage() {
                     />
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-black flex items-center gap-1"><Filter size={13} /> Filter:</span>
-                    <select
+                <div className="flex items-center gap-2 w-full sm:w-52">
+                    <CustomDropdown
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                    >
-                        <option value="all">All Statuses</option>
-                        <option value="present">Present Only</option>
-                        <option value="late">Late Only</option>
-                        <option value="absent">Absent Only</option>
-                    </select>
+                        onChange={(val) => setStatusFilter(val)}
+                        icon={<Filter size={13} />}
+                        options={[
+                            { value: 'all', label: 'All Statuses' },
+                            { value: 'present', label: 'Present Only' },
+                            { value: 'late', label: 'Late Only' },
+                            { value: 'absent', label: 'Absent Only' }
+                        ]}
+                    />
                 </div>
             </div>
 

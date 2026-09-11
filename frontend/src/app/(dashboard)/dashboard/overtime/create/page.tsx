@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Timer } from 'lucide-react';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function CreateOvertimePage() {
     const router = useRouter();
@@ -71,16 +72,16 @@ export default function CreateOvertimePage() {
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-black">Department</label>
-                        <select
+                        <CustomDropdown
                             value={formData.department}
-                            onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="Engineering & IT">Engineering & IT</option>
-                            <option value="Academic Core">Academic Core</option>
-                            <option value="Human Resources">Human Resources</option>
-                            <option value="Operations & Facilities">Operations & Facilities</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, department: val })}
+                            options={[
+                                { value: 'Engineering & IT', label: 'Engineering & IT' },
+                                { value: 'Academic Core', label: 'Academic Core' },
+                                { value: 'Human Resources', label: 'Human Resources' },
+                                { value: 'Operations & Facilities', label: 'Operations & Facilities' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5">

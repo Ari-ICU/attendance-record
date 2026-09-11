@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { MOCK_LEAVE_REQUESTS, LeaveRequestItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function LeavePage() {
     const [leaves, setLeaves] = useState<LeaveRequestItem[]>(MOCK_LEAVE_REQUESTS);
@@ -120,18 +121,18 @@ export default function LeavePage() {
                     />
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-black flex items-center gap-1"><Filter size={13} /> Filter:</span>
-                    <select
+                <div className="flex items-center gap-2 w-full sm:w-52">
+                    <CustomDropdown
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                    >
-                        <option value="all">All Requests</option>
-                        <option value="pending">Pending Only</option>
-                        <option value="approved">Approved Only</option>
-                        <option value="rejected">Rejected Only</option>
-                    </select>
+                        onChange={(val) => setStatusFilter(val)}
+                        icon={<Filter size={13} />}
+                        options={[
+                            { value: 'all', label: 'All Requests' },
+                            { value: 'pending', label: 'Pending Only' },
+                            { value: 'approved', label: 'Approved Only' },
+                            { value: 'rejected', label: 'Rejected Only' }
+                        ]}
+                    />
                 </div>
             </div>
 

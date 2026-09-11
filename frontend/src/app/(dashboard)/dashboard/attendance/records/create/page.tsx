@@ -8,6 +8,7 @@ import { EmployeeService } from '@/services/employee.service';
 import { AttendanceService } from '@/services/attendance.service';
 import { Employee } from '@/types/employee.types';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function CreateAttendanceRecordPage() {
     const router = useRouter();
@@ -85,18 +86,16 @@ export default function CreateAttendanceRecordPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-1.5 sm:col-span-2">
                         <label className="text-xs font-bold text-black">Select Staff / Student Member *</label>
-                        <select
-                            required
+                        <CustomDropdown
                             value={formData.employeeId}
-                            onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            {employees.map(emp => (
-                                <option key={emp._id} value={emp._id}>
-                                    {emp.firstName} {emp.lastName} — {emp.position} ({emp.department})
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, employeeId: val })}
+                            placeholder="Choose employee or student..."
+                            options={employees.map(emp => ({
+                                value: emp._id,
+                                label: `${emp.firstName} ${emp.lastName} — ${emp.position || 'Student'} (${typeof emp.department === 'object' ? (emp.department as any)?.name : emp.department})`
+                            }))}
+                            searchable
+                        />
                     </div>
 
                     <div className="space-y-1.5">
@@ -111,16 +110,16 @@ export default function CreateAttendanceRecordPage() {
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-black">Attendance Status</label>
-                        <select
+                        <CustomDropdown
                             value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="present">Present (On Time)</option>
-                            <option value="late">Late Arrival</option>
-                            <option value="absent">Absent</option>
-                            <option value="half_day">Half Day</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, status: val })}
+                            options={[
+                                { value: 'present', label: 'Present (On Time)' },
+                                { value: 'late', label: 'Late Arrival' },
+                                { value: 'absent', label: 'Absent' },
+                                { value: 'half_day', label: 'Half Day' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5">
@@ -145,15 +144,15 @@ export default function CreateAttendanceRecordPage() {
 
                     <div className="space-y-1.5 sm:col-span-2">
                         <label className="text-xs font-bold text-black">Verification Method</label>
-                        <select
+                        <CustomDropdown
                             value={formData.method}
-                            onChange={(e) => setFormData({ ...formData, method: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="manual">Manual Entry / Admin Override</option>
-                            <option value="face_verification">Face Biometrics Scan</option>
-                            <option value="qr_code">Campus QR Code</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, method: val })}
+                            options={[
+                                { value: 'manual', label: 'Manual Entry / Admin Override' },
+                                { value: 'face_verification', label: 'Face Biometrics Scan' },
+                                { value: 'qr_code', label: 'Campus QR Code' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5 sm:col-span-2">

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, FileText, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function CreateLeavePage() {
     const router = useRouter();
@@ -70,17 +71,17 @@ export default function CreateLeavePage() {
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-black">Leave Category</label>
-                        <select
+                        <CustomDropdown
                             value={formData.type}
-                            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="Annual Leave">Annual Leave (18 Days Available)</option>
-                            <option value="Sick Leave">Sick / Medical Leave</option>
-                            <option value="Casual Leave">Casual Leave</option>
-                            <option value="Maternity / Paternity">Maternity / Paternity</option>
-                            <option value="Emergency">Emergency Leave</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, type: val })}
+                            options={[
+                                { value: 'Annual Leave', label: 'Annual Leave (18 Days Available)' },
+                                { value: 'Sick Leave', label: 'Sick / Medical Leave' },
+                                { value: 'Casual Leave', label: 'Casual Leave' },
+                                { value: 'Maternity / Paternity', label: 'Maternity / Paternity' },
+                                { value: 'Emergency', label: 'Emergency Leave' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5">

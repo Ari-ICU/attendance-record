@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
 import { MOCK_LEAVE_REQUESTS, LeaveRequestItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function EditLeavePage() {
     const params = useParams();
@@ -70,17 +71,17 @@ export default function EditLeavePage() {
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-black">Leave Category</label>
-                        <select
+                        <CustomDropdown
                             value={formData.type}
-                            onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="Annual Leave">Annual Leave</option>
-                            <option value="Sick Leave">Sick Leave</option>
-                            <option value="Casual Leave">Casual Leave</option>
-                            <option value="Maternity / Paternity">Maternity / Paternity</option>
-                            <option value="Emergency">Emergency</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, type: val as any })}
+                            options={[
+                                { value: 'Annual Leave', label: 'Annual Leave' },
+                                { value: 'Sick Leave', label: 'Sick Leave' },
+                                { value: 'Casual Leave', label: 'Casual Leave' },
+                                { value: 'Maternity / Paternity', label: 'Maternity / Paternity' },
+                                { value: 'Emergency', label: 'Emergency' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5">
@@ -105,15 +106,15 @@ export default function EditLeavePage() {
 
                     <div className="space-y-1.5 sm:col-span-2">
                         <label className="text-xs font-bold text-black">Status</label>
-                        <select
+                        <CustomDropdown
                             value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="pending">Pending Approval</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, status: val as any })}
+                            options={[
+                                { value: 'pending', label: 'Pending Approval' },
+                                { value: 'approved', label: 'Approved' },
+                                { value: 'rejected', label: 'Rejected' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5 sm:col-span-2">

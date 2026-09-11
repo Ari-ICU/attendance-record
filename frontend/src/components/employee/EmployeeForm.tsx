@@ -25,6 +25,7 @@ import {
     Info,
     CheckCircle2
 } from 'lucide-react';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 interface EmployeeFormProps {
     initialData?: Employee | null;
@@ -371,19 +372,13 @@ export default function EmployeeForm({
                             <label className="text-xs font-bold text-black">
                                 {isStudent ? 'Class / Major Department *' : 'Department *'}
                             </label>
-                            <select
-                                name="department"
+                            <CustomDropdown
                                 value={formData.department}
-                                onChange={handleInputChange}
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                            >
-                                <option value="">Select Department / Track</option>
-                                {departments.map((dept) => (
-                                    <option key={dept._id} value={dept.name}>
-                                        {dept.name}
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={(val) => setFormData(prev => ({ ...prev, department: val }))}
+                                placeholder="Select Department / Track"
+                                options={departments.map(d => ({ value: d.name, label: d.name }))}
+                                searchable
+                            />
                         </div>
 
                         <div className="space-y-1.5">
@@ -505,15 +500,14 @@ export default function EmployeeForm({
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold text-black">Currency</label>
-                            <select
-                                name="currency"
+                            <CustomDropdown
                                 value={formData.currency}
-                                onChange={handleInputChange}
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                            >
-                                <option value="USD">USD ($)</option>
-                                <option value="KHR">KHR (៛)</option>
-                            </select>
+                                onChange={(val) => setFormData(prev => ({ ...prev, currency: val }))}
+                                options={[
+                                    { value: 'USD', label: 'USD ($)' },
+                                    { value: 'KHR', label: 'KHR (៛)' }
+                                ]}
+                            />
                         </div>
 
                         <div className="space-y-1.5">

@@ -7,6 +7,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { AttendanceService } from '@/services/attendance.service';
 import { AttendanceRecord } from '@/types/attendance.types';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function EditAttendanceRecordPage() {
     const params = useParams();
@@ -101,16 +102,16 @@ export default function EditAttendanceRecordPage() {
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-black">Status</label>
-                        <select
+                        <CustomDropdown
                             value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="present">Present (On Time)</option>
-                            <option value="late">Late</option>
-                            <option value="absent">Absent</option>
-                            <option value="half_day">Half Day</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, status: val })}
+                            options={[
+                                { value: 'present', label: 'Present (On Time)' },
+                                { value: 'late', label: 'Late' },
+                                { value: 'absent', label: 'Absent' },
+                                { value: 'half_day', label: 'Half Day' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5">
