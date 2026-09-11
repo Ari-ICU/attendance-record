@@ -216,7 +216,7 @@ export default function AttendanceScanKioskPage() {
     }, [scanning, selectedEmployeeId, employees, scanAction, mode, soundEnabled]);
 
     return (
-        <div className={`w-full space-y-6 font-sans ${isFullscreen ? 'fixed inset-0 bg-slate-900 text-white z-50 p-6 overflow-y-auto' : 'pb-16'}`}>
+        <div className="w-full space-y-6 font-sans pb-16">
             {/* Header / Kiosk Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-6 shadow-xs">
                 <div>
