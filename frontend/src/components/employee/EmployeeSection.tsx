@@ -66,23 +66,23 @@ export default function EmployeeSection() {
     };
 
     return (
-        <div className="container mx-auto py-6">
-            <div className="flex justify-between items-center mb-8">
+        <div className="py-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-3xl font-black text-white tracking-tight">Personnel Management</h1>
-                    <p className="text-slate-400 mt-1">Manage employee and student records across all departments.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Personnel Directory</h1>
+                    <p className="text-xs sm:text-sm text-slate-400 mt-1">Manage employee and student records across all departments.</p>
                 </div>
                 <button
                     onClick={() => {
                         setEditingEmployee(null);
                         setShowForm(true);
                     }}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold shadow-xl shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-sm active:scale-95 self-start sm:self-auto"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    Add Personnel
+                    <span>Add Personnel</span>
                 </button>
             </div>
 
