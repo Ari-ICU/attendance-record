@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { School, QrCode, LogOut, LayoutDashboard, Clock } from 'lucide-react';
+import { Building2, QrCode, LogOut, LayoutDashboard, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/contexts/SocketContext';
 import { getFullImageUrl } from '@/utils/url.utils';
@@ -36,17 +36,17 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans antialiased">
             {/* Top Navigation Bar */}
             <header className="sticky top-0 z-30 w-full bg-white border-b border-slate-200/80 shadow-xs">
-                <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     {/* Brand */}
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
-                            <School size={17} />
+                            <Building2 size={17} />
                         </div>
                         <div>
                             <span className="text-sm font-bold text-slate-900 leading-tight">
-                                Campus Attendance Portal
+                                Corporate Workforce Portal
                             </span>
-                            <span className="text-[10px] text-slate-400 block font-medium">Student & Client View</span>
+                            <span className="text-[10px] text-slate-400 block font-medium">Staff Self-Service Portal</span>
                         </div>
                     </div>
 
@@ -80,7 +80,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                                         className="w-full h-full object-cover"
                                     />
                                 ) : (
-                                    <span>{user?.firstName?.[0] || 'S'}{user?.lastName?.[0] || ''}</span>
+                                    <span>{user?.firstName?.[0] || 'E'}{user?.lastName?.[0] || ''}</span>
                                 )}
                             </div>
                             <div className="hidden md:block text-left">
@@ -88,7 +88,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                                     {user?.firstName} {user?.lastName}
                                 </p>
                                 <p className="text-[10px] text-slate-400 font-medium capitalize">
-                                    {user?.role || 'Student'} • {isConnected ? 'Online' : 'Offline'}
+                                    {user?.role || 'Employee'} • {isConnected ? 'Online' : 'Offline'}
                                 </p>
                             </div>
 

@@ -477,7 +477,7 @@ export default function SettingsPage() {
                                                             </td>
                                                             <td className="px-4 py-3 text-right">
                                                                 <div className="inline-flex gap-1.5">
-                                                                    {['admin', 'employee', 'student'].map(role => (
+                                                                    {['admin', 'manager', 'employee'].map(role => (
                                                                         <button
                                                                             key={role}
                                                                             onClick={() => handleUpdateUserRole(user._id, role)}

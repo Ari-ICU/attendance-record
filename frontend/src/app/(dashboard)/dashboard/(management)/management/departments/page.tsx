@@ -35,10 +35,10 @@ interface PositionItem {
 
 const DEFAULT_POSITIONS: PositionItem[] = [
     { id: 'pos_001', title: 'System Administrator', department: 'Engineering & IT', employeeCount: 2, description: 'Manages server infrastructure, cloud networks, and biometric IoT endpoints.', level: 'Senior' },
-    { id: 'pos_002', title: 'Senior Lecturer', department: 'Academic Core', employeeCount: 14, description: 'Lead instructors for university courses, curriculum development, and student grading.', level: 'Executive' },
+    { id: 'pos_002', title: 'Lead UX Architect', department: 'Product & Design', employeeCount: 6, description: 'Design system governance, UX flow architecture, and user research coordination.', level: 'Executive' },
     { id: 'pos_003', title: 'HR Director', department: 'Human Resources', employeeCount: 1, description: 'Workforce governance, hiring pipeline, payroll coordination, and staff wellness.', level: 'Executive' },
     { id: 'pos_004', title: 'Operations Manager', department: 'Operations & Facilities', employeeCount: 3, description: 'Campus logistics, security operations, gate check-in monitors, and facilities.', level: 'Mid-Level' },
-    { id: 'pos_005', title: 'Lecturer / Teaching Assistant', department: 'Academic Core', employeeCount: 22, description: 'Classroom teaching assistants, lab proctors, and student attendance monitors.', level: 'Associate' },
+    { id: 'pos_005', title: 'Senior Backend Engineer', department: 'Engineering & IT', employeeCount: 8, description: 'Microservices architecture, API integrations, and database scalability.', level: 'Senior' },
     { id: 'pos_006', title: 'Frontend Engineer', department: 'Engineering & IT', employeeCount: 5, description: 'Web application development, dashboard UI design, and portal maintenance.', level: 'Mid-Level' },
 ];
 

@@ -65,8 +65,6 @@ export default function EditEmployeePage() {
         );
     }
 
-    const isStudent = employee.type === 'student';
-
     return (
         <div className="w-full space-y-6 pb-12 font-sans">
             {/* Breadcrumb Header */}

@@ -148,7 +148,7 @@ export default function DailyAttendance() {
 
                                 return (
                                     <tr key={record._id} className="hover:bg-slate-50/70 transition-colors">
-                                        {/* Student Info */}
+                                        {/* Staff / Employee Info */}
                                         <td className="py-3 px-4 sm:px-5">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 font-bold text-xs shrink-0 overflow-hidden">
@@ -159,7 +159,7 @@ export default function DailyAttendance() {
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
-                                                        <span>{record.employeeId?.firstName?.[0] || 'S'}</span>
+                                                        <span>{record.employeeId?.firstName?.[0] || 'E'}</span>
                                                     )}
                                                 </div>
                                                 <div className="min-w-0">

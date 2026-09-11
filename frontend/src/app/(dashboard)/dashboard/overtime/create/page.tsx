@@ -132,7 +132,7 @@ export default function CreateOvertimePage() {
                             required
                             value={formData.project}
                             onChange={(e) => setFormData({ ...formData, project: e.target.value })}
-                            placeholder="e.g. Student Enrollment Night Session Support"
+                            placeholder="e.g. Q3 Infrastructure Cloud Migration Sprint"
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
                         />
                     </div>

@@ -166,8 +166,8 @@ export default function DepartmentDetailPage() {
             <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
                 <div className="p-5 border-b border-slate-200 flex items-center justify-between">
                     <div>
-                        <h2 className="text-base font-black text-black">Enrolled Faculty & Students Roster</h2>
-                        <p className="text-xs font-medium text-black mt-0.5">Staff and students assigned to this unit</p>
+                        <h2 className="text-base font-black text-black">Assigned Staff & Personnel Roster</h2>
+                        <p className="text-xs font-medium text-black mt-0.5">Department team members and personnel assigned to this unit</p>
                     </div>
                     <span className="px-3 py-1 bg-slate-100 text-black border border-slate-300 rounded-lg text-xs font-bold">
                         {members.length} Members

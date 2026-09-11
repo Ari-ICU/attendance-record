@@ -48,7 +48,7 @@ export class EmployeeService {
         return newEmp;
     }
 
-    static async getAllEmployees(query?: { page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc'; type?: 'employee' | 'student' }): Promise<EmployeeListResponse> {
+    static async getAllEmployees(query?: { page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc'; type?: string }): Promise<EmployeeListResponse> {
         try {
             const { data: res } = await api.get(API_URLS.EMPLOYEE.GET_ALL, { params: query });
             if (res?.data?.employees) return res.data;

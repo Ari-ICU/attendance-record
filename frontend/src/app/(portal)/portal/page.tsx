@@ -50,9 +50,9 @@ export default function PortalPage() {
         fetchPersonalRecords();
     }, []);
 
-    const todayClasses = [
-        { name: 'Web Development & UI Architecture', code: 'CS-301', time: '08:00 AM - 11:00 AM', room: 'Lab 402', status: 'Completed', teacher: 'Dr. John Doe' },
-        { name: 'Database Systems & Cloud Scaling', code: 'CS-304', time: '01:30 PM - 04:30 PM', room: 'Hall B', status: 'Upcoming', teacher: 'Prof. Sarah Chen' },
+    const todaySchedule = [
+        { name: 'Engineering Daily Standup & Sprint Sync', code: 'ENG-SYNC', time: '09:00 AM - 09:45 AM', room: 'Conference Room 4A', status: 'Completed', lead: 'Tech Lead / Architect' },
+        { name: 'Product Design & Architecture Review', code: 'PROD-REV', time: '02:00 PM - 03:30 PM', room: 'Design Studio B', status: 'Upcoming', lead: 'Sarah Jenkins' },
     ];
 
     return (
@@ -61,20 +61,20 @@ export default function PortalPage() {
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 font-bold text-lg shrink-0">
-                        {user?.firstName?.[0] || 'S'}{user?.lastName?.[0] || 'T'}
+                        {user?.firstName?.[0] || 'E'}{user?.lastName?.[0] || 'M'}
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                                Hello, {user?.firstName || 'Student'} 👋
+                                Hello, {user?.firstName || 'Employee'} 👋
                             </h1>
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                <span>Active Student</span>
+                                <span>Active Staff Member</span>
                             </span>
                         </div>
                         <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                            ID: <span className="font-mono text-slate-700 font-medium">{user?._id?.substring(0, 10).toUpperCase() || 'STU-2026-081'}</span> • Academic Year 2025-2026
+                            ID: <span className="font-mono text-slate-700 font-medium">{user?._id?.substring(0, 10).toUpperCase() || 'EMP-2026-081'}</span> • Fiscal Year 2026
                         </p>
                     </div>
                 </div>
@@ -246,17 +246,17 @@ export default function PortalPage() {
                     </div>
                 </div>
 
-                {/* Right (1 col): Today's Classes & Digital ID Badge */}
+                {/* Right (1 col): Today's Schedule & Digital ID Badge */}
                 <div className="space-y-4">
                     {/* Today's Schedule Card */}
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="font-bold text-slate-900 text-sm">Today&apos;s Classes</h3>
+                            <h3 className="font-bold text-slate-900 text-sm">Today&apos;s Work Schedule</h3>
                             <span className="text-xs font-medium text-slate-400">2 Sessions</span>
                         </div>
 
                         <div className="space-y-3">
-                            {todayClasses.map((cls, idx) => (
+                            {todaySchedule.map((cls, idx) => (
                                 <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-slate-900">{cls.name}</span>
@@ -270,7 +270,7 @@ export default function PortalPage() {
                                         <span>⏰ {cls.time}</span>
                                         <span>📍 {cls.room}</span>
                                     </p>
-                                    <p className="text-[10px] text-slate-400">Instructor: {cls.teacher}</p>
+                                    <p className="text-[10px] text-slate-400">Coordinator / Lead: {cls.lead}</p>
                                 </div>
                             ))}
                         </div>

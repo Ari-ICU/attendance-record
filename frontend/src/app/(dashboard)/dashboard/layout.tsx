@@ -66,7 +66,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 { name: 'Employees', href: '/dashboard/management/employee', icon: <Users size={15} /> },
                 { name: 'Departments', href: '/dashboard/management/departments', icon: <Building2 size={15} /> },
                 { name: 'Positions', href: '/dashboard/management/positions', icon: <Briefcase size={15} /> },
-                { name: 'My Profile', href: '/dashboard/profile', icon: <User size={15} /> },
             ],
         },
 
@@ -126,7 +125,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             group: true,
             items: [
                 { name: 'Users & Roles', href: '/dashboard/settings?tab=roles', icon: <Shield size={15} /> },
-                { name: 'Notifications', href: '/dashboard/notifications', icon: <Bell size={15} /> },
                 { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={15} /> },
             ],
         },
