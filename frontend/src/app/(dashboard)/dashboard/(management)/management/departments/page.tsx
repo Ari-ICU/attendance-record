@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
     Users,
     Plus,
@@ -230,13 +231,13 @@ export default function DepartmentsPage() {
                 </div>
 
                 <div className="flex items-center gap-2.5">
-                    <button
-                        onClick={openCreateModal}
+                    <Link
+                        href={activeView === 'departments' ? "/dashboard/management/departments/create" : "/dashboard/management/positions/create"}
                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
                     >
                         <Plus size={16} />
                         <span>{activeView === 'departments' ? 'Add Class / Dept' : 'Add Position'}</span>
-                    </button>
+                    </Link>
                     <button
                         onClick={fetchData}
                         className="p-2.5 rounded-xl bg-white border border-slate-300 text-black hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer"
@@ -308,13 +309,19 @@ export default function DepartmentsPage() {
                                             <Building2 size={20} />
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={() => openEditDeptModal(dept)}
-                                                className="p-1.5 rounded-lg text-black hover:bg-slate-100 transition-colors"
+                                            <Link
+                                                href={`/dashboard/management/departments/${dept._id}`}
+                                                className="px-2.5 py-1 bg-slate-100 hover:bg-black hover:text-white text-black font-bold rounded-lg text-xs transition-colors inline-block"
+                                            >
+                                                View
+                                            </Link>
+                                            <Link
+                                                href={`/dashboard/management/departments/${dept._id}/edit`}
+                                                className="p-1.5 rounded-lg text-black hover:bg-slate-100 transition-colors inline-block"
                                                 title="Edit Unit"
                                             >
                                                 <Edit2 size={15} />
-                                            </button>
+                                            </Link>
                                             <button
                                                 onClick={() => handleDeleteDept(dept._id)}
                                                 className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
@@ -327,9 +334,9 @@ export default function DepartmentsPage() {
 
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <h3 className="text-base font-black text-black leading-snug">
+                                            <Link href={`/dashboard/management/departments/${dept._id}`} className="text-base font-black text-black leading-snug hover:underline">
                                                 {dept.name}
-                                            </h3>
+                                            </Link>
                                             <span className="px-2 py-0.5 rounded-md bg-slate-100 text-black font-mono text-[10px] font-bold border border-slate-200">
                                                 {dept.code}
                                             </span>
@@ -345,10 +352,13 @@ export default function DepartmentsPage() {
                                         <Users size={15} className="text-black" />
                                         <span className="font-bold text-black">{dept.memberCount || 12} Members</span>
                                     </div>
-                                    <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[11px] flex items-center gap-1">
+                                    <Link
+                                        href={`/dashboard/management/departments/${dept._id}`}
+                                        className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[11px] flex items-center gap-1 hover:bg-emerald-100 transition-colors"
+                                    >
                                         <CheckCircle2 size={12} />
                                         <span>Active Unit</span>
-                                    </span>
+                                    </Link>
                                 </div>
                             </div>
                         ))

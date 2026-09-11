@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
-import { INITIAL_POSITIONS } from '../page';
+import { MOCK_POSITIONS, PositionItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
 
 export default function EditPositionPage() {
@@ -12,7 +12,7 @@ export default function EditPositionPage() {
     const router = useRouter();
     const id = params.id as string;
 
-    const current = INITIAL_POSITIONS.find(p => p.id === id) || {
+    const current = MOCK_POSITIONS.find(p => p.id === id) || {
         id,
         title: 'System Administrator',
         department: 'Engineering & IT',

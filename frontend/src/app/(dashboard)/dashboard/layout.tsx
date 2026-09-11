@@ -65,7 +65,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             items: [
                 { name: 'All Staff', href: '/dashboard/management/employee?type=employee', icon: <Users size={15} /> },
                 { name: 'Departments', href: '/dashboard/management/departments', icon: <Building2 size={15} /> },
-                { name: 'Positions', href: '/dashboard/management/departments?view=positions', icon: <Briefcase size={15} /> },
+                { name: 'Positions', href: '/dashboard/management/positions', icon: <Briefcase size={15} /> },
                 { name: 'Staff Profile', href: '/dashboard/profile', icon: <User size={15} /> },
             ],
         },

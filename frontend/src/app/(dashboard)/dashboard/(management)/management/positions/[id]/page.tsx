@@ -11,7 +11,7 @@ import {
     Edit2,
     Trash2
 } from 'lucide-react';
-import { INITIAL_POSITIONS } from '../page';
+import { MOCK_POSITIONS, PositionItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
 
 export default function PositionDetailPage() {
@@ -19,7 +19,7 @@ export default function PositionDetailPage() {
     const router = useRouter();
     const id = params.id as string;
 
-    const pos = INITIAL_POSITIONS.find(p => p.id === id) || {
+    const pos = MOCK_POSITIONS.find(p => p.id === id) || {
         id,
         title: 'System Administrator',
         department: 'Engineering & IT',

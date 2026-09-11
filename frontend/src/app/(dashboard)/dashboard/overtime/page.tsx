@@ -14,29 +14,11 @@ import {
     Search,
     Filter
 } from 'lucide-react';
+import { MOCK_OVERTIME, OvertimeItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
 
-export interface OvertimeItem {
-    id: string;
-    employeeName: string;
-    department: string;
-    date: string;
-    startTime: string;
-    endTime: string;
-    hours: number;
-    project: string;
-    reason: string;
-    status: 'approved' | 'pending' | 'rejected';
-}
-
-export const INITIAL_OVERTIME: OvertimeItem[] = [
-    { id: 'ot_001', employeeName: 'Thoeurn Ratha', department: 'Engineering & IT', date: '2026-09-10', startTime: '17:30', endTime: '20:30', hours: 3.0, project: 'Biometric Gateway Upgrade', reason: 'Campus IoT sensor firmware sync and database patch.', status: 'approved' },
-    { id: 'ot_002', employeeName: 'Sarah Jenkins', department: 'Academic Core', date: '2026-09-09', startTime: '17:00', endTime: '19:00', hours: 2.0, project: 'Mid-term Exam Prep', reason: 'Curriculum exam grading and student submission review.', status: 'pending' },
-    { id: 'ot_003', employeeName: 'David Miller', department: 'Operations & Facilities', date: '2026-09-08', startTime: '18:00', endTime: '21:30', hours: 3.5, project: 'Campus Security Audit', reason: 'Night gate check-in turnstile diagnostic.', status: 'approved' },
-];
-
 export default function OvertimePage() {
-    const [overtimes, setOvertimes] = useState<OvertimeItem[]>(INITIAL_OVERTIME);
+    const [overtimes, setOvertimes] = useState<OvertimeItem[]>(MOCK_OVERTIME);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 

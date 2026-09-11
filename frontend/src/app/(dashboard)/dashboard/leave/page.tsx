@@ -15,29 +15,11 @@ import {
     Search,
     Filter
 } from 'lucide-react';
+import { MOCK_LEAVE_REQUESTS, LeaveRequestItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
 
-export interface LeaveRequestItem {
-    id: string;
-    employeeName: string;
-    department: string;
-    type: 'Annual Leave' | 'Sick Leave' | 'Maternity / Paternity' | 'Casual Leave' | 'Emergency';
-    startDate: string;
-    endDate: string;
-    days: number;
-    reason: string;
-    status: 'approved' | 'pending' | 'rejected';
-}
-
-export const INITIAL_LEAVE_REQUESTS: LeaveRequestItem[] = [
-    { id: 'lv_001', employeeName: 'Thoeurn Ratha', department: 'Engineering & IT', type: 'Annual Leave', startDate: '2026-09-15', endDate: '2026-09-18', days: 4, reason: 'Annual family recharge and personal trip.', status: 'approved' },
-    { id: 'lv_002', employeeName: 'Sarah Jenkins', department: 'Academic Core', type: 'Sick Leave', startDate: '2026-09-12', endDate: '2026-09-13', days: 2, reason: 'Medical recovery & doctor appointment.', status: 'pending' },
-    { id: 'lv_003', employeeName: 'David Miller', department: 'Operations & Facilities', type: 'Casual Leave', startDate: '2026-09-20', endDate: '2026-09-20', days: 1, reason: 'Personal errands and vehicle registration.', status: 'pending' },
-    { id: 'lv_004', employeeName: 'Alex Vannak', department: 'Human Resources', type: 'Emergency', startDate: '2026-09-08', endDate: '2026-09-09', days: 2, reason: 'Urgent family emergency.', status: 'approved' },
-];
-
 export default function LeavePage() {
-    const [leaves, setLeaves] = useState<LeaveRequestItem[]>(INITIAL_LEAVE_REQUESTS);
+    const [leaves, setLeaves] = useState<LeaveRequestItem[]>(MOCK_LEAVE_REQUESTS);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 

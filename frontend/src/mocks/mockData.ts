@@ -293,3 +293,60 @@ export const MOCK_REPORT_ANALYTICS = {
         { day: 'Fri', onTime: 91, late: 7, absent: 2 },
     ]
 };
+
+export interface PositionItem {
+    id: string;
+    title: string;
+    department: string;
+    employeeCount: number;
+    description: string;
+    level: string;
+}
+
+export const MOCK_POSITIONS: PositionItem[] = [
+    { id: 'pos_001', title: 'System Administrator', department: 'Engineering & IT', employeeCount: 2, description: 'Manages server infrastructure, cloud networks, and biometric IoT endpoints.', level: 'Senior' },
+    { id: 'pos_002', title: 'Senior Lecturer', department: 'Academic Core', employeeCount: 14, description: 'Lead instructors for university courses, curriculum development, and student grading.', level: 'Executive' },
+    { id: 'pos_003', title: 'HR Director', department: 'Human Resources', employeeCount: 1, description: 'Workforce governance, hiring pipeline, payroll coordination, and staff wellness.', level: 'Executive' },
+    { id: 'pos_004', title: 'Operations Manager', department: 'Operations & Facilities', employeeCount: 3, description: 'Campus logistics, security operations, gate check-in monitors, and facilities.', level: 'Mid-Level' },
+    { id: 'pos_005', title: 'Lecturer / Teaching Assistant', department: 'Academic Core', employeeCount: 22, description: 'Classroom teaching assistants, lab proctors, and student attendance monitors.', level: 'Associate' },
+    { id: 'pos_006', title: 'Frontend Engineer', department: 'Engineering & IT', employeeCount: 5, description: 'Web application development, dashboard UI design, and portal maintenance.', level: 'Mid-Level' },
+];
+
+export interface LeaveRequestItem {
+    id: string;
+    employeeName: string;
+    department: string;
+    type: 'Annual Leave' | 'Sick Leave' | 'Maternity / Paternity' | 'Casual Leave' | 'Emergency';
+    startDate: string;
+    endDate: string;
+    days: number;
+    reason: string;
+    status: 'approved' | 'pending' | 'rejected';
+}
+
+export const MOCK_LEAVE_REQUESTS: LeaveRequestItem[] = [
+    { id: 'lv_001', employeeName: 'Thoeurn Ratha', department: 'Engineering & IT', type: 'Annual Leave', startDate: '2026-09-15', endDate: '2026-09-18', days: 4, reason: 'Annual family recharge and personal trip.', status: 'approved' },
+    { id: 'lv_002', employeeName: 'Sarah Jenkins', department: 'Academic Core', type: 'Sick Leave', startDate: '2026-09-12', endDate: '2026-09-13', days: 2, reason: 'Medical recovery & doctor appointment.', status: 'pending' },
+    { id: 'lv_003', employeeName: 'David Miller', department: 'Operations & Facilities', type: 'Casual Leave', startDate: '2026-09-20', endDate: '2026-09-20', days: 1, reason: 'Personal errands and vehicle registration.', status: 'pending' },
+    { id: 'lv_004', employeeName: 'Alex Vannak', department: 'Human Resources', type: 'Emergency', startDate: '2026-09-08', endDate: '2026-09-09', days: 2, reason: 'Urgent family emergency.', status: 'approved' },
+];
+
+export interface OvertimeItem {
+    id: string;
+    employeeName: string;
+    department: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    hours: number;
+    project: string;
+    reason: string;
+    status: 'approved' | 'pending' | 'rejected';
+}
+
+export const MOCK_OVERTIME: OvertimeItem[] = [
+    { id: 'ot_001', employeeName: 'Thoeurn Ratha', department: 'Engineering & IT', date: '2026-09-10', startTime: '17:30', endTime: '20:30', hours: 3.0, project: 'Biometric Gateway Upgrade', reason: 'Campus IoT sensor firmware sync and database patch.', status: 'approved' },
+    { id: 'ot_002', employeeName: 'Sarah Jenkins', department: 'Academic Core', date: '2026-09-09', startTime: '17:00', endTime: '19:00', hours: 2.0, project: 'Mid-term Exam Prep', reason: 'Curriculum exam grading and student submission review.', status: 'pending' },
+    { id: 'ot_003', employeeName: 'David Miller', department: 'Operations & Facilities', date: '2026-09-08', startTime: '18:00', endTime: '21:30', hours: 3.5, project: 'Campus Security Audit', reason: 'Night gate check-in turnstile diagnostic.', status: 'approved' },
+];
+

@@ -12,28 +12,11 @@ import {
     Trash2,
     Building2
 } from 'lucide-react';
+import { MOCK_POSITIONS, PositionItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
 
-export interface PositionItem {
-    id: string;
-    title: string;
-    department: string;
-    employeeCount: number;
-    description: string;
-    level: string;
-}
-
-export const INITIAL_POSITIONS: PositionItem[] = [
-    { id: 'pos_001', title: 'System Administrator', department: 'Engineering & IT', employeeCount: 2, description: 'Manages server infrastructure, cloud networks, and biometric IoT endpoints.', level: 'Senior' },
-    { id: 'pos_002', title: 'Senior Lecturer', department: 'Academic Core', employeeCount: 14, description: 'Lead instructors for university courses, curriculum development, and student grading.', level: 'Executive' },
-    { id: 'pos_003', title: 'HR Director', department: 'Human Resources', employeeCount: 1, description: 'Workforce governance, hiring pipeline, payroll coordination, and staff wellness.', level: 'Executive' },
-    { id: 'pos_004', title: 'Operations Manager', department: 'Operations & Facilities', employeeCount: 3, description: 'Campus logistics, security operations, gate check-in monitors, and facilities.', level: 'Mid-Level' },
-    { id: 'pos_005', title: 'Lecturer / Teaching Assistant', department: 'Academic Core', employeeCount: 22, description: 'Classroom teaching assistants, lab proctors, and student attendance monitors.', level: 'Associate' },
-    { id: 'pos_006', title: 'Frontend Engineer', department: 'Engineering & IT', employeeCount: 5, description: 'Web application development, dashboard UI design, and portal maintenance.', level: 'Mid-Level' },
-];
-
 export default function PositionsPage() {
-    const [positions, setPositions] = useState<PositionItem[]>(INITIAL_POSITIONS);
+    const [positions, setPositions] = useState<PositionItem[]>(MOCK_POSITIONS);
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleDelete = (id: string) => {
