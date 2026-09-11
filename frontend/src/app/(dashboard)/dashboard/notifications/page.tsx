@@ -39,11 +39,11 @@ export default function NotificationTestPage() {
                 }
             }
             // Fallback if backend route not found
-            toast.success(`Dispatched (${testType.toUpperCase()}): ${testMessage || 'Test notification dispatched 🔔'}`);
+            toast.success('Test notification dispatched');
             setTestMessage('');
         } catch {
             // Local simulation fallback
-            toast.success(`Dispatched (${testType.toUpperCase()}): ${testMessage || 'Test notification dispatched 🔔'}`);
+            toast.success('Test notification dispatched');
             setTestMessage('');
         } finally {
             setLoading(false);
