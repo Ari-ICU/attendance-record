@@ -11,20 +11,15 @@ import {
     Calendar,
     ShieldCheck,
     User,
-    ArrowLeft,
     Edit3,
     CheckCircle2,
     XCircle,
     Fingerprint,
-    CreditCard,
-    DollarSign,
     Copy,
     Check,
     Clock,
-    Award,
     Activity,
     Printer,
-    FileText,
     ChevronRight,
     Users
 } from 'lucide-react';
@@ -39,9 +34,8 @@ interface EmployeeDetailProps {
 export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
     const router = useRouter();
     const [copied, setCopied] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'biometrics' | 'payroll'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'biometrics'>('overview');
 
-    const isStudent = employee.type === 'student';
     const fullName = employee.fullName || `${employee.firstName || ''} ${employee.lastName || ''}`.trim() || 'Unnamed';
 
     const handleCopyId = () => {
@@ -70,11 +64,11 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs print:hidden">
                 <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-bold text-slate-800">
                     <Link
-                        href={`/dashboard/management/employee${isStudent ? '?type=student' : ''}`}
+                        href="/dashboard/management/employee"
                         className="flex items-center gap-1.5 text-slate-800 hover:text-black transition-colors"
                     >
                         <Users size={15} />
-                        <span>{isStudent ? 'Student Directory' : 'Faculty & Staff'}</span>
+                        <span>Employee Directory</span>
                     </Link>
                     <ChevronRight size={14} className="text-slate-400" />
                     <span className="text-black font-black">{fullName}</span>
@@ -130,7 +124,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                             {employee.isActive !== false ? (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
                                     <CheckCircle2 size={12} className="text-emerald-600" />
-                                    Active Record
+                                    Active Staff
                                 </span>
                             ) : (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200 text-xs font-bold">
@@ -140,19 +134,19 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                             )}
 
                             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-100 text-black border border-slate-300">
-                                {isStudent ? 'Student' : 'Faculty & Staff'}
+                                Staff Member
                             </span>
                         </div>
 
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-y-1 gap-x-4 text-xs sm:text-sm font-semibold text-slate-800">
                             <span className="flex items-center gap-1.5 text-black font-bold">
                                 <Briefcase size={15} className="text-blue-600" />
-                                {employee.position || (isStudent ? 'Enrolled Student' : 'Staff Member')}
+                                {employee.position || 'Staff Member'}
                             </span>
                             <span className="text-slate-300 hidden md:inline">•</span>
                             <span className="flex items-center gap-1.5 text-black font-bold">
                                 <Building2 size={15} className="text-blue-600" />
-                                {typeof employee.department === 'object' ? (employee.department as any)?.name : (employee.department || 'General Campus')}
+                                {typeof employee.department === 'object' ? (employee.department as any)?.name : (employee.department || 'General')}
                             </span>
                         </div>
 
@@ -185,7 +179,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                     <div className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-xl space-y-0.5">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
                             <Clock size={12} className="text-blue-600" />
-                            Total Sessions
+                            Total Check-ins
                         </span>
                         <p className="text-lg font-black text-black">142 Days</p>
                     </div>
@@ -201,7 +195,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                     <div className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-xl space-y-0.5">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
                             <Calendar size={12} className="text-blue-600" />
-                            {isStudent ? 'Enrollment' : 'Joined'}
+                            Date Joined
                         </span>
                         <p className="text-sm font-black text-black mt-1">
                             {employee.dateOfJoining ? new Date(employee.dateOfJoining).toLocaleDateString() : 'N/A'}
@@ -216,7 +210,6 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                     { id: 'overview', label: 'Identity & Details', icon: <User size={15} /> },
                     { id: 'attendance', label: 'Attendance History', icon: <Clock size={15} /> },
                     { id: 'biometrics', label: 'Biometric Access', icon: <Fingerprint size={15} /> },
-                    ...(!isStudent ? [{ id: 'payroll', label: 'Payroll & Banking', icon: <CreditCard size={15} /> }] : []),
                 ].map((tab) => (
                     <button
                         key={tab.id}
@@ -251,7 +244,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                             </div>
 
                             <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                <span className="text-xs font-bold text-slate-600">Email Address</span>
+                                <span className="text-xs font-bold text-slate-600">Work Email Address</span>
                                 <a
                                     href={`mailto:${employee.email}`}
                                     className="text-xs sm:text-sm font-bold text-blue-600 hover:underline flex items-center gap-1"
@@ -278,7 +271,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
 
                             <div className="flex justify-between items-center py-2">
                                 <span className="text-xs font-bold text-slate-600">
-                                    {isStudent ? 'Enrolled Date' : 'Employment Date'}
+                                    Date of Joining
                                 </span>
                                 <span className="text-xs sm:text-sm font-bold text-black">
                                     {employee.dateOfJoining ? new Date(employee.dateOfJoining).toLocaleDateString() : 'N/A'}
@@ -297,7 +290,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                         <div className="space-y-3">
                             <div className="flex justify-between items-center py-2 border-b border-slate-100">
                                 <span className="text-xs font-bold text-slate-600">
-                                    {isStudent ? 'Assigned Class / Track' : 'Department'}
+                                    Department
                                 </span>
                                 <span className="text-xs sm:text-sm font-bold text-black">
                                     {typeof employee.department === 'object' ? (employee.department as any)?.name : (employee.department || 'General')}
@@ -305,23 +298,23 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                             </div>
 
                             <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                <span className="text-xs font-bold text-slate-600">Designation / Role</span>
+                                <span className="text-xs font-bold text-slate-600">Job Title / Designation</span>
                                 <span className="text-xs sm:text-sm font-bold text-black">
-                                    {employee.position || (isStudent ? 'Enrolled Student' : 'Staff Member')}
+                                    {employee.position || 'Staff Member'}
                                 </span>
                             </div>
 
                             <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                <span className="text-xs font-bold text-slate-600">Account Classification</span>
+                                <span className="text-xs font-bold text-slate-600">Employment Status</span>
                                 <span className="text-xs font-bold uppercase tracking-wider text-black">
-                                    {employee.type || 'employee'}
+                                    Full-Time Staff
                                 </span>
                             </div>
 
                             <div className="flex justify-between items-center py-2">
-                                <span className="text-xs font-bold text-slate-600">Shift Schedule</span>
+                                <span className="text-xs font-bold text-slate-600">Standard Work Schedule</span>
                                 <span className="text-xs sm:text-sm font-bold text-black">
-                                    Standard (08:00 AM - 05:00 PM)
+                                    08:00 AM - 05:00 PM (Mon - Fri)
                                 </span>
                             </div>
                         </div>
@@ -410,56 +403,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                             <span className="text-xs font-bold text-slate-600 block">Kiosk Verification Accuracy</span>
                             <div className="text-sm font-black text-black">99.4% Match Rate</div>
                             <p className="text-xs font-semibold text-slate-800">
-                                Real-time anti-spoofing and liveness detection enabled for this profile.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Tab 4: Payroll & Banking (Staff Only) */}
-            {activeTab === 'payroll' && !isStudent && (
-                <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-                    <div className="border-b border-slate-100 pb-3">
-                        <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2">
-                            <CreditCard size={15} className="text-blue-600" />
-                            Compensation & Direct Deposit Information
-                        </h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                            <span className="text-xs font-bold text-slate-600">Base Monthly Salary</span>
-                            <p className="text-lg font-black text-black">
-                                {employee.currency || 'USD'} {employee.baseSalary?.toLocaleString() || '0.00'}
-                            </p>
-                        </div>
-
-                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                            <span className="text-xs font-bold text-slate-600">Hourly Rate</span>
-                            <p className="text-lg font-black text-black">
-                                {employee.currency || 'USD'} {employee.hourlyRate?.toLocaleString() || '0.00'}/hr
-                            </p>
-                        </div>
-
-                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                            <span className="text-xs font-bold text-slate-600">Banking Partner</span>
-                            <p className="text-base font-black text-black">
-                                {employee.bankDetails?.bankName || 'Not Set'}
-                            </p>
-                        </div>
-
-                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                            <span className="text-xs font-bold text-slate-600">Account Number</span>
-                            <p className="text-base font-mono font-black text-black">
-                                {employee.bankDetails?.accountNumber || 'Not Set'}
-                            </p>
-                        </div>
-
-                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                            <span className="text-xs font-bold text-slate-600">Account Holder Name</span>
-                            <p className="text-base font-black text-black uppercase">
-                                {employee.bankDetails?.accountName || 'Not Set'}
+                                Real-time anti-spoofing and liveness detection enabled for this employee.
                             </p>
                         </div>
                     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { Employee } from '@/types/employee.types';
-import { Edit2, Trash2, Eye, Search, Filter, MoreHorizontal, User } from 'lucide-react';
+import { Edit2, Trash2, Eye, Search, User } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { getFullImageUrl } from '@/utils/url.utils';
@@ -38,15 +38,15 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={15} />
                     <input
                         type="text"
-                        placeholder="Search by name, ID, or class..."
+                        placeholder="Search by employee name, ID, or department..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-black font-semibold placeholder-slate-500 focus:bg-white focus:border-blue-500 outline-hidden transition-colors"
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-black font-semibold placeholder-slate-500 focus:bg-white focus:border-black outline-hidden transition-colors"
                     />
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <span className="text-xs font-bold text-slate-800 hidden sm:inline">
-                        Showing {filteredEmployees.length} of {employees.length}
+                        Showing {filteredEmployees.length} of {employees.length} employees
                     </span>
                 </div>
             </div>
@@ -57,8 +57,8 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black text-black uppercase tracking-wider">
-                                <th className="px-5 py-3.5">Student / Staff Member</th>
-                                <th className="px-5 py-3.5">Class / Department</th>
+                                <th className="px-5 py-3.5">Staff Member</th>
+                                <th className="px-5 py-3.5">Department & Role</th>
                                 <th className="px-5 py-3.5">Contact Line</th>
                                 <th className="px-5 py-3.5">Biometrics</th>
                                 <th className="px-5 py-3.5 text-right">Actions</th>
@@ -102,8 +102,8 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                                             </td>
 
                                             <td className="px-5 py-3.5 whitespace-nowrap">
-                                                <div className="font-bold text-black text-xs">{employee.position || 'Student'}</div>
-                                                <div className="text-[11px] text-slate-600 font-medium">{deptName || 'Academic Core'}</div>
+                                                <div className="font-bold text-black text-xs">{employee.position || 'Staff Member'}</div>
+                                                <div className="text-[11px] text-slate-600 font-medium">{deptName || 'General'}</div>
                                             </td>
 
                                             <td className="px-5 py-3.5 whitespace-nowrap">
@@ -131,30 +131,30 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                                                     >
                                                         <Eye size={14} />
                                                     </Link>
-                                                <button
-                                                    onClick={() => onEdit(employee)}
-                                                    className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors cursor-pointer"
-                                                    title="Edit Record"
-                                                >
-                                                    <Edit2 size={14} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(employee._id, employee.fullName || `${employee.firstName} ${employee.lastName}`)}
-                                                    className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer"
-                                                    title="Delete Record"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                                    <button
+                                                        onClick={() => onEdit(employee)}
+                                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors cursor-pointer"
+                                                        title="Edit Record"
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(employee._id, employee.fullName || `${employee.firstName} ${employee.lastName}`)}
+                                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer"
+                                                        title="Delete Record"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     );
                                 })
                             ) : (
                                 <tr>
                                     <td colSpan={5} className="py-14 text-center text-slate-700">
                                         <User size={32} className="mx-auto mb-2 opacity-50 text-slate-600" />
-                                        <p className="text-sm font-bold text-slate-900">No personnel or students found matching your search</p>
+                                        <p className="text-sm font-bold text-slate-900">No employees found matching your search</p>
                                     </td>
                                 </tr>
                             )}

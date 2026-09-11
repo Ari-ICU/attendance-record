@@ -10,17 +10,13 @@ import {
     User,
     Check,
     RotateCcw,
-    CreditCard,
     Building2,
     Camera,
-    X,
     Mail,
     Phone,
     Briefcase,
     Calendar,
-    DollarSign,
     ShieldCheck,
-    Sparkles,
     Trash2,
     Info,
     CheckCircle2
@@ -29,7 +25,6 @@ import CustomDropdown from '@/components/ui/CustomDropdown';
 
 interface EmployeeFormProps {
     initialData?: Employee | null;
-    initialType?: 'employee' | 'student';
     onSubmit: (employee: EmployeeCreateData) => void;
     onCancel: () => void;
     error?: string | null;
@@ -38,7 +33,6 @@ interface EmployeeFormProps {
 
 export default function EmployeeForm({
     initialData,
-    initialType = 'employee',
     onSubmit,
     onCancel,
     error,
@@ -52,18 +46,10 @@ export default function EmployeeForm({
         position: '',
         department: '',
         dateOfJoining: '',
-        type: initialType,
-        baseSalary: 0,
-        hourlyRate: 0,
-        currency: 'USD',
-        bankDetails: {
-            bankName: '',
-            accountName: '',
-            accountNumber: ''
-        }
+        type: 'employee'
     });
 
-    const [activeTab, setActiveTab] = useState<'profile' | 'organization' | 'financial' | 'biometrics'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'organization' | 'biometrics'>('profile');
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -101,17 +87,9 @@ export default function EmployeeForm({
                 email: initialData.email || '',
                 phone: initialData.phone || '',
                 position: initialData.position || '',
-                department: initialData.department || '',
+                department: typeof initialData.department === 'object' ? (initialData.department as any)?.name : (initialData.department || ''),
                 dateOfJoining: formatDateForInput(initialData.dateOfJoining),
-                type: initialData.type || 'employee',
-                baseSalary: initialData.baseSalary || 0,
-                hourlyRate: initialData.hourlyRate || 0,
-                currency: initialData.currency || 'USD',
-                bankDetails: {
-                    bankName: initialData.bankDetails?.bankName || '',
-                    accountName: initialData.bankDetails?.accountName || '',
-                    accountNumber: initialData.bankDetails?.accountNumber || ''
-                },
+                type: 'employee',
                 image: undefined,
             });
 
@@ -121,29 +99,18 @@ export default function EmployeeForm({
         } else {
             setFormData(prev => ({
                 ...prev,
-                type: initialType,
+                type: 'employee',
                 dateOfJoining: formatDateForInput(new Date().toISOString())
             }));
         }
-    }, [initialData, initialType]);
+    }, [initialData]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        if (name.includes('.')) {
-            const [parent, child] = name.split('.');
-            setFormData((prev: any) => ({
-                ...prev,
-                [parent]: {
-                    ...prev[parent],
-                    [child]: value,
-                },
-            }));
-        } else {
-            setFormData((prev) => ({
-                ...prev,
-                [name]: name === 'baseSalary' || name === 'hourlyRate' ? parseFloat(value) || 0 : value,
-            }));
-        }
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
     const processFile = (file: File) => {
@@ -189,8 +156,6 @@ export default function EmployeeForm({
         onSubmit(formData);
     };
 
-    const isStudent = formData.type === 'student';
-
     return (
         <form onSubmit={handleSubmit} className="w-full space-y-6">
             {/* Header Card */}
@@ -199,41 +164,15 @@ export default function EmployeeForm({
                     <div className="space-y-1">
                         <div className="flex items-center gap-2.5">
                             <h2 className="text-xl sm:text-2xl font-black text-black tracking-tight">
-                                {initialData ? `Update ${isStudent ? 'Student' : 'Staff'} Profile` : `Register New ${isStudent ? 'Student' : 'Faculty & Staff'}`}
+                                {initialData ? 'Update Employee Profile' : 'Register New Employee'}
                             </h2>
                             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-black border border-slate-300">
-                                {isStudent ? 'Academic Track' : 'Faculty Track'}
+                                Staff Member
                             </span>
                         </div>
                         <p className="text-xs sm:text-sm font-semibold text-slate-800">
-                            Configure personal records, biometric credentials, and departmental role assignments.
+                            Configure employee identity, departmental role, and biometric attendance credentials.
                         </p>
-                    </div>
-
-                    {/* Account Type Toggle */}
-                    <div className="inline-flex p-1 bg-slate-100 border border-slate-200 rounded-xl shrink-0 self-start sm:self-center">
-                        <button
-                            type="button"
-                            onClick={() => setFormData(p => ({ ...p, type: 'employee' }))}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                                !isStudent
-                                    ? 'bg-black text-white shadow-xs'
-                                    : 'text-slate-800 hover:text-black'
-                            }`}
-                        >
-                            Faculty & Staff
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setFormData(p => ({ ...p, type: 'student' }))}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                                isStudent
-                                    ? 'bg-black text-white shadow-xs'
-                                    : 'text-slate-800 hover:text-black'
-                            }`}
-                        >
-                            Student
-                        </button>
                     </div>
                 </div>
 
@@ -249,9 +188,8 @@ export default function EmployeeForm({
             <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
                 {[
                     { id: 'profile', label: '1. Personal Profile', icon: <User size={15} /> },
-                    { id: 'organization', label: `2. ${isStudent ? 'Class & Major' : 'Department & Role'}`, icon: <Building2 size={15} /> },
+                    { id: 'organization', label: '2. Department & Role', icon: <Building2 size={15} /> },
                     { id: 'biometrics', label: '3. Face Biometrics', icon: <ShieldCheck size={15} /> },
-                    ...(!isStudent ? [{ id: 'financial', label: '4. Payroll & Banking', icon: <CreditCard size={15} /> }] : []),
                 ].map((tab) => (
                     <button
                         key={tab.id}
@@ -289,7 +227,7 @@ export default function EmployeeForm({
                                 name="firstName"
                                 value={formData.firstName}
                                 onChange={handleInputChange}
-                                placeholder="e.g. Dara"
+                                placeholder="e.g. Sok"
                                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
                             />
                         </div>
@@ -302,13 +240,13 @@ export default function EmployeeForm({
                                 name="lastName"
                                 value={formData.lastName}
                                 onChange={handleInputChange}
-                                placeholder="e.g. Sok"
+                                placeholder="e.g. Dara"
                                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
                             />
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-black">Email Address *</label>
+                            <label className="text-xs font-bold text-black">Work Email Address *</label>
                             <div className="relative">
                                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={15} />
                                 <input
@@ -317,7 +255,7 @@ export default function EmployeeForm({
                                     name="email"
                                     value={formData.email}
                                     onChange={handleInputChange}
-                                    placeholder="e.g. user@campus.edu"
+                                    placeholder="e.g. dara.sok@company.com"
                                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
                                 />
                             </div>
@@ -339,9 +277,7 @@ export default function EmployeeForm({
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-black">
-                                {isStudent ? 'Enrollment Date' : 'Employment Start Date'}
-                            </label>
+                            <label className="text-xs font-bold text-black">Date of Joining / Hire Date</label>
                             <div className="relative">
                                 <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={15} />
                                 <input
@@ -363,28 +299,24 @@ export default function EmployeeForm({
                     <div className="border-b border-slate-100 pb-3">
                         <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2">
                             <Building2 size={15} className="text-blue-600" />
-                            {isStudent ? 'Academic Department & Class Assignment' : 'Department & Professional Role'}
+                            Department & Professional Role
                         </h3>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-black">
-                                {isStudent ? 'Class / Major Department *' : 'Department *'}
-                            </label>
+                            <label className="text-xs font-bold text-black">Company Department *</label>
                             <CustomDropdown
                                 value={formData.department}
                                 onChange={(val) => setFormData(prev => ({ ...prev, department: val }))}
-                                placeholder="Select Department / Track"
+                                placeholder="Select Department"
                                 options={departments.map(d => ({ value: d.name, label: d.name }))}
                                 searchable
                             />
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-black">
-                                {isStudent ? 'Academic Year / Cohort' : 'Position / Title'}
-                            </label>
+                            <label className="text-xs font-bold text-black">Job Title / Designation *</label>
                             <div className="relative">
                                 <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={15} />
                                 <input
@@ -392,7 +324,7 @@ export default function EmployeeForm({
                                     name="position"
                                     value={formData.position}
                                     onChange={handleInputChange}
-                                    placeholder={isStudent ? 'e.g. Computer Science - Year 3' : 'e.g. Senior Lecturer / Professor'}
+                                    placeholder="e.g. Senior Software Engineer"
                                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
                                 />
                             </div>
@@ -449,7 +381,7 @@ export default function EmployeeForm({
                         <div className="space-y-2 text-center sm:text-left flex-1">
                             <h4 className="text-sm font-bold text-black">Frontal Biometric Portrait</h4>
                             <p className="text-xs font-semibold text-slate-800">
-                                High-clarity face portrait for instant kiosk terminal check-in. Drag and drop file or choose from device.
+                                High-clarity face portrait for instant employee kiosk terminal check-in. Drag and drop file or choose from device.
                             </p>
                             <p className="text-[11px] font-medium text-slate-600">
                                 Supported formats: JPG, PNG, WebP (Max 5MB)
@@ -482,100 +414,6 @@ export default function EmployeeForm({
                                     </button>
                                 )}
                             </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Tab 4: Financial & Banking (Staff Only) */}
-            {activeTab === 'financial' && !isStudent && (
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-                    <div className="border-b border-slate-100 pb-3">
-                        <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2">
-                            <CreditCard size={15} className="text-blue-600" />
-                            Payroll, Compensation & Direct Deposit
-                        </h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-black">Currency</label>
-                            <CustomDropdown
-                                value={formData.currency}
-                                onChange={(val) => setFormData(prev => ({ ...prev, currency: val }))}
-                                options={[
-                                    { value: 'USD', label: 'USD ($)' },
-                                    { value: 'KHR', label: 'KHR (៛)' }
-                                ]}
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-black">Monthly Base Salary</label>
-                            <div className="relative">
-                                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={15} />
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    name="baseSalary"
-                                    value={formData.baseSalary}
-                                    onChange={handleInputChange}
-                                    placeholder="0.00"
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-black">Hourly Rate</label>
-                            <div className="relative">
-                                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={15} />
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    name="hourlyRate"
-                                    value={formData.hourlyRate}
-                                    onChange={handleInputChange}
-                                    placeholder="0.00"
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-black">Bank Institution Name</label>
-                            <input
-                                type="text"
-                                name="bankDetails.bankName"
-                                value={formData.bankDetails?.bankName || ''}
-                                onChange={handleInputChange}
-                                placeholder="e.g. ABA Bank, ACLEDA"
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-black">Bank Account Number</label>
-                            <input
-                                type="text"
-                                name="bankDetails.accountNumber"
-                                value={formData.bankDetails?.accountNumber || ''}
-                                onChange={handleInputChange}
-                                placeholder="e.g. 000 123 456"
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors font-mono"
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-black">Account Holder Name</label>
-                            <input
-                                type="text"
-                                name="bankDetails.accountName"
-                                value={formData.bankDetails?.accountName || ''}
-                                onChange={handleInputChange}
-                                placeholder="e.g. SOK DARA"
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors uppercase"
-                            />
                         </div>
                     </div>
                 </div>

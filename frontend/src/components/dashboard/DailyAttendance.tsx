@@ -72,7 +72,7 @@ export default function DailyAttendance() {
                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Filter student..."
+                            placeholder="Filter employee..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-blue-500 transition-colors"
@@ -118,8 +118,8 @@ export default function DailyAttendance() {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                            <th className="py-3 px-4 sm:px-5">Student / Staff</th>
-                            <th className="py-3 px-4">Class / Department</th>
+                            <th className="py-3 px-4 sm:px-5">Employee / Staff</th>
+                            <th className="py-3 px-4">Department & Role</th>
                             <th className="py-3 px-4">Check-in Time</th>
                             <th className="py-3 px-4">Verification</th>
                             <th className="py-3 px-4 sm:px-5 text-right">Status</th>

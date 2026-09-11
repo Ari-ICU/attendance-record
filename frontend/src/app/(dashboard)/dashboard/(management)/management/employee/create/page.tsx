@@ -1,23 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import EmployeeForm from '@/components/employee/EmployeeForm';
 import { EmployeeCreateData } from '@/types/employee.types';
 import { EmployeeService } from '@/services/employee.service';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { ArrowLeft, ChevronRight, Users, UserPlus } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Users } from 'lucide-react';
 
 export default function CreateEmployeePage() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const typeFromUrl = searchParams.get('type') as 'employee' | 'student' | null;
-
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
-
-    const isStudent = typeFromUrl === 'student';
 
     const handleSubmit = async (employee: EmployeeCreateData) => {
         try {
@@ -25,7 +20,7 @@ export default function CreateEmployeePage() {
             setSubmissionError(null);
             await EmployeeService.createEmployee(employee);
             toast.success('Record created successfully!');
-            router.push(`/dashboard/management/employee${employee.type === 'student' ? '?type=student' : ''}`);
+            router.push('/dashboard/management/employee');
         } catch (error: any) {
             console.error('Submission error:', error);
             let message = 'Failed to register record. Please verify all inputs and try again.';
@@ -52,16 +47,16 @@ export default function CreateEmployeePage() {
                         className="flex items-center gap-1.5 text-slate-800 hover:text-black transition-colors"
                     >
                         <Users size={15} />
-                        <span>Directory</span>
+                        <span>Employee Directory</span>
                     </Link>
                     <ChevronRight size={14} className="text-slate-400" />
                     <span className="text-black font-black">
-                        {isStudent ? 'Enroll Student' : 'New Faculty / Staff'}
+                        New Employee
                     </span>
                 </div>
 
                 <button
-                    onClick={() => router.push(`/dashboard/management/employee${isStudent ? '?type=student' : ''}`)}
+                    onClick={() => router.push('/dashboard/management/employee')}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-black text-xs font-bold rounded-xl transition-colors cursor-pointer"
                 >
                     <ArrowLeft size={14} />
@@ -71,9 +66,8 @@ export default function CreateEmployeePage() {
 
             {/* Main Form */}
             <EmployeeForm
-                initialType={typeFromUrl || 'employee'}
                 onSubmit={handleSubmit}
-                onCancel={() => router.push(`/dashboard/management/employee${isStudent ? '?type=student' : ''}`)}
+                onCancel={() => router.push('/dashboard/management/employee')}
                 error={submissionError}
                 isSubmitting={isSubmitting}
             />

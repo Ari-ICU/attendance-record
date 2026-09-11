@@ -85,14 +85,14 @@ export default function CreateAttendanceRecordPage() {
             <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-1.5 sm:col-span-2">
-                        <label className="text-xs font-bold text-black">Select Staff / Student Member *</label>
+                        <label className="text-xs font-bold text-black">Select Staff Member *</label>
                         <CustomDropdown
                             value={formData.employeeId}
                             onChange={(val) => setFormData({ ...formData, employeeId: val })}
-                            placeholder="Choose employee or student..."
+                            placeholder="Choose employee..."
                             options={employees.map(emp => ({
                                 value: emp._id,
-                                label: `${emp.firstName} ${emp.lastName} — ${emp.position || 'Student'} (${typeof emp.department === 'object' ? (emp.department as any)?.name : emp.department})`
+                                label: `${emp.firstName} ${emp.lastName} — ${emp.position || 'Staff Member'} (${typeof emp.department === 'object' ? (emp.department as any)?.name : emp.department})`
                             }))}
                             searchable
                         />
