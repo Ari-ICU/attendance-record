@@ -6,7 +6,6 @@ import {
     Calendar as CalendarIcon,
     ChevronLeft,
     ChevronRight,
-    Clock,
     CalendarDays,
     ArrowUpRight,
     ChevronDown,

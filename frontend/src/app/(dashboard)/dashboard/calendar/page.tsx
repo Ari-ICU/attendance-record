@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Calendar as CalendarIcon,
     ChevronLeft,
@@ -8,22 +8,15 @@ import {
     Plus,
     Clock,
     UserCheck,
-    AlertCircle,
     UserX,
     Sparkles,
     Search,
-    Filter,
     Download,
-    Eye,
-    QrCode,
     Camera,
-    Shield,
     X,
-    CheckCircle2,
     CalendarDays,
-    BookOpen,
     Users,
-    ChevronDown
+    Loader2
 } from 'lucide-react';
 import {
     format,
@@ -46,9 +39,7 @@ import {
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AttendanceService } from '@/services/attendance.service';
-import { EmployeeService } from '@/services/employee.service';
 import { AttendanceRecord } from '@/types/attendance.types';
-import { Employee } from '@/types/employee.types';
 import { getFullImageUrl } from '@/utils/url.utils';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
@@ -101,7 +92,6 @@ export default function CalendarPage() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
     const [records, setRecords] = useState<AttendanceRecord[]>([]);
-    const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [events, setEvents] = useState<CalendarEvent[]>(() => {
         if (typeof window !== 'undefined') {
@@ -140,32 +130,27 @@ export default function CalendarPage() {
         }
     };
 
-    // Fetch Attendance & Employees
-    const fetchData = async () => {
+    // Fetch Attendance
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const start = format(startOfMonth(subMonths(currentDate, 1)), 'yyyy-MM-dd');
             const end = format(endOfMonth(addMonths(currentDate, 1)), 'yyyy-MM-dd');
 
-            const [recordsRes, employeesRes] = await Promise.all([
-                AttendanceService.getRecords({ startDate: start, endDate: end, limit: 1000 }),
-                EmployeeService.getAllEmployees({ limit: 1000 })
-            ]);
-
+            const recordsRes = await AttendanceService.getRecords({ startDate: start, endDate: end, limit: 1000 });
             const recData = recordsRes?.data?.docs || recordsRes?.data || [];
             setRecords(recData);
-            setEmployees(employeesRes?.employees || []);
         } catch (error) {
             console.error('Error fetching calendar data:', error);
             toast.error('Failed to load attendance calendar data');
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentDate]);
 
     useEffect(() => {
         fetchData();
-    }, [currentDate]);
+    }, [fetchData]);
 
     // Group records by YYYY-MM-DD
     const recordsByDate = useMemo(() => {
@@ -178,7 +163,7 @@ export default function CalendarPage() {
             // Apply role filter if set
             if (roleFilter !== 'all') {
                 const emp = record.employeeId;
-                const empType = (emp as any)?.type || (emp as any)?.role || 'employee';
+                const empType = emp?.type || 'employee';
                 if (roleFilter === 'student' && empType !== 'student') return;
                 if (roleFilter === 'employee' && empType === 'student') return;
             }
@@ -322,7 +307,7 @@ export default function CalendarPage() {
         const rows = selectedDateRecords.map((r) => [
             r.employeeId?.employeeId || 'N/A',
             `"${r.employeeId?.firstName || ''} ${r.employeeId?.lastName || ''}"`,
-            (r.employeeId as any)?.type || 'Staff',
+            r.employeeId?.type || 'Staff',
             r.status,
             r.checkIn?.time ? format(parseISO(r.checkIn.time), 'hh:mm:ss a') : 'N/A',
             r.checkOut?.time ? format(parseISO(r.checkOut.time), 'hh:mm:ss a') : 'N/A',
@@ -993,9 +978,31 @@ export default function CalendarPage() {
                                 />
                             </div>
 
+                            {/* Status filter chips */}
+                            <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
+                                {(['all', 'present', 'late', 'absent', 'on_leave'] as const).map((st) => (
+                                    <button
+                                        key={st}
+                                        onClick={() => setStatusFilter(st)}
+                                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold capitalize transition-all shrink-0 ${
+                                            statusFilter === st
+                                                ? 'bg-slate-900 text-white'
+                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+                                        }`}
+                                    >
+                                        {st.replace('_', ' ')}
+                                    </button>
+                                ))}
+                            </div>
+
                             {/* Attendee Roster List */}
                             <div className="max-h-72 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
-                                {selectedDateRecords.length > 0 ? (
+                                {loading ? (
+                                    <div className="p-8 text-center text-slate-400">
+                                        <Loader2 size={20} className="mx-auto animate-spin mb-2 text-blue-600" />
+                                        <p className="text-xs font-medium">Loading attendance...</p>
+                                    </div>
+                                ) : selectedDateRecords.length > 0 ? (
                                     selectedDateRecords.map((record) => (
                                         <div
                                             key={record._id}
