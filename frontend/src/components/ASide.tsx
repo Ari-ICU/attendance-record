@@ -8,15 +8,12 @@ import {
     ChevronLeft,
     ChevronRight,
     LogOut,
-    QrCode,
-    UserPlus,
     Briefcase
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/contexts/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFullImageUrl } from '@/utils/url.utils';
-import SidebarCalendar from '@/components/SidebarCalendar';
 
 export interface MenuItem {
     name: string;
@@ -287,40 +284,11 @@ export default function Sidebar({
                 )}
             </div>
 
-            {/* Quick Actions (Full mode) */}
-            {!collapsed && (
-                <div className="p-3 border-b border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-0.5 mb-2">
-                        Quick Actions
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                        <Link
-                            href="/dashboard/management/employee?type=employee"
-                            className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 hover:text-blue-600 transition-all text-xs font-semibold"
-                        >
-                            <UserPlus size={14} className="text-blue-600 shrink-0" />
-                            <span>＋ Add Staff</span>
-                        </Link>
-                        <Link
-                            href="/dashboard/attendance/monitor"
-                            className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 hover:text-blue-600 transition-all text-xs font-semibold"
-                        >
-                            <QrCode size={14} className="text-blue-600 shrink-0" />
-                            <span>✓ Attendance</span>
-                        </Link>
-                    </div>
-                </div>
-            )}
 
             {/* Navigation Menu */}
-            <nav className="flex-1 overflow-y-auto py-2 custom-scrollbar flex flex-col justify-between">
+            <nav className="flex-1 overflow-y-auto py-2 custom-scrollbar">
                 <div>
                     {renderMenuContent()}
-                </div>
-
-                {/* Calendar Widget in Aside */}
-                <div className="mt-3 pt-2 border-t border-slate-100">
-                    <SidebarCalendar collapsed={collapsed} />
                 </div>
             </nav>
 
