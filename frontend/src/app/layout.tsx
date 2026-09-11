@@ -1,34 +1,20 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SocketProvider } from '@/contexts/SocketContext';
 import { Toaster } from 'react-hot-toast';
 import "./globals.css";
 
-const fontSans = Plus_Jakarta_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-});
-
-const fontMono = Geist_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "Smart Attendance - Campus Management",
-  description: "High-performance facial recognition and biometric attendance management system",
+  title: "Staff Attendance - Workforce Management System",
+  description: "Advanced biometric facial recognition and staff workforce attendance system",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased selection:bg-blue-500/20 bg-slate-50 text-slate-900`}
+        className="font-sans antialiased selection:bg-blue-500/20 bg-slate-50 text-slate-900"
         suppressHydrationWarning
       >
         <AuthProvider>

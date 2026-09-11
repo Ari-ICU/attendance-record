@@ -15,7 +15,25 @@ import {
     UserCheck,
     Calendar,
     Clock,
-    CalendarDays
+    CalendarDays,
+    Briefcase,
+    Building2,
+    User,
+    CheckCircle2,
+    AlertTriangle,
+    History,
+    Layers,
+    FileText,
+    Bookmark,
+    PieChart,
+    Timer,
+    Award,
+    DollarSign,
+    CreditCard,
+    Receipt,
+    FileSpreadsheet,
+    TrendingUp,
+    Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -38,6 +56,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             icon: <Home size={17} />,
         },
 
+        // STAFF
+        {
+            section: 'STAFF',
+            name: 'Staff',
+            icon: <Users size={17} />,
+            group: true,
+            items: [
+                { name: 'All Staff', href: '/dashboard/management/employee?type=employee', icon: <Users size={15} /> },
+                { name: 'Departments', href: '/dashboard/management/departments', icon: <Building2 size={15} /> },
+                { name: 'Positions', href: '/dashboard/management/departments?view=positions', icon: <Briefcase size={15} /> },
+                { name: 'Staff Profile', href: '/dashboard/profile', icon: <User size={15} /> },
+            ],
+        },
+
         // ATTENDANCE
         {
             section: 'ATTENDANCE',
@@ -45,38 +77,76 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             icon: <CheckSquare size={17} />,
             group: true,
             items: [
-                { name: 'Calendar & Schedule', href: '/dashboard/calendar', icon: <CalendarDays size={15} /> },
-                { name: 'Take Attendance', href: '/dashboard/attendance/monitor', icon: <Clock size={15} /> },
-                { name: 'Attendance Records', href: '/dashboard/attendance/records', icon: <Calendar size={15} /> },
+                { name: 'Today', href: '/dashboard/attendance/monitor', icon: <CheckCircle2 size={15} /> },
+                { name: 'Records', href: '/dashboard/attendance/records', icon: <Calendar size={15} /> },
+                { name: 'Late / Early Leave', href: '/dashboard/attendance/records?status=late', icon: <AlertTriangle size={15} /> },
+                { name: 'Attendance History', href: '/dashboard/attendance/records?view=history', icon: <History size={15} /> },
             ],
         },
 
-        // PEOPLE
+        // SCHEDULE
         {
-            section: 'PEOPLE',
-            name: 'People',
-            icon: <Users size={17} />,
+            section: 'SCHEDULE',
+            name: 'Schedule',
+            icon: <Clock size={17} />,
             group: true,
             items: [
-                { name: 'Students', href: '/dashboard/management/employee?type=student', icon: <Users size={15} /> },
-                { name: 'Teachers / Staff', href: '/dashboard/management/employee?type=employee', icon: <UserCheck size={15} /> },
+                { name: 'Work Schedule', href: '/dashboard/schedule', icon: <Clock size={15} /> },
+                { name: 'Shifts', href: '/dashboard/schedule?view=shifts', icon: <Layers size={15} /> },
+                { name: 'Calendar', href: '/dashboard/calendar', icon: <CalendarDays size={15} /> },
             ],
         },
 
-        // CLASSES / ACADEMIC
+        // LEAVE
         {
-            section: 'ACADEMIC',
-            name: 'Classes & Depts',
-            href: '/dashboard/management/departments',
-            icon: <BookOpen size={17} />,
+            section: 'LEAVE',
+            name: 'Leave',
+            icon: <FileText size={17} />,
+            group: true,
+            items: [
+                { name: 'Requests', href: '/dashboard/leave/requests', icon: <FileText size={15} /> },
+                { name: 'Leave Types', href: '/dashboard/leave/types', icon: <Bookmark size={15} /> },
+                { name: 'Leave Balance', href: '/dashboard/leave/balance', icon: <PieChart size={15} /> },
+            ],
+        },
+
+        // OVERTIME
+        {
+            section: 'OVERTIME',
+            name: 'Overtime',
+            icon: <Timer size={17} />,
+            group: true,
+            items: [
+                { name: 'Requests', href: '/dashboard/overtime', icon: <Timer size={15} /> },
+                { name: 'Overtime Records', href: '/dashboard/overtime/records', icon: <Award size={15} /> },
+            ],
+        },
+
+        // PAYROLL
+        {
+            section: 'PAYROLL',
+            name: 'Payroll',
+            icon: <DollarSign size={17} />,
+            group: true,
+            items: [
+                { name: 'Salary', href: '/dashboard/finance/payroll', icon: <DollarSign size={15} /> },
+                { name: 'Payroll', href: '/dashboard/finance/payroll?tab=periods', icon: <CreditCard size={15} /> },
+                { name: 'Payslips', href: '/dashboard/finance/payroll?tab=payslips', icon: <Receipt size={15} /> },
+            ],
         },
 
         // REPORTS
         {
-            section: 'INSIGHTS',
-            name: 'Reports & Analytics',
-            href: '/dashboard/reports/analytics',
+            section: 'REPORTS',
+            name: 'Reports',
             icon: <BarChart3 size={17} />,
+            group: true,
+            items: [
+                { name: 'Attendance', href: '/dashboard/reports/analytics?tab=attendance', icon: <BarChart3 size={15} /> },
+                { name: 'Staff', href: '/dashboard/reports/analytics?tab=staff', icon: <Users size={15} /> },
+                { name: 'Leave', href: '/dashboard/reports/analytics?tab=leave', icon: <FileSpreadsheet size={15} /> },
+                { name: 'Payroll', href: '/dashboard/reports/analytics?tab=payroll', icon: <TrendingUp size={15} /> },
+            ],
         },
 
         // SYSTEM
@@ -86,8 +156,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             icon: <Settings size={17} />,
             group: true,
             items: [
-                { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={15} /> },
+                { name: 'Users & Roles', href: '/dashboard/settings?tab=roles', icon: <Shield size={15} /> },
                 { name: 'Notifications', href: '/dashboard/notifications', icon: <Bell size={15} /> },
+                { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={15} /> },
             ],
         },
     ];

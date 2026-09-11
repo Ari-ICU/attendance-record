@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Abel&family=Archivo+Narrow:ital,wght@0,400..700;1,400..700&family=Rubik+Spray+Paint&family=Sekuya&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -5,13 +6,34 @@
   --foreground: #0f172a;
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
-  --font-geist-sans: "Geist", "Geist Fallback", system-ui, sans-serif;
-  --font-geist-mono: "Geist Mono", "Geist Mono Fallback", monospace;
+  --font-archivo: 'Archivo Narrow', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-abel: 'Abel', sans-serif;
+  --font-rubik-spray: 'Rubik Spray Paint', cursive;
+  --font-sekuya: 'Sekuya', cursive, sans-serif;
 }
 
 @theme {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-archivo);
+  --font-abel: 'Abel', sans-serif;
+  --font-archivo: 'Archivo Narrow', sans-serif;
+  --font-rubik-spray: 'Rubik Spray Paint', cursive;
+  --font-sekuya: 'Sekuya', cursive, sans-serif;
+}
+
+.font-abel {
+  font-family: var(--font-abel);
+}
+
+.font-archivo {
+  font-family: var(--font-archivo);
+}
+
+.font-rubik-spray {
+  font-family: var(--font-rubik-spray);
+}
+
+.font-sekuya {
+  font-family: var(--font-sekuya);
 }
 
 /* Custom Scrollbar - Minimalist Light */

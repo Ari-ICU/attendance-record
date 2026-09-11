@@ -10,7 +10,7 @@ import {
     LogOut,
     QrCode,
     UserPlus,
-    School
+    Briefcase
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/contexts/SocketContext';
@@ -39,11 +39,11 @@ interface SidebarProps {
 
 export default function Sidebar({
     menuItems,
-    brandName = 'Attendance System',
-    brandSubtitle = 'Campus Portal',
+    brandName = 'StaffFlow',
+    brandSubtitle = 'Management System',
     brandIcon = (
-        <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
-            <School size={17} />
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
+            <Briefcase size={16} />
         </div>
     ),
     collapsed = false,
@@ -267,10 +267,10 @@ export default function Sidebar({
                     {brandIcon}
                     {!collapsed && (
                         <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-bold text-slate-900 leading-tight truncate">
+                            <span className="text-base font-bold text-slate-900 leading-tight truncate tracking-tight">
                                 {brandName}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-medium">{brandSubtitle}</span>
+                            <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{brandSubtitle}</span>
                         </div>
                     )}
                 </Link>
@@ -295,18 +295,18 @@ export default function Sidebar({
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                         <Link
-                            href="/verify"
-                            className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 hover:text-blue-600 transition-all text-xs font-semibold"
-                        >
-                            <QrCode size={14} className="text-blue-600 shrink-0" />
-                            <span>Scan ID</span>
-                        </Link>
-                        <Link
-                            href="/dashboard/management/employee?type=student"
+                            href="/dashboard/management/employee?type=employee"
                             className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 hover:text-blue-600 transition-all text-xs font-semibold"
                         >
                             <UserPlus size={14} className="text-blue-600 shrink-0" />
-                            <span>+ Student</span>
+                            <span>＋ Add Staff</span>
+                        </Link>
+                        <Link
+                            href="/dashboard/attendance/monitor"
+                            className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 hover:text-blue-600 transition-all text-xs font-semibold"
+                        >
+                            <QrCode size={14} className="text-blue-600 shrink-0" />
+                            <span>✓ Attendance</span>
                         </Link>
                     </div>
                 </div>
