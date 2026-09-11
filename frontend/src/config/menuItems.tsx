@@ -13,6 +13,7 @@ export const defaultMenuItems = [
 ];
 export const searchablePages = [
   { name: 'Dashboard Overview', href: '/dashboard', category: 'General' },
+  { name: 'Calendar & Schedule', href: '/dashboard/calendar', category: 'Attendance' },
   { name: 'Live Link Monitor', href: '/dashboard/attendance/monitor', category: 'Attendance' },
   { name: 'Attendance Records', href: '/dashboard/attendance/records', category: 'Attendance' },
   { name: 'Scan Station', href: '/verify', category: 'Attendance' },

@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/contexts/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFullImageUrl } from '@/utils/url.utils';
+import SidebarCalendar from '@/components/SidebarCalendar';
 
 export interface MenuItem {
     name: string;
@@ -312,8 +313,15 @@ export default function Sidebar({
             )}
 
             {/* Navigation Menu */}
-            <nav className="flex-1 overflow-y-auto py-2 custom-scrollbar">
-                {renderMenuContent()}
+            <nav className="flex-1 overflow-y-auto py-2 custom-scrollbar flex flex-col justify-between">
+                <div>
+                    {renderMenuContent()}
+                </div>
+
+                {/* Calendar Widget in Aside */}
+                <div className="mt-3 pt-2 border-t border-slate-100">
+                    <SidebarCalendar collapsed={collapsed} />
+                </div>
             </nav>
 
             {/* Expand button for collapsed mode */}

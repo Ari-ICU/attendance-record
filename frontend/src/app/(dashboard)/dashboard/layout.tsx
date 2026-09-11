@@ -14,7 +14,8 @@ import {
     Bell,
     UserCheck,
     Calendar,
-    Clock
+    Clock,
+    CalendarDays
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -44,6 +45,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             icon: <CheckSquare size={17} />,
             group: true,
             items: [
+                { name: 'Calendar & Schedule', href: '/dashboard/calendar', icon: <CalendarDays size={15} /> },
                 { name: 'Take Attendance', href: '/dashboard/attendance/monitor', icon: <Clock size={15} /> },
                 { name: 'Attendance Records', href: '/dashboard/attendance/records', icon: <Calendar size={15} /> },
             ],
