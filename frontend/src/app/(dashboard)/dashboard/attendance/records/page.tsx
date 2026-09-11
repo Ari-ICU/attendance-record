@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
     Calendar,
     Download,
@@ -15,24 +16,43 @@ import {
     Edit2,
     Trash2,
     UserCheck,
-    MapPin
+    MapPin,
+    History,
+    FileSpreadsheet,
+    ArrowLeft
 } from 'lucide-react';
 import { AttendanceService } from '@/services/attendance.service';
 import { AttendanceRecord } from '@/types/attendance.types';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 
-export default function AttendanceRecordsPage() {
+function AttendanceRecordsContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
+    const initialStatus = searchParams.get('status') || 'all';
+    const viewParam = searchParams.get('view') || '';
+
     const [records, setRecords] = useState<AttendanceRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(initialStatus);
+
+    // Sync with URL query parameter changes
+    useEffect(() => {
+        const paramStatus = searchParams.get('status');
+        if (paramStatus) {
+            setStatusFilter(paramStatus);
+        } else if (!searchParams.get('status')) {
+            setStatusFilter('all');
+        }
+    }, [searchParams]);
 
     const fetchRecords = async () => {
         try {
             setLoading(true);
             const res = await AttendanceService.getRecords({ limit: 100 });
-            setRecords(res.data?.docs || []);
+            setRecords(res.data?.docs || res.data || []);
         } catch {
             toast.error('Failed to load attendance records');
         } finally {
@@ -55,9 +75,33 @@ export default function AttendanceRecordsPage() {
         }
     };
 
+    const handleStatusFilterChange = (val: string) => {
+        setStatusFilter(val);
+        if (val === 'all') {
+            if (viewParam) {
+                router.push(`/dashboard/attendance/records?view=${viewParam}`);
+            } else {
+                router.push('/dashboard/attendance/records');
+            }
+        } else {
+            router.push(`/dashboard/attendance/records?status=${val}${viewParam ? `&view=${viewParam}` : ''}`);
+        }
+    };
+
     const filtered = records.filter(r => {
-        const empName = typeof r.employeeId === 'object' && r.employeeId ? `${(r.employeeId as any).firstName} ${(r.employeeId as any).lastName}` : '';
-        const matchesSearch = empName.toLowerCase().includes(searchTerm.toLowerCase()) || r.date.includes(searchTerm);
+        const empName = typeof r.employeeId === 'object' && r.employeeId
+            ? `${(r.employeeId as any).firstName || ''} ${(r.employeeId as any).lastName || ''}`.trim()
+            : '';
+        const dept = typeof r.employeeId === 'object' && r.employeeId
+            ? (typeof (r.employeeId as any).department === 'object' ? (r.employeeId as any).department?.name : (r.employeeId as any).department) || ''
+            : '';
+        const dateStr = r.date || '';
+
+        const matchesSearch =
+            empName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            dept.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            dateStr.includes(searchTerm);
+
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
@@ -65,35 +109,69 @@ export default function AttendanceRecordsPage() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'present':
-                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold"><CheckCircle2 size={12} /> Present</span>;
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-black">
+                        <CheckCircle2 size={12} /> Present
+                    </span>
+                );
             case 'late':
-                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold"><AlertTriangle size={12} /> Late</span>;
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 text-amber-900 border border-amber-200 text-xs font-black">
+                        <AlertTriangle size={12} /> Late Entry
+                    </span>
+                );
             case 'absent':
-                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-50 text-rose-800 border border-rose-200 text-xs font-bold"><Clock size={12} /> Absent</span>;
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-50 text-rose-800 border border-rose-200 text-xs font-black">
+                        <Clock size={12} /> Absent
+                    </span>
+                );
             default:
-                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-black border border-slate-200 text-xs font-bold capitalize">{status}</span>;
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-black border border-slate-200 text-xs font-bold capitalize">
+                        {status}
+                    </span>
+                );
         }
     };
+
+    const isLateView = searchParams.get('status') === 'late';
+    const isHistoryView = viewParam === 'history';
+
+    // Page title and subtitle based on active route
+    const pageTitle = isLateView
+        ? 'Late & Early Leave Logs'
+        : isHistoryView
+            ? 'Attendance History & Archives'
+            : 'Attendance Logs & Records';
+
+    const pageSubtitle = isLateView
+        ? 'Review staff arrivals exceeding grace period, late check-ins, and early departures'
+        : isHistoryView
+            ? 'Historical attendance records, biometric audit trails, and archived timesheets'
+            : 'Review biometric scans, check-in timestamps, and manual attendance entries';
 
     return (
         <div className="w-full space-y-6 pb-12 font-sans">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs">
                 <div>
                     <div className="flex items-center gap-3">
                         <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
-                            <span>Attendance Logs & Records</span>
+                            {isLateView && <AlertTriangle size={22} className="text-amber-600" />}
+                            {isHistoryView && <History size={22} className="text-black" />}
+                            <span>{pageTitle}</span>
                         </h1>
                         <span className="px-2.5 py-0.5 rounded-full bg-black text-white text-xs font-bold">
-                            {records.length} Logs
+                            {filtered.length} {filtered.length === 1 ? 'Record' : 'Records'}
                         </span>
                     </div>
-                    <p className="text-xs sm:text-sm font-medium text-black mt-1">
-                        Review biometric scans, check-in timestamps, and manual attendance entries
+                    <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-1">
+                        {pageSubtitle}
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 flex-wrap">
                     <Link
                         href="/dashboard/attendance/records/create"
                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
@@ -105,22 +183,22 @@ export default function AttendanceRecordsPage() {
             </div>
 
             {/* Filter Toolbar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-xs">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white border border-slate-200/90 p-3.5 rounded-2xl shadow-xs">
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" size={15} />
                     <input
                         type="text"
-                        placeholder="Search employee name or date..."
+                        placeholder="Search employee, department, or date..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
+                        className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-black placeholder:text-slate-500 outline-none focus:bg-white focus:border-black transition-colors"
                     />
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-52">
+                <div className="flex items-center gap-2 w-full sm:w-60">
                     <CustomDropdown
                         value={statusFilter}
-                        onChange={(val) => setStatusFilter(val)}
+                        onChange={handleStatusFilterChange}
                         icon={<Filter size={13} />}
                         options={[
                             { value: 'all', label: 'All Statuses' },
@@ -133,11 +211,11 @@ export default function AttendanceRecordsPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
+            <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-black text-black uppercase tracking-wider">
+                            <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black text-black uppercase tracking-wider">
                                 <th className="py-3 px-5">Staff Member</th>
                                 <th className="py-3 px-5">Date</th>
                                 <th className="py-3 px-5">Check In</th>
@@ -151,6 +229,7 @@ export default function AttendanceRecordsPage() {
                             {loading ? (
                                 <tr>
                                     <td colSpan={7} className="py-12 text-center text-black font-bold">
+                                        <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                                         Loading attendance logs...
                                     </td>
                                 </tr>
@@ -161,24 +240,26 @@ export default function AttendanceRecordsPage() {
                                         <tr key={record._id} className="hover:bg-slate-50/80 transition-colors">
                                             <td className="py-3.5 px-5">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-black text-white font-bold flex items-center justify-center text-xs">
+                                                    <div className="w-8 h-8 rounded-full bg-black text-white font-black flex items-center justify-center text-xs">
                                                         {emp?.firstName?.[0] || 'U'}{emp?.lastName?.[0] || ''}
                                                     </div>
                                                     <div>
-                                                        <Link href={`/dashboard/attendance/records/${record._id}`} className="font-bold text-black block text-sm hover:underline">
+                                                        <Link href={`/dashboard/attendance/records/${record._id}`} className="font-black text-black block text-sm hover:underline">
                                                             {emp ? `${emp.firstName} ${emp.lastName}` : 'Unassigned'}
                                                         </Link>
-                                                        <span className="text-[11px] font-medium text-black">{emp?.department || 'General'}</span>
+                                                        <span className="text-[11px] font-semibold text-slate-700">
+                                                            {typeof emp?.department === 'object' ? (emp.department as any)?.name : emp?.department || 'General'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-3.5 px-5 font-bold text-black">
+                                            <td className="py-3.5 px-5 font-black text-black">
                                                 {record.date}
                                             </td>
-                                            <td className="py-3.5 px-5 font-semibold text-black">
+                                            <td className="py-3.5 px-5 font-mono font-black text-black">
                                                 {record.checkIn?.time ? new Date(record.checkIn.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
                                             </td>
-                                            <td className="py-3.5 px-5 font-semibold text-black">
+                                            <td className="py-3.5 px-5 font-mono font-semibold text-slate-800">
                                                 {record.checkOut?.time ? new Date(record.checkOut.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
                                             </td>
                                             <td className="py-3.5 px-5">
@@ -207,7 +288,7 @@ export default function AttendanceRecordsPage() {
                                                     </Link>
                                                     <button
                                                         onClick={() => handleDelete(record._id)}
-                                                        className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                        className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                                                         title="Delete Record"
                                                     >
                                                         <Trash2 size={14} />
@@ -219,8 +300,8 @@ export default function AttendanceRecordsPage() {
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan={7} className="py-12 text-center text-black font-bold">
-                                        No attendance records found.
+                                    <td colSpan={7} className="py-12 text-center text-slate-700 font-bold">
+                                        No {statusFilter !== 'all' ? `${statusFilter} ` : ''}attendance records found.
                                     </td>
                                 </tr>
                             )}
@@ -229,5 +310,17 @@ export default function AttendanceRecordsPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function AttendanceRecordsPage() {
+    return (
+        <Suspense fallback={
+            <div className="p-8 text-center font-bold text-black">
+                Loading attendance records...
+            </div>
+        }>
+            <AttendanceRecordsContent />
+        </Suspense>
     );
 }

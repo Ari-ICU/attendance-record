@@ -50,8 +50,6 @@ export default function AttendanceScanKioskPage() {
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
     const [recentScans, setRecentScans] = useState<any[]>([]);
     const [lastVerifiedRecord, setLastVerifiedRecord] = useState<any | null>(null);
-    const [showStaffQrModal, setShowStaffQrModal] = useState<boolean>(false);
-    const [modalEmployee, setModalEmployee] = useState<Employee | null>(null);
     const [clockTime, setClockTime] = useState<string>('');
     const [clockDate, setClockDate] = useState<string>('');
     const [qrCountdown, setQrCountdown] = useState<number>(30);
@@ -85,9 +83,6 @@ export default function AttendanceScanKioskPage() {
                 const res = await EmployeeService.getAllEmployees({ limit: 50 });
                 const list = res?.employees || [];
                 setEmployees(list);
-                if (list.length > 0) {
-                    setModalEmployee(list[0]);
-                }
             } catch (err) {
                 console.error('Failed to load employees for scanner', err);
             }
@@ -263,15 +258,6 @@ export default function AttendanceScanKioskPage() {
                             title={soundEnabled ? 'Mute Chimes' : 'Enable Chimes'}
                         >
                             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                        </button>
-
-                        <button
-                            onClick={() => setShowStaffQrModal(true)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
-                            title="Generate / Show Staff QR Badge"
-                        >
-                            <QrCode size={14} className="text-emerald-400" />
-                            <span className="hidden sm:inline">My Staff Badge</span>
                         </button>
 
                         <button
@@ -616,98 +602,6 @@ export default function AttendanceScanKioskPage() {
                     </div>
                 </div>
             </div>
-
-            {/* Modal: Staff Digital QR Badge */}
-            {showStaffQrModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                            <div className="flex items-center gap-2">
-                                <QrCode size={18} className="text-black" />
-                                <h3 className="text-base font-black text-black">Company QR Access Badge</h3>
-                            </div>
-                            <button
-                                onClick={() => setShowStaffQrModal(false)}
-                                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-black transition-colors"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-
-                        <div className="mt-4 space-y-4">
-                            {/* Employee Selector for badge preview */}
-                            <div>
-                                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                    Switch Staff Badge Preview:
-                                </label>
-                                <CustomDropdown
-                                    value={modalEmployee?._id || ''}
-                                    onChange={(val) => {
-                                        const found = employees.find(e => e._id === val);
-                                        if (found) setModalEmployee(found);
-                                    }}
-                                    icon={<User size={13} />}
-                                    options={employees.map(e => ({
-                                        value: e._id,
-                                        label: `${e.firstName} ${e.lastName} (${e.position || 'Staff'})`
-                                    }))}
-                                />
-                            </div>
-
-                            {/* Badge Visual */}
-                            <div className="bg-gradient-to-b from-slate-900 to-black text-white p-6 rounded-2xl text-center shadow-lg border border-slate-800 relative overflow-hidden">
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-1">
-                                    STAFFFLOW SECURE GATEWAY
-                                </div>
-                                <h4 className="text-lg font-black text-white">
-                                    {modalEmployee?.firstName} {modalEmployee?.lastName}
-                                </h4>
-                                <p className="text-xs text-slate-300 font-semibold">{modalEmployee?.position || 'Staff Member'}</p>
-                                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                                    ID: {modalEmployee?._id?.substring(0, 10).toUpperCase() || 'EMP-2026-001'}
-                                </p>
-
-                                {/* QR Matrix Graphic */}
-                                <div className="bg-white p-4 rounded-xl inline-block mt-4 shadow-md">
-                                    <div className="w-40 h-40 bg-white flex flex-col items-center justify-center relative">
-                                        <QrCode size={140} className="text-black" />
-                                    </div>
-                                </div>
-
-                                <p className="text-[10px] text-slate-400 mt-3 font-semibold">
-                                    Present this optical QR code directly to the kiosk camera or turnstile reader
-                                </p>
-                            </div>
-
-                            {/* Quick Test Scan with this badge */}
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => {
-                                        if (modalEmployee) {
-                                            setShowStaffQrModal(false);
-                                            setMode('qr_display');
-                                            handlePerformScan(modalEmployee);
-                                        }
-                                    }}
-                                    className="flex-1 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                                >
-                                    <Scan size={14} />
-                                    <span>Simulate Scan this Badge</span>
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        toast.success('Staff QR badge downloaded to device');
-                                    }}
-                                    className="p-2.5 border border-slate-200 hover:bg-slate-100 rounded-xl text-black transition-colors cursor-pointer"
-                                    title="Download Badge"
-                                >
-                                    <Download size={16} />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
