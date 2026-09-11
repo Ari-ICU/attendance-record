@@ -18,6 +18,7 @@ export const searchablePages = [
   { name: 'Departments', href: '/dashboard/management/departments', category: 'Employees' },
   { name: 'Positions & Roles', href: '/dashboard/management/positions', category: 'Employees' },
   { name: 'Live Attendance Monitor', href: '/dashboard/attendance/monitor', category: 'Attendance' },
+  { name: 'Face & QR Attendance Scanner', href: '/dashboard/attendance/scan', category: 'Attendance' },
   { name: 'Attendance Records & Logs', href: '/dashboard/attendance/records', category: 'Attendance' },
   { name: 'Late & Early Departures', href: '/dashboard/attendance/records?status=late', category: 'Attendance' },
   { name: 'Calendar & Shifts Hub', href: '/dashboard/calendar', category: 'Schedule' },

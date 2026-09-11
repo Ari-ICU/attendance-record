@@ -258,6 +258,15 @@ export default function LiveMonitorPage() {
 
                         {/* Action Buttons */}
                         <div className="flex items-center gap-2 flex-wrap">
+                            <Link
+                                href="/dashboard/attendance/scan"
+                                className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+                                title="Open Live Biometric & QR Camera Kiosk"
+                            >
+                                <Scan size={15} />
+                                <span>Open Scanner</span>
+                            </Link>
+
                             <button
                                 onClick={simulateBiometricScan}
                                 className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-black hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"

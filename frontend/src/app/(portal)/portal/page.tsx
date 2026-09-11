@@ -79,7 +79,24 @@ export default function PortalPage() {
                     </div>
                 </div>
 
+                {/* Quick Staff Clock-In Actions */}
+                <div className="flex items-center gap-2.5 flex-wrap">
+                    <Link
+                        href="/dashboard/attendance/scan"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
+                    >
+                        <Camera size={15} className="text-emerald-400" />
+                        <span>Face Scan Check-In</span>
+                    </Link>
 
+                    <Link
+                        href="/dashboard/attendance/scan"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-black border border-slate-300 rounded-xl text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer"
+                    >
+                        <QrCode size={15} />
+                        <span>QR Code Scanner</span>
+                    </Link>
+                </div>
             </div>
 
             {/* Bento Stat Cards */}

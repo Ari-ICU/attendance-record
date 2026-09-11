@@ -27,18 +27,19 @@ import {
     Check,
     X,
     Smartphone,
-    Download
+    Download,
+    Eye,
+    Shield
 } from 'lucide-react';
 import { AttendanceService } from '@/services/attendance.service';
 import { EmployeeService } from '@/services/employee.service';
 import { Employee } from '@/types/employee.types';
-import { AttendanceRecord } from '@/types/attendance.types';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 export default function AttendanceScanKioskPage() {
-    const [mode, setMode] = useState<'face' | 'qr'>('face');
+    const [mode, setMode] = useState<'face' | 'qr_display' | 'qr_camera'>('face');
     const [scanAction, setScanAction] = useState<'check_in' | 'check_out'>('check_in');
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('auto');
@@ -53,10 +54,11 @@ export default function AttendanceScanKioskPage() {
     const [modalEmployee, setModalEmployee] = useState<Employee | null>(null);
     const [clockTime, setClockTime] = useState<string>('');
     const [clockDate, setClockDate] = useState<string>('');
+    const [qrCountdown, setQrCountdown] = useState<number>(30);
 
     const webcamRef = useRef<Webcam>(null);
 
-    // Live clock
+    // Live clock ticker
     useEffect(() => {
         const update = () => {
             const now = new Date();
@@ -66,6 +68,14 @@ export default function AttendanceScanKioskPage() {
         update();
         const t = setInterval(update, 1000);
         return () => clearInterval(t);
+    }, []);
+
+    // Dynamic QR countdown timer
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setQrCountdown((prev) => (prev <= 1 ? 30 : prev - 1));
+        }, 1000);
+        return () => clearInterval(timer);
     }, []);
 
     // Load registered staff
@@ -85,12 +95,21 @@ export default function AttendanceScanKioskPage() {
         fetchEmployees();
     }, []);
 
+    // Sync fullscreen state with native browser fullscreen events
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
+
     // Toggle fullscreen kiosk
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+            document.documentElement.requestFullscreen().catch(() => {});
         } else {
-            document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+            document.exitFullscreen().catch(() => {});
         }
     };
 
@@ -119,13 +138,11 @@ export default function AttendanceScanKioskPage() {
         setScanning(true);
 
         try {
-            // Find target employee
             let targetEmp: Employee | undefined = forcedEmp;
             if (!targetEmp) {
                 if (selectedEmployeeId !== 'auto') {
                     targetEmp = employees.find(e => e._id === selectedEmployeeId);
                 } else {
-                    // Pick candidate from list
                     targetEmp = employees[Math.floor(Math.random() * employees.length)];
                 }
             }
@@ -136,26 +153,31 @@ export default function AttendanceScanKioskPage() {
                 return;
             }
 
-            // Simulate AI biometric / QR recognition latency
-            await new Promise(r => setTimeout(r, 900));
+            // Simulate recognition latency
+            await new Promise(r => setTimeout(r, 700));
 
             const now = new Date();
             const hour = now.getHours();
             const minute = now.getMinutes();
             const isLate = scanAction === 'check_in' && (hour >= 9 || (hour === 8 && minute > 30));
 
+            const methodLabel = mode === 'face'
+                ? 'Face Biometrics (AI 99.4%)'
+                : mode === 'qr_display'
+                    ? 'Mobile QR Scan (Self)'
+                    : 'Corporate QR Badge (Gate)';
+
             const verificationPayload = {
                 id: `rec_${Date.now()}`,
                 employee: targetEmp,
                 action: scanAction,
                 time: now.toISOString(),
-                method: mode === 'face' ? 'Face Biometrics (AI 99.4%)' : 'Corporate QR Badge',
+                method: methodLabel,
                 location: 'HQ Main Terminal Gate #1',
                 status: isLate ? 'late' : 'present',
                 confidence: mode === 'face' ? (98.2 + Math.random() * 1.6).toFixed(1) : '100.0',
             };
 
-            // Call API / Mock Attendance Service
             if (scanAction === 'check_in') {
                 await AttendanceService.checkIn({
                     employeeId: targetEmp._id,
@@ -187,7 +209,7 @@ export default function AttendanceScanKioskPage() {
                 { duration: 4000 }
             );
         } catch {
-            toast.error('Biometric verification failed. Please align again.');
+            toast.error('Verification failed. Please align again.');
         } finally {
             setScanning(false);
         }
@@ -213,10 +235,10 @@ export default function AttendanceScanKioskPage() {
                         </div>
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight flex items-center gap-2.5">
-                        <span>Staff Biometric & QR Scanner</span>
+                        <span>Staff Attendance Scanner & QR Hub</span>
                     </h1>
                     <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5">
-                        High-speed optical facial recognition and dynamic QR code gate clock-in terminal.
+                        Face Biometrics AI recognition and dynamic Office QR Code for staff mobile check-ins.
                     </p>
                 </div>
 
@@ -249,7 +271,7 @@ export default function AttendanceScanKioskPage() {
                             title="Generate / Show Staff QR Badge"
                         >
                             <QrCode size={14} className="text-emerald-400" />
-                            <span className="hidden sm:inline">My QR Badge</span>
+                            <span className="hidden sm:inline">My Staff Badge</span>
                         </button>
 
                         <button
@@ -265,11 +287,11 @@ export default function AttendanceScanKioskPage() {
 
             {/* Main Scanner Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* Left 7 Cols: Camera Viewfinder & Controls */}
+                {/* Left 7 Cols: Camera Viewfinder OR Office Dynamic QR Code */}
                 <div className="lg:col-span-7 space-y-4">
-                    {/* Scanner Mode Switcher (Face Recognition vs QR Code) & Check-in / Check-out Toggle */}
+                    {/* Mode Navigation Tabs (Face Biometrics vs Office QR Code vs Camera Scanner) */}
                     <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-                        {/* Biometric Mode Tabs */}
+                        {/* Primary Mode Tabs */}
                         <div className="flex items-center bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
                             <button
                                 onClick={() => setMode('face')}
@@ -280,22 +302,23 @@ export default function AttendanceScanKioskPage() {
                                 }`}
                             >
                                 <Camera size={15} />
-                                <span>Face Biometrics</span>
+                                <span>Face Biometrics (Camera)</span>
                             </button>
+
                             <button
-                                onClick={() => setMode('qr')}
+                                onClick={() => setMode('qr_display')}
                                 className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                                    mode === 'qr'
+                                    mode === 'qr_display'
                                         ? 'bg-white text-black shadow-xs'
                                         : 'text-slate-700 hover:text-black'
                                 }`}
                             >
                                 <QrCode size={15} />
-                                <span>QR Scanner</span>
+                                <span>Office QR Code (Scan with Phone)</span>
                             </button>
                         </div>
 
-                        {/* Action Direction (Check In vs Check Out) */}
+                        {/* Action Direction (Clock In vs Clock Out) */}
                         <div className="flex items-center bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
                             <button
                                 onClick={() => setScanAction('check_in')}
@@ -322,43 +345,39 @@ export default function AttendanceScanKioskPage() {
                         </div>
                     </div>
 
-                    {/* Camera Feed Viewport Card */}
-                    <div className="bg-black rounded-3xl overflow-hidden shadow-lg border border-slate-800 relative aspect-4/3 sm:aspect-16/10 flex items-center justify-center">
-                        {cameraActive ? (
-                            <Webcam
-                                ref={webcamRef}
-                                audio={false}
-                                screenshotFormat="image/jpeg"
-                                className="w-full h-full object-cover"
-                                videoConstraints={{
-                                    facingMode: 'user',
-                                    width: 1280,
-                                    height: 720
-                                }}
-                                onUserMedia={() => setCameraPermission('granted')}
-                                onUserMediaError={() => setCameraPermission('denied')}
-                            />
-                        ) : (
-                            <div className="text-center p-8 text-slate-400">
-                                <Camera size={40} className="mx-auto mb-2 opacity-50" />
-                                <p className="text-sm font-bold">Camera is paused</p>
-                            </div>
-                        )}
+                    {/* MAIN DISPLAY AREA: (Webcam for Face vs Dynamic Office QR Code for QR) */}
+                    {mode === 'face' ? (
+                        /* FACE BIOMETRICS CAMERA FEED */
+                        <div className="bg-black rounded-3xl overflow-hidden shadow-lg border border-slate-800 relative aspect-4/3 sm:aspect-16/10 flex items-center justify-center">
+                            {cameraActive ? (
+                                <Webcam
+                                    ref={webcamRef}
+                                    audio={false}
+                                    screenshotFormat="image/jpeg"
+                                    className="w-full h-full object-cover"
+                                    videoConstraints={{
+                                        facingMode: 'user',
+                                        width: 1280,
+                                        height: 720
+                                    }}
+                                    onUserMedia={() => setCameraPermission('granted')}
+                                    onUserMediaError={() => setCameraPermission('denied')}
+                                />
+                            ) : (
+                                <div className="text-center p-8 text-slate-400">
+                                    <Camera size={40} className="mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm font-bold">Camera is paused</p>
+                                </div>
+                            )}
 
-                        {/* HUD Scanning Overlays & Target Frame */}
-                        <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-6">
-                            {/* Corner Viewfinder Markers */}
-                            <div className={`relative transition-all duration-300 ${
-                                mode === 'face' ? 'w-64 h-72 sm:w-72 sm:h-80' : 'w-56 h-56 sm:w-64 sm:h-64'
-                            }`}>
-                                {/* Corner Reticles */}
-                                <div className="absolute top-0 left-0 w-8 h-8 border-t-3 border-l-3 border-emerald-400 rounded-tl-xl" />
-                                <div className="absolute top-0 right-0 w-8 h-8 border-t-3 border-r-3 border-emerald-400 rounded-tr-xl" />
-                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-3 border-l-3 border-emerald-400 rounded-bl-xl" />
-                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-3 border-r-3 border-emerald-400 rounded-br-xl" />
+                            {/* HUD Face Scanning Overlay */}
+                            <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-6">
+                                <div className="relative w-64 h-72 sm:w-72 sm:h-80 transition-all duration-300">
+                                    <div className="absolute top-0 left-0 w-8 h-8 border-t-3 border-l-3 border-emerald-400 rounded-tl-xl" />
+                                    <div className="absolute top-0 right-0 w-8 h-8 border-t-3 border-r-3 border-emerald-400 rounded-tr-xl" />
+                                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-3 border-l-3 border-emerald-400 rounded-bl-xl" />
+                                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-3 border-r-3 border-emerald-400 rounded-br-xl" />
 
-                                {/* Mode Graphic in Center */}
-                                {mode === 'face' ? (
                                     <div className="w-full h-full flex flex-col items-center justify-center opacity-40">
                                         <div className="w-36 h-48 border border-dashed border-emerald-300/60 rounded-full flex items-center justify-center">
                                             <span className="text-[10px] font-mono text-emerald-300 font-bold uppercase tracking-widest">
@@ -366,58 +385,85 @@ export default function AttendanceScanKioskPage() {
                                             </span>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center opacity-40">
-                                        <QrCode size={80} className="text-emerald-300" />
-                                        <span className="text-[10px] font-mono text-emerald-300 font-bold uppercase tracking-widest mt-2">
-                                            Present QR Badge
-                                        </span>
+
+                                    {scanning && (
+                                        <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_#34d399] animate-bounce" />
+                                    )}
+                                </div>
+
+                                <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+                                    <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs font-bold flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                                        <span>Optical Sensor: Face Mesh AI v2</span>
                                     </div>
-                                )}
-
-                                {/* Animated Laser Sweep Bar when scanning */}
-                                {scanning && (
-                                    <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_#34d399] animate-bounce" />
-                                )}
-                            </div>
-
-                            {/* Top HUD Telemetry Pill */}
-                            <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                                <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs font-bold flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                                    <span>Optical Sensor: {mode === 'face' ? 'Face Mesh v2' : 'QR Matrix Engine'}</span>
+                                    <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs font-mono font-bold">
+                                        FPS: 30 · ISO 200
+                                    </div>
                                 </div>
 
-                                <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs font-mono font-bold">
-                                    FPS: 30 · ISO 200
+                                <div className="absolute bottom-4 bg-black/70 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-white text-xs font-bold flex items-center gap-2">
+                                    <ShieldCheck size={14} className="text-emerald-400" />
+                                    <span>Look directly into the camera to verify attendance</span>
                                 </div>
-                            </div>
-
-                            {/* Bottom Instruction Pill */}
-                            <div className="absolute bottom-4 bg-black/70 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-white text-xs font-bold flex items-center gap-2">
-                                <ShieldCheck size={14} className="text-emerald-400" />
-                                <span>
-                                    {mode === 'face'
-                                        ? 'Look directly at camera to trigger automatic face verification'
-                                        : 'Hold staff badge 15-20cm from scanner lens'}
-                                </span>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        /* DYNAMIC OFFICE CHECK-IN QR STATION (NO CAMERA ON USER) */
+                        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xs text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[420px]">
+                            <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                                <span>Refreshes in {qrCountdown}s</span>
+                            </div>
 
-                    {/* Fast Verification Trigger & Testing Override Controls */}
+                            <div className="max-w-md w-full">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold mb-3">
+                                    <Smartphone size={13} className="text-black" />
+                                    <span>Staff Mobile Self-Check-In</span>
+                                </div>
+
+                                <h3 className="text-xl sm:text-2xl font-black text-black">
+                                    Scan with Your Smartphone
+                                </h3>
+                                <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-1">
+                                    Open your phone camera or StaffFlow app to {scanAction === 'check_in' ? 'Clock In' : 'Clock Out'} instantly.
+                                </p>
+
+                                {/* Big High-Contrast Dynamic QR Display */}
+                                <div className="mt-5 p-5 bg-slate-50 border-2 border-slate-300 rounded-3xl inline-block shadow-inner relative group">
+                                    <div className="w-48 h-48 sm:w-56 sm:h-56 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center justify-center">
+                                        <QrCode size={190} className="text-black transition-transform group-hover:scale-102" />
+                                    </div>
+                                    <div className="mt-2 text-[10px] font-mono font-bold text-slate-600 tracking-wider">
+                                        TOKEN: SF-GATE1-{clockTime ? clockTime.replace(/\s+/g, '') : 'LIVE'}
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-700 font-bold">
+                                    <span className="flex items-center gap-1">
+                                        <MapPin size={13} className="text-black" /> HQ Lobby Gate #1
+                                    </span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1">
+                                        <ShieldCheck size={13} className="text-emerald-600" /> Geofence GPS Verified
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Trigger & Quick Test Bar */}
                     <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs space-y-3">
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                             <div className="flex-1">
                                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                    Staff Verification Profile (Auto-Detect or Select)
+                                    Staff Verification Profile (Simulate Scan As)
                                 </label>
                                 <CustomDropdown
                                     value={selectedEmployeeId}
                                     onChange={(val) => setSelectedEmployeeId(val)}
                                     icon={<User size={13} />}
                                     options={[
-                                        { value: 'auto', label: '⚡ Auto-Detect Face from Live Stream' },
+                                        { value: 'auto', label: '⚡ Auto-Detect from Roster' },
                                         ...employees.map(e => ({
                                             value: e._id,
                                             label: `${e.firstName} ${e.lastName} (${e.position || 'Staff'})`
@@ -438,12 +484,12 @@ export default function AttendanceScanKioskPage() {
                                 {scanning ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                        <span>Verifying Face...</span>
+                                        <span>Verifying...</span>
                                     </>
                                 ) : (
                                     <>
                                         <Scan size={16} />
-                                        <span>Trigger {scanAction === 'check_in' ? 'Check-In' : 'Check-Out'} Scan</span>
+                                        <span>Trigger {scanAction === 'check_in' ? 'Clock-In' : 'Clock-Out'} Scan</span>
                                     </>
                                 )}
                             </button>
@@ -515,7 +561,7 @@ export default function AttendanceScanKioskPage() {
                             <div className="p-8 text-center text-slate-400">
                                 <Scan size={36} className="mx-auto mb-2 opacity-40 text-slate-500" />
                                 <p className="text-xs font-bold text-slate-600">No recent scan recorded in this session</p>
-                                <p className="text-[11px] font-medium text-slate-500 mt-1">Position face in front of the lens to trigger verification</p>
+                                <p className="text-[11px] font-medium text-slate-500 mt-1">Scan via Face Recognition or Mobile QR</p>
                             </div>
                         )}
                     </div>
@@ -639,7 +685,7 @@ export default function AttendanceScanKioskPage() {
                                     onClick={() => {
                                         if (modalEmployee) {
                                             setShowStaffQrModal(false);
-                                            setMode('qr');
+                                            setMode('qr_display');
                                             handlePerformScan(modalEmployee);
                                         }
                                     }}
