@@ -56,7 +56,7 @@ export default function AHeader({ sidebarCollapsed, setSidebarCollapsed }: AHead
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={() => setIsSearchFocused(true)}
                             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                            placeholder="Quick search... (Students, Classes, Reports)"
+                            placeholder="Quick search... (Staff, Departments, Attendance, Payroll)"
                             className={`
                                 w-full py-2 pl-9 pr-10 sm:pr-14 text-xs sm:text-sm
                                 transition-all outline-none rounded-xl

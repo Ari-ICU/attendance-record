@@ -40,6 +40,8 @@ const reportRoutes = require('./routes/report.routes');
 const backupRoutes = require('./routes/backup.routes');
 const securityRoutes = require('./routes/security.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const leaveRoutes = require('./routes/leave.routes');
+const overtimeRoutes = require('./routes/overtime.routes');
 
 
 
@@ -171,6 +173,10 @@ app.use('/api/attendance', attendanceRoutes);
 
 // System settings routes
 app.use('/api/settings', systemSettingRoutes);
+
+// Leave & Overtime Workforce Routes
+app.use('/api/leaves', leaveRoutes);
+app.use('/api/overtime', overtimeRoutes);
 
 // Payroll routes
 app.use('/api/payroll', payrollRoutes);
