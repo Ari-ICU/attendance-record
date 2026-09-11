@@ -110,19 +110,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             icon: <Timer size={17} />,
         },
 
-        // PAYROLL
-        {
-            section: 'PAYROLL',
-            name: 'Payroll',
-            icon: <DollarSign size={17} />,
-            group: true,
-            items: [
-                { name: 'Salary', href: '/dashboard/finance/payroll', icon: <DollarSign size={15} /> },
-                { name: 'Payroll', href: '/dashboard/finance/payroll?tab=periods', icon: <CreditCard size={15} /> },
-                { name: 'Payslips', href: '/dashboard/finance/payroll?tab=payslips', icon: <Receipt size={15} /> },
-            ],
-        },
-
         // REPORTS
         {
             section: 'REPORTS',
@@ -133,7 +120,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 { name: 'Attendance', href: '/dashboard/reports/analytics?tab=attendance', icon: <BarChart3 size={15} /> },
                 { name: 'Staff', href: '/dashboard/reports/analytics?tab=staff', icon: <Users size={15} /> },
                 { name: 'Leave', href: '/dashboard/reports/analytics?tab=leave', icon: <FileSpreadsheet size={15} /> },
-                { name: 'Payroll', href: '/dashboard/reports/analytics?tab=payroll', icon: <TrendingUp size={15} /> },
             ],
         },
 
@@ -174,7 +160,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     if (loading || initializing || !user) return null;
 
     return (
-        <div className="flex min-h-screen bg-slate-50/70 text-slate-800 font-sans antialiased">
+        <div className="flex min-h-screen bg-slate-50/70 text-black font-sans antialiased">
             {/* Sidebar */}
             <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-sm print:hidden`}>
                 <Sidebar menuItems={menuItems} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
