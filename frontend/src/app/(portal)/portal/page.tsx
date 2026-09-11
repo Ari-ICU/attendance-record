@@ -79,15 +79,7 @@ export default function PortalPage() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 w-full md:w-auto">
-                    <Link
-                        href="/verify"
-                        className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-xs transition-colors text-xs sm:text-sm font-semibold active:scale-95"
-                    >
-                        <Camera size={15} />
-                        <span>Biometric Check-In</span>
-                    </Link>
-                </div>
+
             </div>
 
             {/* Bento Stat Cards */}
@@ -295,12 +287,6 @@ export default function PortalPage() {
                                 <p className="text-[11px] text-slate-400">High-speed verification active</p>
                             </div>
                         </div>
-                        <Link
-                            href="/verify"
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-700"
-                        >
-                            Test &rarr;
-                        </Link>
                     </div>
                 </div>
             </div>

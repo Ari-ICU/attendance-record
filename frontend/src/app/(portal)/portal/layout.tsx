@@ -58,14 +58,6 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                             <span>{currentTime || '08:00:00 AM'}</span>
                         </div>
 
-                        {/* Switch to Kiosk */}
-                        <Link
-                            href="/verify"
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/70 text-slate-700 text-xs font-semibold transition-colors"
-                        >
-                            <QrCode size={14} className="text-blue-600" />
-                            <span className="hidden sm:inline">Kiosk Mode</span>
-                        </Link>
 
                         {/* Admin Link if Admin */}
                         {user.role === 'admin' && (
