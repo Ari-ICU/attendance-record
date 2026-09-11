@@ -19,7 +19,10 @@ import {
     ShieldCheck,
     Trash2,
     Info,
-    CheckCircle2
+    CheckCircle2,
+    DollarSign,
+    CreditCard,
+    Calculator
 } from 'lucide-react';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 
@@ -46,10 +49,18 @@ export default function EmployeeForm({
         position: '',
         department: '',
         dateOfJoining: '',
-        type: 'employee'
+        type: 'employee',
+        baseSalary: 2800,
+        hourlyRate: 17.50,
+        currency: 'USD',
+        bankDetails: {
+            bankName: 'ABA Bank',
+            accountName: '',
+            accountNumber: ''
+        }
     });
 
-    const [activeTab, setActiveTab] = useState<'profile' | 'organization' | 'biometrics'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'organization' | 'payroll' | 'biometrics'>('profile');
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -91,6 +102,14 @@ export default function EmployeeForm({
                 dateOfJoining: formatDateForInput(initialData.dateOfJoining),
                 type: 'employee',
                 image: undefined,
+                baseSalary: initialData.baseSalary ?? 2800,
+                hourlyRate: initialData.hourlyRate ?? 17.50,
+                currency: initialData.currency || 'USD',
+                bankDetails: {
+                    bankName: initialData.bankDetails?.bankName || 'ABA Bank',
+                    accountName: initialData.bankDetails?.accountName || (initialData.fullName || `${initialData.firstName || ''} ${initialData.lastName || ''}`.trim()),
+                    accountNumber: initialData.bankDetails?.accountNumber || ''
+                }
             });
 
             if (initialData.photoUrl) {
@@ -100,7 +119,15 @@ export default function EmployeeForm({
             setFormData(prev => ({
                 ...prev,
                 type: 'employee',
-                dateOfJoining: formatDateForInput(new Date().toISOString())
+                dateOfJoining: formatDateForInput(new Date().toISOString()),
+                baseSalary: 2800,
+                hourlyRate: 17.50,
+                currency: 'USD',
+                bankDetails: {
+                    bankName: 'ABA Bank',
+                    accountName: '',
+                    accountNumber: ''
+                }
             }));
         }
     }, [initialData]);
@@ -110,6 +137,26 @@ export default function EmployeeForm({
         setFormData(prev => ({
             ...prev,
             [name]: value
+        }));
+    };
+
+    const handleSalaryChange = (value: number) => {
+        const base = isNaN(value) ? 0 : value;
+        const autoHourly = Math.round((base / 160) * 100) / 100;
+        setFormData(prev => ({
+            ...prev,
+            baseSalary: base,
+            hourlyRate: autoHourly
+        }));
+    };
+
+    const handleBankDetailChange = (field: 'bankName' | 'accountName' | 'accountNumber', value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            bankDetails: {
+                ...prev.bankDetails,
+                [field]: value
+            }
         }));
     };
 
@@ -153,8 +200,34 @@ export default function EmployeeForm({
             setActiveTab('profile');
             return;
         }
-        onSubmit(formData);
+
+        // Auto-fill account name if empty
+        const submissionPayload = {
+            ...formData,
+            bankDetails: {
+                bankName: formData.bankDetails?.bankName || 'ABA Bank',
+                accountName: formData.bankDetails?.accountName || `${formData.firstName} ${formData.lastName}`.trim(),
+                accountNumber: formData.bankDetails?.accountNumber || '001 234 567'
+            }
+        };
+
+        onSubmit(submissionPayload);
     };
+
+    const bankOptions = [
+        { value: 'ABA Bank', label: 'ABA Bank' },
+        { value: 'ACLEDA Bank', label: 'ACLEDA Bank' },
+        { value: 'Canadia Bank', label: 'Canadia Bank' },
+        { value: 'Wing Bank', label: 'Wing Bank' },
+        { value: 'Sathapana Bank', label: 'Sathapana Bank' },
+        { value: 'Vattanac Bank', label: 'Vattanac Bank' },
+        { value: 'Foreign Currency / Wire', label: 'International Wire Transfer' },
+    ];
+
+    const currencyOptions = [
+        { value: 'USD', label: 'USD ($)' },
+        { value: 'KHR', label: 'KHR (៛)' },
+    ];
 
     return (
         <form onSubmit={handleSubmit} className="w-full space-y-6">
@@ -171,7 +244,7 @@ export default function EmployeeForm({
                             </span>
                         </div>
                         <p className="text-xs sm:text-sm font-semibold text-slate-800">
-                            Configure employee identity, departmental role, and biometric attendance credentials.
+                            Configure employee identity, departmental role, payroll compensation, and biometric attendance credentials.
                         </p>
                     </div>
                 </div>
@@ -189,7 +262,8 @@ export default function EmployeeForm({
                 {[
                     { id: 'profile', label: '1. Personal Profile', icon: <User size={15} /> },
                     { id: 'organization', label: '2. Department & Role', icon: <Building2 size={15} /> },
-                    { id: 'biometrics', label: '3. Face Biometrics', icon: <ShieldCheck size={15} /> },
+                    { id: 'payroll', label: '3. Payroll & Compensation', icon: <DollarSign size={15} /> },
+                    { id: 'biometrics', label: '4. Face Biometrics', icon: <ShieldCheck size={15} /> },
                 ].map((tab) => (
                     <button
                         key={tab.id}
@@ -333,7 +407,112 @@ export default function EmployeeForm({
                 </div>
             )}
 
-            {/* Tab 3: Biometrics & Photo */}
+            {/* Tab 3: Payroll & Compensation */}
+            {activeTab === 'payroll' && (
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
+                    <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+                        <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2">
+                            <DollarSign size={15} className="text-emerald-600" />
+                            Salary Structure & Disbursement Banking
+                        </h3>
+                        <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            Automated Payroll Ready
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                        {/* Base Monthly Salary */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-black">Base Monthly Salary (USD) *</label>
+                            <div className="relative">
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black font-bold text-sm">$</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="50"
+                                    required
+                                    value={formData.baseSalary ?? 2800}
+                                    onChange={(e) => handleSalaryChange(parseFloat(e.target.value))}
+                                    placeholder="2800"
+                                    className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-mono font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
+                                />
+                            </div>
+                            <span className="text-[10px] text-slate-600 block">Standard 160 hours / month</span>
+                        </div>
+
+                        {/* Overtime Hourly Rate */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-black">Hourly Base Rate ($/hr)</label>
+                            <div className="relative">
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black font-bold text-sm">$</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.5"
+                                    value={formData.hourlyRate ?? 17.50}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }))}
+                                    placeholder="17.50"
+                                    className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-mono font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
+                                />
+                            </div>
+                            <span className="text-[10px] text-slate-600 block">Overtime multiplies at 1.5x</span>
+                        </div>
+
+                        {/* Currency */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-black">Disbursement Currency</label>
+                            <CustomDropdown
+                                value={formData.currency || 'USD'}
+                                onChange={(val) => setFormData(prev => ({ ...prev, currency: val }))}
+                                options={currencyOptions}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Bank Particulars Section */}
+                    <div className="pt-4 border-t border-slate-100">
+                        <h4 className="text-xs font-black uppercase tracking-wider text-black mb-4 flex items-center gap-1.5">
+                            <CreditCard size={14} className="text-black" />
+                            Employee Bank Account Particulars
+                        </h4>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-black">Receiving Bank</label>
+                                <CustomDropdown
+                                    value={formData.bankDetails?.bankName || 'ABA Bank'}
+                                    onChange={(val) => handleBankDetailChange('bankName', val)}
+                                    options={bankOptions}
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-black">Account Holder Name</label>
+                                <input
+                                    type="text"
+                                    value={formData.bankDetails?.accountName || ''}
+                                    onChange={(e) => handleBankDetailChange('accountName', e.target.value)}
+                                    placeholder={formData.firstName ? `${formData.firstName} ${formData.lastName}` : 'Account Holder Name'}
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black placeholder:text-slate-400 outline-none focus:bg-white focus:border-black transition-colors"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-black">Bank Account Number</label>
+                                <input
+                                    type="text"
+                                    value={formData.bankDetails?.accountNumber || ''}
+                                    onChange={(e) => handleBankDetailChange('accountNumber', e.target.value)}
+                                    placeholder="e.g. 001 234 567"
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-mono font-bold text-black placeholder:text-slate-400 outline-none focus:bg-white focus:border-black transition-colors"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Tab 4: Biometrics & Photo */}
             {activeTab === 'biometrics' && (
                 <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
                     <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
@@ -454,3 +633,4 @@ export default function EmployeeForm({
         </form>
     );
 }
+
