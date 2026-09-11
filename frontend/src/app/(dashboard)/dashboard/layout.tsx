@@ -14,7 +14,6 @@ import {
     Clock,
     ShieldCheck,
     Users,
-    Aperture,
     Bell
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,45 +30,45 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     const menuItems = [
         {
-            name: 'Overview',
+            name: 'Dashboard',
             href: '/dashboard',
-            icon: <Home size={20} />,
+            icon: <Home size={19} />,
         },
         {
             name: 'Attendance',
-            icon: <ShieldCheck size={20} />,
+            icon: <ShieldCheck size={19} />,
             group: true,
             items: [
-                { name: 'Live Monitor', href: '/dashboard/attendance/monitor', icon: <Clock size={20} /> },
-                { name: 'Records', href: '/dashboard/attendance/records', icon: <Calendar size={20} /> },
+                { name: 'Live Monitor', href: '/dashboard/attendance/monitor', icon: <Clock size={18} /> },
+                { name: 'Records', href: '/dashboard/attendance/records', icon: <Calendar size={18} /> },
             ],
         },
         {
             name: 'Management',
-            icon: <Users size={20} />,
+            icon: <Users size={19} />,
             group: true,
             items: [
-                { name: 'Employees', href: '/dashboard/management/employee?type=employee', icon: <User size={20} /> },
-                { name: 'Students', href: '/dashboard/management/employee?type=student', icon: <Users size={20} /> },
-                { name: 'Departments', href: '/dashboard/management/departments', icon: <Users size={20} /> },
+                { name: 'Students', href: '/dashboard/management/employee?type=student', icon: <Users size={18} /> },
+                { name: 'Teachers / Staff', href: '/dashboard/management/employee?type=employee', icon: <User size={18} /> },
+                { name: 'Classes / Depts', href: '/dashboard/management/departments', icon: <Users size={18} /> },
             ],
         },
         {
-            name: 'Organization',
-            icon: <BarChart3 size={20} />,
+            name: 'Reports & Finance',
+            icon: <BarChart3 size={19} />,
             group: true,
             items: [
-                { name: 'Payroll', href: '/dashboard/finance/payroll', icon: <CreditCard size={20} /> },
-                { name: 'Reports', href: '/dashboard/reports/analytics', icon: <BarChart3 size={20} /> },
+                { name: 'Reports', href: '/dashboard/reports/analytics', icon: <BarChart3 size={18} /> },
+                { name: 'Payroll', href: '/dashboard/finance/payroll', icon: <CreditCard size={18} /> },
             ],
         },
         {
             name: 'System',
-            icon: <Settings size={20} />,
+            icon: <Settings size={19} />,
             group: true,
             items: [
-                { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={20} /> },
-                { name: 'Notifications', href: '/dashboard/notifications', icon: <Bell size={20} /> },
+                { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={18} /> },
+                { name: 'Notifications', href: '/dashboard/notifications', icon: <Bell size={18} /> },
             ],
         },
     ];
@@ -97,28 +96,28 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     if (loading || initializing || !user) return null;
 
     return (
-        <div className="flex min-h-screen font-sans text-slate-100">
+        <div className="flex min-h-screen bg-slate-50/70 text-slate-800 font-sans antialiased">
             {/* Sidebar */}
-            <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-2xl print:hidden`}>
+            <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-sm print:hidden`}>
                 <Sidebar menuItems={menuItems} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
             </div>
 
             {/* Mobile Overlay */}
             {!sidebarCollapsed && (
                 <div
-                    className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity duration-300 print:hidden"
+                    className="fixed inset-0 z-30 bg-slate-900/30 backdrop-blur-xs lg:hidden transition-opacity duration-300 print:hidden"
                     onClick={() => setSidebarCollapsed(true)}
                 />
             )}
 
             {/* Main Content */}
-            <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} relative min-h-screen print:ml-0`}>
+            <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} min-h-screen print:ml-0`}>
                 {/* Header */}
                 <div className="print:hidden">
                     <AHeader sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
                 </div>
 
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto print:p-0 max-w-7xl w-full mx-auto">
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 max-w-7xl w-full mx-auto">
                     {children}
                 </main>
             </div>

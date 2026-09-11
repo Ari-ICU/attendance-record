@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090d16;
-  --foreground: #f8fafc;
-  --card-bg: #0f172a;
-  --card-border: #1e293b;
-  --font-geist-sans: "Geist", "Geist Fallback";
-  --font-geist-mono: "Geist Mono", "Geist Mono Fallback";
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --font-geist-sans: "Geist", "Geist Fallback", system-ui, sans-serif;
+  --font-geist-mono: "Geist Mono", "Geist Mono Fallback", monospace;
 }
 
 @theme {
@@ -14,10 +14,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Custom Scrollbar - Flat Minimalist */
+/* Custom Scrollbar - Minimalist Light */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 ::-webkit-scrollbar {
@@ -30,29 +30,29 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
+  background: #cbd5e1;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94a3b8;
 }
 
-/* Fix browser autofill colors */
+/* Fix browser autofill colors in light mode */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
   -webkit-background-clip: text;
-  -webkit-text-fill-color: #ffffff !important;
+  -webkit-text-fill-color: #0f172a !important;
   transition: background-color 5000s ease-in-out 0s;
-  box-shadow: inset 0 0 0px 1000px #090d16 !important;
+  box-shadow: inset 0 0 0px 1000px #ffffff !important;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
@@ -60,21 +60,24 @@ body {
   overflow-x: hidden;
 }
 
-/* Modern Flat Panel Surfaces */
-.glass-pane,
-.flat-card {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  box-shadow: none;
+/* Material & Bento Card Utilities */
+.material-card,
+.flat-card,
+.glass-pane {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
 }
 
-.flat-card-hover {
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+.material-card-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.flat-card-hover:hover {
-  border-color: #3b82f6;
-  background-color: #131d35;
+.material-card-hover:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
+  transform: translateY(-1px);
 }
 
 @media print {
