@@ -1,7 +1,7 @@
 import api from '@/api/axiosInstance';
 
 const MOCK_SETTINGS = {
-    companyName: 'StaffFlow University & Enterprise',
+    companyName: 'StaffFlow Enterprise Systems',
     workHours: {
         startTime: '08:00',
         endTime: '17:00',
@@ -23,9 +23,12 @@ const MOCK_SETTINGS = {
 };
 
 const MOCK_SYSTEM_USERS = [
-    { _id: 'u1', username: 'admin', email: 'admin@system.com', role: 'admin', firstName: 'Thoeurn', lastName: 'Ratha', isLocked: false },
-    { _id: 'u2', username: 'sarah.j', email: 'sarah.j@staffflow.io', role: 'manager', firstName: 'Sarah', lastName: 'Jenkins', isLocked: false },
-    { _id: 'u3', username: 'alex.hr', email: 'alex.v@staffflow.io', role: 'hr', firstName: 'Alex', lastName: 'Vannak', isLocked: false },
+    { _id: 'u1', username: 'admin.ratha', email: 'ratha@staffflow.io', role: 'admin', firstName: 'Thoeurn', lastName: 'Ratha', department: 'Engineering & IT', isLocked: false },
+    { _id: 'u2', username: 'sarah.ux', email: 'sarah.j@staffflow.io', role: 'manager', firstName: 'Sarah', lastName: 'Jenkins', department: 'Product & Design', isLocked: false },
+    { _id: 'u3', username: 'alex.hr', email: 'alex.v@staffflow.io', role: 'manager', firstName: 'Alex', lastName: 'Vannak', department: 'Human Resources', isLocked: false },
+    { _id: 'u4', username: 'david.ops', email: 'david.m@staffflow.io', role: 'manager', firstName: 'David', lastName: 'Miller', department: 'Operations & Facilities', isLocked: false },
+    { _id: 'u5', username: 'chann.dara', email: 'chann.dara@staffflow.io', role: 'employee', firstName: 'Chann', lastName: 'Dara', department: 'Engineering & IT', isLocked: false },
+    { _id: 'u6', username: 'sophea.k', email: 'sophea.k@staffflow.io', role: 'employee', firstName: 'Sophea', lastName: 'Kosal', department: 'Product & Design', isLocked: false },
 ];
 
 export const SettingsService = {
