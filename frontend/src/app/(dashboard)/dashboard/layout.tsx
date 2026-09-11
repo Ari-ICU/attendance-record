@@ -86,15 +86,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         // SCHEDULE & CALENDAR
         {
-            section: 'SCHEDULE',
-            name: 'Calendar',
+            section: 'SCHEDULE & TIME',
+            name: 'Calendar & Shifts',
             href: '/dashboard/calendar',
             icon: <CalendarDays size={17} />,
-        },
-        {
-            name: 'Work Schedule',
-            href: '/dashboard/schedule',
-            icon: <Clock size={17} />,
         },
 
         // LEAVE & OVERTIME
