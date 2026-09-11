@@ -192,9 +192,10 @@ export default function CalendarPage() {
             if (searchTerm) {
                 const emp = rec.employeeId;
                 const fullName = `${emp?.firstName || ''} ${emp?.lastName || ''}`.toLowerCase();
-                const empId = (emp?.employeeId || '').toLowerCase();
+                const empId = (emp?._id || '').toLowerCase();
+                const email = (emp?.email || '').toLowerCase();
                 const term = searchTerm.toLowerCase();
-                return fullName.includes(term) || empId.includes(term);
+                return fullName.includes(term) || empId.includes(term) || email.includes(term);
             }
             return true;
         });
@@ -305,7 +306,7 @@ export default function CalendarPage() {
 
         const headers = ['Employee ID', 'Name', 'Type', 'Status', 'Check In', 'Check Out', 'Method', 'Date'];
         const rows = selectedDateRecords.map((r) => [
-            r.employeeId?.employeeId || 'N/A',
+            r.employeeId?._id || 'N/A',
             `"${r.employeeId?.firstName || ''} ${r.employeeId?.lastName || ''}"`,
             r.employeeId?.type || 'Staff',
             r.status,
@@ -838,7 +839,7 @@ export default function CalendarPage() {
                                                             {record.employeeId?.firstName} {record.employeeId?.lastName}
                                                         </p>
                                                         <p className="text-[11px] text-slate-400 font-mono">
-                                                            ID: {record.employeeId?.employeeId || 'N/A'} • {record.checkIn?.method || 'Manual'}
+                                                            ID: {record.employeeId?._id?.substring(0, 8) || 'N/A'} • {record.checkIn?.method || 'Manual'}
                                                         </p>
                                                     </div>
                                                 </div>
