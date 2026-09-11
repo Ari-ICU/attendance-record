@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
 import { MOCK_POSITIONS, PositionItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function EditPositionPage() {
     const params = useParams();
@@ -76,31 +77,31 @@ export default function EditPositionPage() {
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-black">Department</label>
-                        <select
+                        <CustomDropdown
                             value={formData.department}
-                            onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="Engineering & IT">Engineering & IT</option>
-                            <option value="Academic Core">Academic Core</option>
-                            <option value="Human Resources">Human Resources</option>
-                            <option value="Operations & Facilities">Operations & Facilities</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, department: val })}
+                            options={[
+                                { value: 'Engineering & IT', label: 'Engineering & IT' },
+                                { value: 'Academic Core', label: 'Academic Core' },
+                                { value: 'Human Resources', label: 'Human Resources' },
+                                { value: 'Operations & Facilities', label: 'Operations & Facilities' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-black">Seniority Tier</label>
-                        <select
+                        <CustomDropdown
                             value={formData.level}
-                            onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="Associate">Associate / Entry</option>
-                            <option value="Mid-Level">Mid-Level</option>
-                            <option value="Senior">Senior</option>
-                            <option value="Lead">Lead / Supervisor</option>
-                            <option value="Executive">Executive / Director</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, level: val })}
+                            options={[
+                                { value: 'Associate', label: 'Associate / Entry' },
+                                { value: 'Mid-Level', label: 'Mid-Level' },
+                                { value: 'Senior', label: 'Senior' },
+                                { value: 'Lead', label: 'Lead / Supervisor' },
+                                { value: 'Executive', label: 'Executive / Director' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5 sm:col-span-2">

@@ -8,6 +8,7 @@ import { DepartmentService } from '@/services/department.service';
 import { EmployeeService } from '@/services/employee.service';
 import { Employee } from '@/types/employee.types';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function CreateDepartmentPage() {
     const router = useRouter();
@@ -109,18 +110,19 @@ export default function CreateDepartmentPage() {
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-black">Lead Instructor / Head of Unit</label>
-                        <select
+                        <CustomDropdown
                             value={formData.headOfDepartment}
-                            onChange={(e) => setFormData({ ...formData, headOfDepartment: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="">Unassigned</option>
-                            {employees.map(emp => (
-                                <option key={emp._id} value={emp._id}>
-                                    {emp.firstName} {emp.lastName} ({emp.position})
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, headOfDepartment: val })}
+                            placeholder="Unassigned"
+                            options={[
+                                { value: '', label: 'Unassigned' },
+                                ...employees.map(emp => ({
+                                    value: emp._id,
+                                    label: `${emp.firstName} ${emp.lastName} (${emp.position || 'Staff'})`
+                                }))
+                            ]}
+                            searchable
+                        />
                     </div>
 
                     <div className="space-y-1.5 sm:col-span-2">

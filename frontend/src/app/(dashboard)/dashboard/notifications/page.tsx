@@ -5,6 +5,7 @@ import { useSocket } from '@/contexts/SocketContext';
 import { Bell, Send, Wifi, WifiOff, CheckCircle, AlertCircle, Info, AlertTriangle, RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { BASE_URL } from '@/api/apiUrl';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function NotificationTestPage() {
     const { socket, isConnected, notifications, unreadCount } = useSocket();
@@ -139,28 +140,28 @@ export default function NotificationTestPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-700">Notice Type</label>
-                                <select
+                                <label className="text-xs font-bold text-black">Notice Type</label>
+                                <CustomDropdown
                                     value={testType}
-                                    onChange={(e) => setTestType(e.target.value as any)}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:bg-white focus:border-blue-500 transition-colors capitalize"
-                                >
-                                    <option value="info">Info (Blue)</option>
-                                    <option value="success">Success (Green)</option>
-                                    <option value="warning">Warning (Amber)</option>
-                                    <option value="error">Error (Rose)</option>
-                                </select>
+                                    onChange={(val) => setTestType(val as any)}
+                                    options={[
+                                        { value: 'info', label: 'Info (Blue)' },
+                                        { value: 'success', label: 'Success (Green)' },
+                                        { value: 'warning', label: 'Warning (Amber)' },
+                                        { value: 'error', label: 'Error (Rose)' }
+                                    ]}
+                                />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-700">Priority Level</label>
-                                <select
+                                <label className="text-xs font-bold text-black">Priority Level</label>
+                                <CustomDropdown
                                     value={testPriority}
-                                    onChange={(e) => setTestPriority(e.target.value as any)}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:bg-white focus:border-blue-500 transition-colors capitalize"
-                                >
-                                    <option value="normal">Normal Priority</option>
-                                    <option value="high">High Priority</option>
-                                </select>
+                                    onChange={(val) => setTestPriority(val as any)}
+                                    options={[
+                                        { value: 'normal', label: 'Normal Priority' },
+                                        { value: 'high', label: 'High Priority' }
+                                    ]}
+                                />
                             </div>
                         </div>
 

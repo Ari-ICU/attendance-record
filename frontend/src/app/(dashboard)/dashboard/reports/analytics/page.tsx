@@ -5,6 +5,7 @@ import {
     BarChart3, 
     Download 
 } from 'lucide-react';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function AnalyticsPage() {
     const [timeRange, setTimeRange] = useState('7d');
@@ -27,18 +28,20 @@ export default function AnalyticsPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <select
-                        value={timeRange}
-                        onChange={(e) => setTimeRange(e.target.value)}
-                        className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black focus:outline-hidden"
-                    >
-                        <option value="7d">Last 7 Days</option>
-                        <option value="30d">Last 30 Days</option>
-                        <option value="90d">Last Quarter</option>
-                        <option value="1y">This Year</option>
-                    </select>
+                    <div className="w-40">
+                        <CustomDropdown
+                            value={timeRange}
+                            onChange={(val) => setTimeRange(val)}
+                            options={[
+                                { value: '7d', label: 'Last 7 Days' },
+                                { value: '30d', label: 'Last 30 Days' },
+                                { value: '90d', label: 'Last Quarter' },
+                                { value: '1y', label: 'This Year' }
+                            ]}
+                        />
+                    </div>
 
-                    <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-black text-xs font-bold transition-colors cursor-pointer">
+                    <button className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-black text-xs font-bold transition-colors cursor-pointer whitespace-nowrap">
                         <Download size={14} />
                         <span>Export</span>
                     </button>

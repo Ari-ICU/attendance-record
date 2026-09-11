@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
 import { MOCK_OVERTIME, OvertimeItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function EditOvertimePage() {
     const params = useParams();
@@ -73,16 +74,16 @@ export default function EditOvertimePage() {
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-black">Department</label>
-                        <select
+                        <CustomDropdown
                             value={formData.department}
-                            onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="Engineering & IT">Engineering & IT</option>
-                            <option value="Academic Core">Academic Core</option>
-                            <option value="Human Resources">Human Resources</option>
-                            <option value="Operations & Facilities">Operations & Facilities</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, department: val })}
+                            options={[
+                                { value: 'Engineering & IT', label: 'Engineering & IT' },
+                                { value: 'Academic Core', label: 'Academic Core' },
+                                { value: 'Human Resources', label: 'Human Resources' },
+                                { value: 'Operations & Facilities', label: 'Operations & Facilities' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5">
@@ -138,15 +139,15 @@ export default function EditOvertimePage() {
 
                     <div className="space-y-1.5 sm:col-span-2">
                         <label className="text-xs font-bold text-black">Status</label>
-                        <select
+                        <CustomDropdown
                             value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                        >
-                            <option value="pending">Pending</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, status: val as any })}
+                            options={[
+                                { value: 'pending', label: 'Pending' },
+                                { value: 'approved', label: 'Approved' },
+                                { value: 'rejected', label: 'Rejected' }
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1.5 sm:col-span-2">

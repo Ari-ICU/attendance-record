@@ -22,6 +22,7 @@ import { EmployeeService } from '@/services/employee.service';
 import { Department } from '@/types/department.types';
 import { Employee } from '@/types/employee.types';
 import toast from 'react-hot-toast';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 interface PositionItem {
     id: string;
@@ -509,18 +510,19 @@ export default function DepartmentsPage() {
 
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-black">Lead Instructor / Head</label>
-                                        <select
+                                        <CustomDropdown
                                             value={formData.head}
-                                            onChange={(e) => setFormData({ ...formData, head: e.target.value })}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                                        >
-                                            <option value="">Unassigned</option>
-                                            {employees.map(emp => (
-                                                <option key={emp._id} value={emp._id}>
-                                                    {emp.firstName} {emp.lastName} ({emp.position})
-                                                </option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => setFormData({ ...formData, head: val })}
+                                            placeholder="Unassigned"
+                                            options={[
+                                                { value: '', label: 'Unassigned' },
+                                                ...employees.map(emp => ({
+                                                    value: emp._id,
+                                                    label: `${emp.firstName} ${emp.lastName} (${emp.position || 'Staff'})`
+                                                }))
+                                            ]}
+                                            searchable
+                                        />
                                     </div>
 
                                     <div className="flex gap-2 pt-2">
@@ -555,32 +557,29 @@ export default function DepartmentsPage() {
 
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-black">Assigned Department</label>
-                                        <select
+                                        <CustomDropdown
                                             value={positionFormData.department}
-                                            onChange={(e) => setPositionFormData({ ...positionFormData, department: e.target.value })}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                                        >
-                                            {departments.map(dept => (
-                                                <option key={dept._id} value={dept.name}>
-                                                    {dept.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => setPositionFormData({ ...positionFormData, department: val })}
+                                            options={departments.map(dept => ({
+                                                value: dept.name,
+                                                label: dept.name
+                                            }))}
+                                        />
                                     </div>
 
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-black">Seniority Tier</label>
-                                        <select
+                                        <CustomDropdown
                                             value={positionFormData.level}
-                                            onChange={(e) => setPositionFormData({ ...positionFormData, level: e.target.value })}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-black outline-none focus:bg-white focus:border-black transition-colors"
-                                        >
-                                            <option value="Associate">Associate / Entry</option>
-                                            <option value="Mid-Level">Mid-Level</option>
-                                            <option value="Senior">Senior</option>
-                                            <option value="Lead">Lead / Supervisor</option>
-                                            <option value="Executive">Executive / Director</option>
-                                        </select>
+                                            onChange={(val) => setPositionFormData({ ...positionFormData, level: val })}
+                                            options={[
+                                                { value: 'Associate', label: 'Associate / Entry' },
+                                                { value: 'Mid-Level', label: 'Mid-Level' },
+                                                { value: 'Senior', label: 'Senior' },
+                                                { value: 'Lead', label: 'Lead / Supervisor' },
+                                                { value: 'Executive', label: 'Executive / Director' }
+                                            ]}
+                                        />
                                     </div>
 
                                     <div className="space-y-1.5">
