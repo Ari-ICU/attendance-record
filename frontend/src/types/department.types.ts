@@ -3,6 +3,8 @@ import { Employee } from "./employee.types";
 export interface Department {
     _id: string;
     name: string;
+    code: string;
+    headOfDepartment: {};
     description?: string;
     head?: Employee;
     memberCount?: number;

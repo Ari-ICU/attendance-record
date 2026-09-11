@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-    User,
     Mail,
-    Shield,
-    Calendar,
     MapPin,
     Phone,
     Briefcase,
@@ -18,7 +15,6 @@ import {
     X,
     Loader2
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { getFullImageUrl } from '@/utils/url.utils';
 import toast from 'react-hot-toast';
 
@@ -58,7 +54,7 @@ export default function ProfilePage() {
             await updateProfile(formData);
             toast.success('Profile updated successfully');
             setIsEditing(false);
-        } catch (error) {
+        } catch {
             toast.error('Failed to update profile');
         } finally {
             setLoading(false);
@@ -66,32 +62,32 @@ export default function ProfilePage() {
     };
 
     const stats = [
-        { label: 'Attendance Rate', value: '98.5%', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-        { label: 'Logged Hours', value: '164 hrs', icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Badges Earned', value: '12 Active', icon: Award, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { label: 'Attendance Rate', value: '98.5%', icon: CheckCircle2, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+        { label: 'Logged Hours', value: '164 hrs', icon: Clock, color: 'text-black', bg: 'bg-slate-100' },
+        { label: 'Badges Earned', value: '12 Active', icon: Award, color: 'text-amber-800', bg: 'bg-amber-50' },
     ];
 
     return (
-        <div className="space-y-6 pb-12">
+        <div className="w-full space-y-6 pb-12">
             {/* Profile Card Banner */}
             <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
-                <div className="h-32 sm:h-36 bg-gradient-to-r from-blue-600 to-indigo-600 relative" />
+                <div className="h-32 sm:h-36 bg-black relative" />
 
                 <div className="px-5 sm:px-8 pb-6 relative">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-14 sm:-mt-16 mb-4">
                         <div className="flex flex-col sm:flex-row sm:items-end gap-4">
                             {/* Avatar */}
                             <div className="relative group/avatar">
-                                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-4 border-white overflow-hidden bg-slate-100 shadow-sm flex items-center justify-center">
+                                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-4 border-white overflow-hidden bg-slate-100 shadow-md flex items-center justify-center">
                                     {user?.photoUrl ? (
                                         <img src={getFullImageUrl(user.photoUrl) || ''} alt="Profile" className="w-full h-full object-cover" />
                                     ) : (
-                                        <span className="text-2xl font-bold text-slate-700">
+                                        <span className="text-2xl font-black text-black">
                                             {formData.firstName?.[0] || 'A'}{formData.lastName?.[0] || ''}
                                         </span>
                                     )}
                                 </div>
-                                <button className="absolute bottom-1 right-1 p-2 rounded-xl bg-blue-600 text-white shadow-xs hover:bg-blue-500 transition-colors">
+                                <button className="absolute bottom-1 right-1 p-2 rounded-xl bg-black text-white shadow-xs hover:bg-slate-800 transition-colors cursor-pointer">
                                     <Camera size={13} />
                                 </button>
                             </div>
@@ -104,33 +100,33 @@ export default function ProfilePage() {
                                             <input
                                                 value={formData.firstName}
                                                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                                className="bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1 text-base font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 w-36"
+                                                className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1 text-base font-bold text-black outline-none focus:bg-white focus:border-black w-36"
                                                 placeholder="First Name"
                                             />
                                             <input
                                                 value={formData.lastName}
                                                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                                className="bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1 text-base font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 w-36"
+                                                className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1 text-base font-bold text-black outline-none focus:bg-white focus:border-black w-36"
                                                 placeholder="Last Name"
                                             />
                                         </div>
                                     ) : (
-                                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                                        <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">
                                             {formData.firstName} {formData.lastName}
                                         </h1>
                                     )}
-                                    <span className="px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-600 text-xs font-semibold capitalize">
+                                    <span className="px-2.5 py-0.5 rounded-full bg-black text-white text-xs font-bold capitalize">
                                         {user?.role || 'Administrator'}
                                     </span>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 pt-0.5">
+                                <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-black pt-0.5">
                                     <span className="flex items-center gap-1.5">
-                                        <Briefcase size={14} className="text-slate-400" />
+                                        <Briefcase size={14} className="text-black" />
                                         <span>{formData.position}</span>
                                     </span>
                                     <span className="flex items-center gap-1.5">
-                                        <MapPin size={14} className="text-slate-400" />
+                                        <MapPin size={14} className="text-black" />
                                         <span>{formData.location}</span>
                                     </span>
                                 </div>
@@ -143,7 +139,7 @@ export default function ProfilePage() {
                                 <>
                                     <button
                                         onClick={() => setIsEditing(false)}
-                                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                                        className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-black font-bold transition-colors cursor-pointer"
                                         title="Cancel"
                                     >
                                         <X size={15} />
@@ -151,16 +147,16 @@ export default function ProfilePage() {
                                     <button
                                         disabled={loading}
                                         onClick={handleSave}
-                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold transition-all disabled:opacity-50"
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black hover:bg-slate-800 text-white text-xs sm:text-sm font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
                                     >
                                         {loading ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-                                        <span>Save</span>
+                                        <span>Save Changes</span>
                                     </button>
                                 </>
                             ) : (
                                 <button
                                     onClick={() => setIsEditing(true)}
-                                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-semibold transition-colors"
+                                    className="px-4 py-2.5 rounded-xl bg-black hover:bg-slate-800 text-white text-xs sm:text-sm font-bold transition-colors shadow-xs cursor-pointer"
                                 >
                                     Edit Profile
                                 </button>
@@ -174,37 +170,44 @@ export default function ProfilePage() {
                 {/* Left Column: Quick Stats & Contacts */}
                 <div className="space-y-6">
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
-                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Summary Statistics</h3>
+                        <h3 className="text-xs font-black text-black uppercase tracking-wider mb-4">Summary Statistics</h3>
                         <div className="space-y-3">
                             {stats.map((stat, i) => (
-                                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                                     <div className="flex items-center gap-3">
                                         <div className={`p-2 rounded-lg ${stat.bg} ${stat.color}`}>
                                             <stat.icon size={15} />
                                         </div>
-                                        <span className="text-xs font-semibold text-slate-600">{stat.label}</span>
+                                        <span className="text-xs font-bold text-black">{stat.label}</span>
                                     </div>
-                                    <span className="text-sm font-bold text-slate-900">{stat.value}</span>
+                                    <span className="text-sm font-black text-black">{stat.value}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-4">
-                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Contact Credentials</h3>
+                        <h3 className="text-xs font-black text-black uppercase tracking-wider">Contact Credentials</h3>
                         <div className="space-y-3">
                             <div className="space-y-1">
-                                <label className="text-[11px] font-semibold text-slate-500">Email Address</label>
-                                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-800">
-                                    <Mail size={14} className="text-slate-400" />
-                                    <span className="truncate">{user?.email || 'admin@campus.edu'}</span>
+                                <label className="text-xs font-bold text-black">Email Address</label>
+                                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-300 text-xs font-bold text-black">
+                                    <Mail size={14} className="text-black" />
+                                    <span className="truncate">{user?.email || 'admin@system.com'}</span>
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[11px] font-semibold text-slate-500">Phone</label>
-                                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-800">
-                                    <Phone size={14} className="text-slate-400" />
+                                <label className="text-xs font-bold text-black">Phone Number</label>
+                                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-300 text-xs font-bold text-black">
+                                    <Phone size={14} className="text-black" />
                                     <span>{formData.phoneNumber}</span>
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-black">Department Track</label>
+                                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-300 text-xs font-bold text-black">
+                                    <Briefcase size={14} className="text-black" />
+                                    <span>{formData.department}</span>
                                 </div>
                             </div>
                         </div>
@@ -214,7 +217,7 @@ export default function ProfilePage() {
                 {/* Right Column: Bio */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-7 shadow-xs space-y-4">
-                        <h2 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100">
+                        <h2 className="text-base font-black text-black pb-3 border-b border-slate-200">
                             About & Professional Summary
                         </h2>
 
@@ -222,11 +225,11 @@ export default function ProfilePage() {
                             <textarea
                                 value={formData.bio}
                                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                rows={4}
-                                className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-800 text-xs sm:text-sm outline-none focus:bg-white focus:border-blue-500 transition-colors resize-none"
+                                rows={5}
+                                className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-300 text-black font-medium text-xs sm:text-sm outline-none focus:bg-white focus:border-black transition-colors resize-none placeholder:text-slate-500"
                             />
                         ) : (
-                            <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                            <p className="text-black font-medium text-xs sm:text-sm leading-relaxed">
                                 {formData.bio}
                             </p>
                         )}
@@ -236,3 +239,4 @@ export default function ProfilePage() {
         </div>
     );
 }
+
