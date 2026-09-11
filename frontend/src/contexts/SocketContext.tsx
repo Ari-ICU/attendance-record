@@ -116,7 +116,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Listen for attendance updates (for admins)
         if (user.role === 'admin') {
             newSocket.on('attendance_update', (data) => {
-                const message = `${data.userId} just ${data.type === 'check_in' ? 'checked in' : 'checked out'}`;
+                const message = `Attendance ${data.type === 'check_in' ? 'check-in' : 'check-out'} recorded`;
                 const newNotification: Notification = {
                     id: Date.now().toString(),
                     type: 'info',

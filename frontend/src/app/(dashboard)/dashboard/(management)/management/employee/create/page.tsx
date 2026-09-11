@@ -21,7 +21,7 @@ export default function CreateEmployeePage() {
             setSubmissionError(null);
             // Call the API to create the employee
             await EmployeeService.createEmployee(employee);
-            toast.success(`${employee.type === 'student' ? 'Student' : 'Employee'} created successfully!`);
+            toast.success('Record created successfully!');
             router.push(`/dashboard/management/employee${employee.type === 'student' ? '?type=student' : ''}`);
         } catch (error: any) {
             console.error('Submission error:', error);

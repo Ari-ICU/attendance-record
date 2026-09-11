@@ -36,7 +36,7 @@ export default function EditEmployeePage() {
             setIsSubmitting(true);
             setSubmissionError(null);
             await EmployeeService.updateEmployee(id, updated);
-            toast.success(`${updated.type === 'student' ? 'Student' : 'Employee'} updated successfully!`);
+            toast.success('Record updated successfully!');
             router.push(`/dashboard/management/employee/${id}`);
         } catch (error: any) {
             console.error('Update error:', error);

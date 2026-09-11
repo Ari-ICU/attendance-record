@@ -81,7 +81,7 @@ export default function AttendanceRecordDetailPage() {
     const emp = typeof record.employeeId === 'object' ? record.employeeId : null;
 
     return (
-        <div className="w-full max-w-4xl mx-auto space-y-6 pb-12 font-sans">
+        <div className="w-full space-y-6 pb-12 font-sans">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
                 <div className="flex items-center gap-3">
