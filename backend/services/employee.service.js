@@ -50,16 +50,16 @@ class EmployeeService {
     // Extract face descriptor from stored photo
     static async extractFaceDescriptorFromPhoto(employee) {
         try {
+            if (!employee.photoUrl) return;
             const descriptor = await getDescriptor(employee.photoUrl);
-            if (!descriptor) throw new Error('No face detected in employee photo');
+            if (!descriptor) return;
 
-            employee.faceDescriptor = descriptor;
+            employee.faceDescriptor = Array.from(descriptor);
             employee.faceVerifiedAt = new Date();
             employee.faceVerificationEnabled = true;
             await employee.save();
         } catch (err) {
-            console.warn(`Failed to extract face descriptor for employee ${employee._id}: ${err.message}`);
-            throw err; // Bubble up the error
+            console.warn(`[EmployeeService] Notice for employee ${employee._id}: ${err.message}`);
         }
     }
 
