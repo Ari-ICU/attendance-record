@@ -118,7 +118,7 @@ export default function PositionsPage() {
                                                     <Briefcase size={15} />
                                                 </div>
                                                 <div>
-                                                    <Link href={`/dashboard/management/positions/${pos.id}`} className="font-bold text-black block text-sm hover:underline">
+                                                    <Link href={`/dashboard/management/positions/${pos.id || pos._id}`} className="font-bold text-black block text-sm hover:underline">
                                                         {pos.title}
                                                     </Link>
                                                     <span className="text-[11px] font-medium text-black line-clamp-1">{pos.description}</span>
@@ -145,20 +145,20 @@ export default function PositionsPage() {
                                         <td className="py-3.5 px-5 text-right">
                                             <div className="flex items-center justify-end gap-1.5">
                                                 <Link
-                                                    href={`/dashboard/management/positions/${pos.id}`}
+                                                    href={`/dashboard/management/positions/${pos.id || pos._id}`}
                                                     className="px-2.5 py-1 bg-slate-100 hover:bg-black hover:text-white text-black font-bold rounded-lg transition-colors"
                                                 >
                                                     View
                                                 </Link>
                                                 <Link
-                                                    href={`/dashboard/management/positions/${pos.id}/edit`}
+                                                    href={`/dashboard/management/positions/${pos.id || pos._id}/edit`}
                                                     className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
                                                     title="Edit Position"
                                                 >
                                                     <Edit2 size={14} />
                                                 </Link>
                                                 <button
-                                                    onClick={() => handleDelete(pos.id)}
+                                                    onClick={() => handleDelete(pos.id || pos._id || '')}
                                                     className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
                                                     title="Delete Position"
                                                 >

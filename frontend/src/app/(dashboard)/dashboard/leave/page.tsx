@@ -74,7 +74,7 @@ export default function LeavePage() {
     };
 
     const filtered = leaves.filter(l => {
-        const matchesSearch = l.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) || l.type.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (l.employeeName || '').toLowerCase().includes(searchTerm.toLowerCase()) || (l.type || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' || l.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
@@ -136,7 +136,7 @@ export default function LeavePage() {
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
                     <span className="text-xs font-bold text-black uppercase">Total Days Taken</span>
                     <h3 className="text-2xl font-black text-black mt-1">
-                        {leaves.reduce((acc, curr) => acc + curr.days, 0)} Days
+                        {leaves.reduce((acc, curr) => acc + (curr.days || curr.totalDays || 0), 0)} Days
                     </h3>
                 </div>
             </div>
@@ -189,7 +189,7 @@ export default function LeavePage() {
                                     <tr key={req.id} className="hover:bg-slate-50/80 transition-colors">
                                         <td className="py-3.5 px-5">
                                             <div>
-                                                <Link href={`/dashboard/leave/${req.id}`} className="font-bold text-black block text-sm hover:underline">
+                                                <Link href={`/dashboard/leave/${req.id || req._id}`} className="font-bold text-black block text-sm hover:underline">
                                                     {req.employeeName}
                                                 </Link>
                                                 <span className="text-[11px] font-medium text-black">{req.department}</span>
@@ -204,7 +204,7 @@ export default function LeavePage() {
                                             {req.startDate} → {req.endDate}
                                         </td>
                                         <td className="py-3.5 px-5 font-bold text-black">
-                                            {req.days} {req.days === 1 ? 'Day' : 'Days'}
+                                            {req.days || req.totalDays || 1} {(req.days || req.totalDays || 1) === 1 ? 'Day' : 'Days'}
                                         </td>
                                         <td className="py-3.5 px-5">
                                             {getStatusBadge(req.status)}
@@ -214,13 +214,13 @@ export default function LeavePage() {
                                                 {req.status === 'pending' && (
                                                     <>
                                                         <button
-                                                            onClick={() => handleApprove(req.id)}
+                                                            onClick={() => handleApprove(req.id || req._id || '')}
                                                             className="px-2.5 py-1 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 font-bold rounded-lg transition-colors cursor-pointer"
                                                         >
                                                             Approve
                                                         </button>
                                                         <button
-                                                            onClick={() => handleReject(req.id)}
+                                                            onClick={() => handleReject(req.id || req._id || '')}
                                                             className="px-2.5 py-1 bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200 font-bold rounded-lg transition-colors cursor-pointer"
                                                         >
                                                             Reject
@@ -228,20 +228,20 @@ export default function LeavePage() {
                                                     </>
                                                 )}
                                                 <Link
-                                                    href={`/dashboard/leave/${req.id}`}
+                                                    href={`/dashboard/leave/${req.id || req._id}`}
                                                     className="px-2.5 py-1 bg-slate-100 hover:bg-black hover:text-white text-black font-bold rounded-lg transition-colors"
                                                 >
                                                     View
                                                 </Link>
                                                 <Link
-                                                    href={`/dashboard/leave/${req.id}/edit`}
+                                                    href={`/dashboard/leave/${req.id || req._id}/edit`}
                                                     className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
                                                     title="Edit Request"
                                                 >
                                                     <Edit2 size={14} />
                                                 </Link>
                                                 <button
-                                                    onClick={() => handleDelete(req.id)}
+                                                    onClick={() => handleDelete(req.id || req._id || '')}
                                                     className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
                                                     title="Delete Request"
                                                 >

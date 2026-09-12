@@ -34,7 +34,7 @@ export default function CreateOvertimePage() {
                     EmployeeService.getAllEmployees(),
                     DepartmentService.getAll()
                 ]);
-                const empList = empRes?.data || [];
+                const empList = empRes.employees || [];
                 setEmployees(empList);
                 const deptList = deptRes?.data || [];
                 setDepartments(deptList);
@@ -43,7 +43,7 @@ export default function CreateOvertimePage() {
                     const first = empList[0];
                     setFormData(prev => ({
                         ...prev,
-                        employeeId: first._id || first.id,
+                        employeeId: first._id,
                         department: first.department || (deptList[0]?.name || 'General')
                     }));
                 }
@@ -55,12 +55,12 @@ export default function CreateOvertimePage() {
     }, []);
 
     const employeeOptions = employees.map(emp => ({
-        value: emp._id || emp.id,
+        value: emp._id,
         label: `${emp.fullName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim()} — ${emp.position || 'Staff'} (${emp.department || 'General'})`
     }));
 
     const handleEmployeeChange = (employeeId: string) => {
-        const matched = employees.find(e => (e._id || e.id) === employeeId);
+        const matched = employees.find(e => e._id === employeeId);
         setFormData(prev => ({
             ...prev,
             employeeId,

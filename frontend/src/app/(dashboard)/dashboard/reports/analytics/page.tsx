@@ -32,6 +32,7 @@ import { ReportService } from '@/services/report.service';
 import { DepartmentService } from '@/services/department.service';
 import { EmployeeService } from '@/services/employee.service';
 import { LeaveService } from '@/services/leave.service';
+import toast from 'react-hot-toast';
 
 type AnalyticsTab = 'attendance' | 'staff' | 'leave';
 
@@ -325,21 +326,36 @@ export default function AnalyticsPage() {
                             </div>
 
                             {/* Weekly Trends & Attendance Timeline */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                <div className="lg:col-span-8 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+                                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                                        <div>
+                                            <h3 className="text-sm font-black text-black">Weekly Attendance Activity</h3>
+                                            <p className="text-xs font-medium text-slate-700">Daily distribution of on-time, late, and absent records</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {(analytics.timeline || DEFAULT_REPORT_ANALYTICS.timeline).map((item: any) => (
+                                            <div key={item.day} className="space-y-1">
+                                                <div className="flex justify-between text-xs font-bold text-black">
+                                                    <span>{item.day}</span>
+                                                    <span>On-time: {item.onTime} | Late: {item.late}</span>
+                                                </div>
                                                 <div className="w-full h-4 bg-slate-100 rounded-lg overflow-hidden flex">
                                                     <div
                                                         className="h-full bg-black transition-all"
-                                                        style={{ width: `${item.onTime}%` }}
-                                                        title={`On-Time: ${item.onTime}%`}
+                                                        style={{ width: `${(item.onTime / (item.onTime + item.late + item.absent || 1)) * 100}%` }}
+                                                        title={`On-Time: ${item.onTime}`}
                                                     />
                                                     <div
                                                         className="h-full bg-amber-500 transition-all"
-                                                        style={{ width: `${item.late}%` }}
-                                                        title={`Late: ${item.late}%`}
+                                                        style={{ width: `${(item.late / (item.onTime + item.late + item.absent || 1)) * 100}%` }}
+                                                        title={`Late: ${item.late}`}
                                                     />
                                                     <div
                                                         className="h-full bg-rose-500 transition-all"
-                                                        style={{ width: `${item.absent}%` }}
-                                                        title={`Absent: ${item.absent}%`}
+                                                        style={{ width: `${(item.absent / (item.onTime + item.late + item.absent || 1)) * 100}%` }}
+                                                        title={`Absent: ${item.absent}`}
                                                     />
                                                 </div>
                                             </div>
@@ -421,7 +437,7 @@ export default function AnalyticsPage() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 text-xs">
-                                            {departmentBreakdown.map((dept) => (
+                                            {departmentBreakdown.map((dept: any) => (
                                                 <tr key={dept.name} className="hover:bg-slate-50/80 transition-colors">
                                                     <td className="py-3.5 px-5">
                                                         <div className="flex items-center gap-2.5">

@@ -42,7 +42,7 @@ export default function EditOvertimePage() {
                     DepartmentService.getAll()
                 ]);
 
-                setEmployees(empRes?.data || []);
+                setEmployees(empRes.employees || []);
                 setDepartments(deptRes?.data || []);
 
                 const current = overtimeList.find(o => o.id === id || o._id === id) || overtimeList[0];
