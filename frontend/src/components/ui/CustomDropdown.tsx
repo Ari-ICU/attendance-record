@@ -43,7 +43,21 @@ export default function CustomDropdown({
 }: CustomDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [openUpward, setOpenUpward] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Auto-detect space below to flip upward if near screen bottom
+    useEffect(() => {
+        if (isOpen && dropdownRef.current) {
+            const rect = dropdownRef.current.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            if (spaceBelow < 260 && rect.top > 260) {
+                setOpenUpward(true);
+            } else {
+                setOpenUpward(false);
+            }
+        }
+    }, [isOpen]);
 
     // Normalize options into standard format
     const normalizedOptions: DropdownOption[] = options.map(opt => {
@@ -134,7 +148,7 @@ export default function CustomDropdown({
             {/* Dropdown Menu Popover */}
             {isOpen && (
                 <div
-                    className={`absolute z-50 mt-1.5 w-full min-w-[200px] bg-white border border-slate-300 rounded-2xl shadow-xl overflow-hidden py-1.5 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 ${menuClassName}`}
+                    className={`absolute z-50 ${openUpward ? 'bottom-full mb-1.5' : 'top-full mt-1.5'} w-full min-w-[200px] bg-white border border-slate-300 rounded-2xl shadow-xl overflow-hidden py-1.5 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 ${menuClassName}`}
                     role="listbox"
                 >
                     {searchable && (

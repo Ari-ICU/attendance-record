@@ -78,7 +78,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             group: true,
             items: [
                 { name: 'Today', href: '/dashboard/attendance/monitor', icon: <CheckCircle2 size={15} /> },
-                { name: 'Face & QR Scanner', href: '/dashboard/attendance/scan', icon: <Scan size={15} /> },
+                { name: 'Kiosk Terminal', href: '/scan', icon: <Scan size={15} /> },
                 { name: 'Records', href: '/dashboard/attendance/records', icon: <Calendar size={15} /> },
                 { name: 'Late / Early Leave', href: '/dashboard/attendance/records?status=late', icon: <AlertTriangle size={15} /> },
                 { name: 'Attendance History', href: '/dashboard/attendance/records?view=history', icon: <History size={15} /> },
