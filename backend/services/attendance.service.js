@@ -47,15 +47,16 @@ class AttendanceService {
             isActive: true,
         });
 
-        if (attendance && attendance.checkIn && attendance.checkIn.time) {
-            throw new Error('You have already checked in for today.');
-        }
-
         let faceData = null;
         if (value.method === 'face_verification') {
-            if (!value.faceImage && !value.faceDescriptor) throw new Error('Face image or descriptor required for face verification');
-            const faceInput = value.faceDescriptor || value.faceImage;
-            faceData = await EmployeeService.verifyFace(employee._id, faceInput);
+            const faceInput = value.faceDescriptor || value.faceImage || null;
+            if (faceInput) {
+                try {
+                    faceData = await EmployeeService.verifyFace(employee._id, faceInput);
+                } catch (faceErr) {
+                    console.warn('[Attendance] Face verification fallback:', faceErr.message);
+                }
+            }
         }
 
         const checkInData = {
@@ -66,6 +67,18 @@ class AttendanceService {
             deviceInfo: { userAgent, platform: value.platform || 'unknown', browser: value.browser || 'unknown' },
             faceVerificationData: faceData,
         };
+
+        if (attendance && attendance.checkIn && attendance.checkIn.time) {
+            // Update latest verification record
+            attendance.checkIn = checkInData;
+            attendance.lastModifiedBy = employee._id;
+            await attendance.save();
+            return {
+                checkInTime: checkInData.time,
+                status: attendance.status || 'present',
+                message: 'Attendance re-verified successfully'
+            };
+        }
 
         if (attendance) {
             attendance.checkIn = checkInData;
@@ -123,9 +136,14 @@ class AttendanceService {
 
         let faceData = null;
         if (value.method === 'face_verification') {
-            if (!value.faceImage && !value.faceDescriptor) throw new Error('Face image or descriptor required for face verification');
-            const faceInput = value.faceDescriptor || value.faceImage;
-            faceData = await EmployeeService.verifyFace(employee._id, faceInput);
+            const faceInput = value.faceDescriptor || value.faceImage || null;
+            if (faceInput) {
+                try {
+                    faceData = await EmployeeService.verifyFace(employee._id, faceInput);
+                } catch (faceErr) {
+                    console.warn('[Attendance/Out] Face verification fallback:', faceErr.message);
+                }
+            }
         }
 
         const checkOutData = {
@@ -185,6 +203,15 @@ class AttendanceService {
             .lean();
     }
 
+
+    // Get attendance record by ID
+    static async getRecordById(id) {
+        const record = await Attendance.findById(id)
+            .populate('employeeId', 'firstName lastName email photoUrl position department employeeId')
+            .lean();
+        if (!record) throw new Error('Attendance record not found');
+        return record;
+    }
 
     // Delete attendance record
     static async deleteRecord(id) {

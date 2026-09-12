@@ -31,11 +31,29 @@ export default function AttendanceRecordDetailPage() {
         const fetchRecord = async () => {
             try {
                 setLoading(true);
-                const res = await AttendanceService.getRecords({ limit: 100 });
-                const found = res.data?.docs?.find((r: AttendanceRecord) => r._id === id || (r as any).id === id);
+                // 1. Direct fetch by ID
+                const res = await AttendanceService.getRecordById(id);
+                const data = res?.data || res;
+                if (data && (data._id === id || data.id === id || data.date)) {
+                    setRecord(data);
+                    return;
+                }
+
+                // 2. Fallback to list search if single-item route is unsupported or legacy
+                const listRes = await AttendanceService.getRecords({ limit: 100 });
+                const list = Array.isArray(listRes?.data) ? listRes.data : Array.isArray(listRes) ? listRes : (listRes?.data?.docs || []);
+                const found = list.find((r: AttendanceRecord) => r._id === id || (r as any).id === id);
                 setRecord(found || null);
-            } catch {
-                toast.error('Failed to load attendance record');
+            } catch (err) {
+                console.warn('Direct fetch failed, trying list search fallback...', err);
+                try {
+                    const listRes = await AttendanceService.getRecords({ limit: 100 });
+                    const list = Array.isArray(listRes?.data) ? listRes.data : Array.isArray(listRes) ? listRes : (listRes?.data?.docs || []);
+                    const found = list.find((r: AttendanceRecord) => r._id === id || (r as any).id === id);
+                    setRecord(found || null);
+                } catch {
+                    toast.error('Failed to load attendance record');
+                }
             } finally {
                 setLoading(false);
             }

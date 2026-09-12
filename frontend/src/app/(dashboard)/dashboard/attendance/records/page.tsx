@@ -52,7 +52,8 @@ function AttendanceRecordsContent() {
         try {
             setLoading(true);
             const res = await AttendanceService.getRecords({ limit: 100 });
-            setRecords(res.data?.docs || res.data || []);
+            const list = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : (res?.data?.docs || []));
+            setRecords(list);
         } catch {
             toast.error('Failed to load attendance records');
         } finally {

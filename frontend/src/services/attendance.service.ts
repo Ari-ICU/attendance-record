@@ -45,6 +45,11 @@ export const AttendanceService = {
         return response.data;
     },
 
+    getRecordById: async (id: string) => {
+        const response = await api.get(API_URLS.ATTENDANCE.GET_BY_ID(id));
+        return response.data;
+    },
+
     deleteRecord: async (id: string) => {
         const response = await api.delete(API_URLS.ATTENDANCE.DELETE(id));
         return response.data;

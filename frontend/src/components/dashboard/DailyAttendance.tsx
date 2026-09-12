@@ -23,7 +23,9 @@ export default function DailyAttendance() {
             else setRefreshing(true);
 
             const response = await AttendanceService.getRecords({ limit: 50 });
-            const data = response.data?.docs || response.data || [];
+            const data = Array.isArray(response)
+                ? response
+                : (Array.isArray(response?.data) ? response.data : (response?.data?.docs || []));
 
             setRecords(data);
             setLastUpdated(new Date());

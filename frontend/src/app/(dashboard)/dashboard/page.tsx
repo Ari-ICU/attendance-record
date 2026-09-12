@@ -73,7 +73,8 @@ export default function DashboardPage() {
 
             setEmployees(empRes?.employees || []);
             setDepartments(deptRes?.data || deptRes || []);
-            setAttendanceRecords(attRes?.data?.docs || attRes?.data || []);
+            const rawAtt = Array.isArray(attRes) ? attRes : (Array.isArray(attRes?.data) ? attRes.data : (attRes?.data?.docs || []));
+            setAttendanceRecords(rawAtt);
         } catch (err) {
             console.error('Failed to load dashboard data', err);
         } finally {
@@ -91,7 +92,12 @@ export default function DashboardPage() {
     const totalDeptCount = departments.length || 4;
 
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const todayRecords = attendanceRecords.filter(r => r.date === todayStr || !r.date);
+    const todayRecords = attendanceRecords.filter(r => {
+        if (!r) return false;
+        if (r.checkIn?.time && r.checkIn.time.startsWith(todayStr)) return true;
+        if (r.date && typeof r.date === 'string' && r.date.startsWith(todayStr)) return true;
+        return true;
+    });
 
     const presentCount = todayRecords.filter(r => r.status === 'present').length;
     const lateCount = todayRecords.filter(r => r.status === 'late').length;

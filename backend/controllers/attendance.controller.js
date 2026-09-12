@@ -119,6 +119,17 @@ class AttendanceController {
             return res.status(400).json(ApiResponse.error(err.message || 'Failed to check out', 400));
         }
     }
+    // Get attendance record by ID
+    static async getAttendanceById(req, res) {
+        try {
+            const record = await AttendanceService.getRecordById(req.params.id);
+            return res.status(200).json(ApiResponse.success(record, 'Attendance record retrieved successfully', 200));
+        } catch (err) {
+            console.error('Error in getAttendanceById:', err);
+            return res.status(404).json(ApiResponse.error(err.message || 'Attendance record not found', 404));
+        }
+    }
+
     // Delete attendance record
     static async deleteAttendance(req, res) {
         try {

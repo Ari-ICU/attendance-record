@@ -43,20 +43,10 @@ const checkInSchema = Joi.object({
         'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification'
     }),
     deviceInfo: deviceInfoSchema.optional(),
-    platform: Joi.string().optional(),
-    browser: Joi.string().optional(),
-    faceDescriptor: Joi.array().items(Joi.number()).optional(),
-    faceImage: Joi.string().when('method', {
-        is: 'face_verification',
-        then: Joi.when('faceDescriptor', {
-            is: Joi.exist(),
-            then: Joi.optional(),
-            otherwise: Joi.required()
-        }).messages({
-            'any.required': 'Face image or descriptor is required for face_verification method'
-        }),
-        otherwise: Joi.forbidden()
-    })
+    platform: Joi.string().optional().allow(''),
+    browser: Joi.string().optional().allow(''),
+    faceDescriptor: Joi.array().items(Joi.number()).optional().allow(null),
+    faceImage: Joi.string().optional().allow('', null)
 });
 
 const checkOutSchema = Joi.object({
@@ -66,20 +56,10 @@ const checkOutSchema = Joi.object({
         'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification'
     }),
     deviceInfo: deviceInfoSchema.optional(),
-    platform: Joi.string().optional(),
-    browser: Joi.string().optional(),
-    faceDescriptor: Joi.array().items(Joi.number()).optional(),
-    faceImage: Joi.string().when('method', {
-        is: 'face_verification',
-        then: Joi.when('faceDescriptor', {
-            is: Joi.exist(),
-            then: Joi.optional(),
-            otherwise: Joi.required()
-        }).messages({
-            'any.required': 'Face image or descriptor is required for face_verification method'
-        }),
-        otherwise: Joi.forbidden()
-    })
+    platform: Joi.string().optional().allow(''),
+    browser: Joi.string().optional().allow(''),
+    faceDescriptor: Joi.array().items(Joi.number()).optional().allow(null),
+    faceImage: Joi.string().optional().allow('', null)
 });
 
 const breakSchema = Joi.object({

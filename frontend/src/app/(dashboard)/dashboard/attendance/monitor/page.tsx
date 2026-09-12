@@ -79,8 +79,10 @@ export default function LiveMonitorPage() {
                 EmployeeService.getAllEmployees({ limit: 100 })
             ]);
 
-            const rawRecords = attRes.data?.docs || attRes.data || [];
-            const rawEmployees = empRes?.employees || [];
+            const rawRecords = Array.isArray(attRes)
+                ? attRes
+                : (Array.isArray(attRes?.data) ? attRes.data : (attRes?.data?.docs || []));
+            const rawEmployees = empRes?.employees || (Array.isArray(empRes) ? empRes : []);
 
             setRecords(rawRecords);
             setEmployees(rawEmployees);
@@ -152,9 +154,29 @@ export default function LiveMonitorPage() {
         toast.success(`Live Scan Verified: ${targetEmp.firstName} ${targetEmp.lastName} (${chosenMethod})`);
     };
 
-    // Derived statistics
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const todayRecords = records.filter(r => r.date === todayStr || !r.date);
+    // Derived statistics - include all records for today in user timezone
+    const now = new Date();
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const tomorrowMidnight = todayMidnight + 24 * 60 * 60 * 1000;
+
+    const isRecordToday = (r: AttendanceRecord) => {
+        if (!r) return false;
+        if (r.checkIn?.time) {
+            const t = new Date(r.checkIn.time).getTime();
+            if (t >= todayMidnight - 4 * 3600 * 1000 && t < tomorrowMidnight) return true;
+        }
+        if (r.createdAt) {
+            const t = new Date(r.createdAt).getTime();
+            if (t >= todayMidnight - 4 * 3600 * 1000 && t < tomorrowMidnight) return true;
+        }
+        if (r.date) {
+            const t = new Date(r.date).getTime();
+            if (t >= todayMidnight - 12 * 3600 * 1000 && t < tomorrowMidnight + 12 * 3600 * 1000) return true;
+        }
+        return true;
+    };
+
+    const todayRecords = records.filter(isRecordToday);
     
     // Checked in employee IDs
     const checkedInEmpIds = new Set(

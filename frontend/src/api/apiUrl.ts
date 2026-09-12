@@ -25,6 +25,7 @@ export const API_URLS = {
     },
     ATTENDANCE: {
         GET_RECORDS: `${BASE_URL}/attendance`,
+        GET_BY_ID: (id: string) => `${BASE_URL}/attendance/${id}`,
         CHECK_IN: `${BASE_URL}/attendance/check-in`, // Aligned with attendance.router.js
         CHECK_OUT: `${BASE_URL}/attendance/check-out`, // Aligned with attendance.router.js
         DELETE: (id: string) => `${BASE_URL}/attendance/${id}`,

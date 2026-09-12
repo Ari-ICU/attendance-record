@@ -28,12 +28,20 @@ export default function EditAttendanceRecordPage() {
         const fetchRecord = async () => {
             try {
                 setLoading(true);
-                const res = await AttendanceService.getRecords({ limit: 100 });
-                const found = res.data?.docs?.find((r: AttendanceRecord) => r._id === id);
+                let found: AttendanceRecord | null = null;
+                try {
+                    const single = await AttendanceService.getRecordById(id);
+                    found = single?.data || single;
+                } catch {
+                    const res = await AttendanceService.getRecords({ limit: 100 });
+                    const list = Array.isArray(res?.data) ? res.data : (res?.data?.docs || []);
+                    found = list.find((r: AttendanceRecord) => r._id === id || (r as any).id === id);
+                }
+
                 if (found) {
                     setFormData({
-                        date: found.date,
-                        status: found.status,
+                        date: found.date ? (typeof found.date === 'string' ? found.date.substring(0, 10) : new Date(found.date).toISOString().substring(0, 10)) : '',
+                        status: found.status || 'present',
                         checkInTime: found.checkIn?.time ? new Date(found.checkIn.time).toTimeString().substring(0, 5) : '08:00',
                         checkOutTime: found.checkOut?.time ? new Date(found.checkOut.time).toTimeString().substring(0, 5) : '17:00',
                         remarks: 'Admin adjustment record'

@@ -11,6 +11,7 @@ router.post('/check-out', AttendanceController.checkOut);
 // Protected routes
 router.use(authMiddleware);
 router.get('/', AttendanceController.getAttendance);
+router.get('/:id', AttendanceController.getAttendanceById);
 router.delete('/:id', AttendanceController.deleteAttendance);
 
 

@@ -5,16 +5,136 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ArrowLeft,
-    Briefcase,
     Building2,
     Users,
     ShieldCheck,
     Edit2,
-    Trash2
+    Trash2,
+    Briefcase,
+    DollarSign,
+    Clock,
+    MapPin,
+    CheckCircle2,
+    Sparkles,
+    UserPlus,
+    FileText,
+    ExternalLink,
+    Award,
+    Layers,
+    BadgeAlert
 } from 'lucide-react';
 import { PositionItem } from '@/types/position.types';
 import { PositionService } from '@/services/position.service';
+import { EmployeeService } from '@/services/employee.service';
+import { Employee } from '@/types/employee.types';
 import toast from 'react-hot-toast';
+
+// Dynamic role blueprint enhancer for rich job descriptions
+const ROLE_BLUEPRINTS: Record<string, {
+    summary: string;
+    responsibilities: string[];
+    skills: string[];
+    salaryRange: string;
+    employmentType: string;
+    experienceReq: string;
+    workPolicy: string;
+}> = {
+    'frontend engineer': {
+        summary: 'Responsible for architecting, building, and maintaining high-performance, responsive web applications and dashboard user interfaces. Collaborates with product designers and backend engineers to translate complex workflows into seamless, pixel-perfect user experiences.',
+        responsibilities: [
+            'Develop modern, reactive user interfaces using Next.js, React, and TypeScript.',
+            'Collaborate with backend teams to integrate RESTful endpoints, WebSockets, and real-time data feeds.',
+            'Build and maintain accessible, reusable design system components and UI design tokens.',
+            'Optimize frontend bundle sizes, Core Web Vitals, and runtime rendering performance.',
+            'Implement rigorous test coverage with automated unit, integration, and E2E browser tests.',
+            'Participate in code reviews, technical architectural planning, and developer experience enhancements.'
+        ],
+        skills: ['React / Next.js', 'TypeScript', 'Tailwind CSS', 'State Management', 'REST / GraphQL', 'Git & CI/CD', 'Figma / UI Design', 'Web Performance'],
+        salaryRange: '$1,200 – $2,800 / mo',
+        employmentType: 'Full-time / Permanent',
+        experienceReq: '2 – 5 Years',
+        workPolicy: 'Hybrid (3 days on-site)'
+    },
+    'system administrator': {
+        summary: 'Oversees the configuration, maintenance, and reliable operation of enterprise computer systems, servers, network infrastructure, and biometric gate hardware across all company facilities.',
+        responsibilities: [
+            'Maintain and administer computer networks, Linux/Windows servers, and cloud computing environments.',
+            'Manage user accounts, IAM permissions, single sign-on (SSO), and biometric attendance terminals.',
+            'Perform daily system monitoring, verifying the integrity and availability of all server resources and log files.',
+            'Execute regular data backup operations and disaster recovery failover validation.',
+            'Apply OS patches and upgrades on a regular basis, and upgrade administrative tools and utilities.',
+            'Maintain network security policies, VPNs, firewalls, and endpoint protection compliance.'
+        ],
+        skills: ['Linux / UNIX', 'Network Security', 'Docker / Kubernetes', 'Active Directory / LDAP', 'Biometric Gate Protocols', 'Bash / Python Scripting', 'Disaster Recovery', 'Firewalls & VPN'],
+        salaryRange: '$1,400 – $3,200 / mo',
+        employmentType: 'Full-time / Permanent',
+        experienceReq: '3 – 6 Years',
+        workPolicy: 'On-site (Main Campus)'
+    },
+    'hr director': {
+        summary: 'Leads the Human Resources department in developing and executing human resource strategy in support of the overall business plan and strategic direction of the organization.',
+        responsibilities: [
+            'Develop comprehensive strategic recruiting, onboarding, and retention plans to meet human capital needs.',
+            'Establish and implement HR policies, employee performance evaluation systems, and compensation structures.',
+            'Oversee monthly payroll approval, employee benefits administration, and overtime compliance.',
+            'Manage workplace relations, conflict resolution, and employee satisfaction initiatives.',
+            'Ensure legal compliance with national labor laws and employment regulations.',
+            'Provide proactive executive leadership and counseling on human resource organizational topics.'
+        ],
+        skills: ['HR Strategy', 'Talent Acquisition', 'Labor Law Compliance', 'Payroll Administration', 'Performance Management', 'Conflict Mediation', 'Organizational Leadership', 'Executive Reporting'],
+        salaryRange: '$2,000 – $4,500 / mo',
+        employmentType: 'Full-time / Executive',
+        experienceReq: '6+ Years',
+        workPolicy: 'On-site / Flexible'
+    },
+    'lead ux architect': {
+        summary: 'Champions the design vision, product usability, and user journey mapping across all enterprise products, ensuring intuitive interfaces and delightful user experiences.',
+        responsibilities: [
+            'Lead user research, field usability testing, persona development, and journey mapping.',
+            'Design comprehensive design systems, high-fidelity interactive prototypes, and UX specifications.',
+            'Partner closely with Product Managers and Frontend Engineers to guide iterative design implementation.',
+            'Audit existing user workflows and formulate data-driven recommendations for UX simplification.',
+            'Facilitate design workshops and establish consistent design standards across all software suites.',
+            'Mentor junior and mid-level designers in UX best practices and user-centered design methodologies.'
+        ],
+        skills: ['Figma Mastery', 'Design Systems', 'Interactive Prototyping', 'User Research & Testing', 'Information Architecture', 'Design Tokens', 'HTML/CSS Awareness', 'Micro-interactions'],
+        salaryRange: '$1,800 – $3,800 / mo',
+        employmentType: 'Full-time / Permanent',
+        experienceReq: '5+ Years',
+        workPolicy: 'Hybrid (2 days on-site)'
+    }
+};
+
+function getBlueprint(title: string, level: string, description?: string) {
+    const key = title.toLowerCase().trim();
+    for (const [k, blueprint] of Object.entries(ROLE_BLUEPRINTS)) {
+        if (key.includes(k) || k.includes(key)) {
+            return {
+                ...blueprint,
+                summary: description && description.length > 30 ? description : blueprint.summary
+            };
+        }
+    }
+
+    // Generic intelligent fallback
+    return {
+        summary: description && description.length > 20
+            ? description
+            : `Core organizational role responsible for operational directives, daily project delivery, and cross-functional team collaboration within the designated department.`,
+        responsibilities: [
+            `Execute core duties and daily operational milestones in accordance with department standards.`,
+            `Collaborate with cross-functional team members to maintain high quality and timely deliverable output.`,
+            `Ensure compliance with company attendance, security, and data protection policies.`,
+            `Participate in team planning sessions, sprint reviews, and continuous improvement retrospectives.`,
+            `Maintain clear documentation and technical/operational status updates for management reporting.`
+        ],
+        skills: ['Communication', 'Project Execution', 'Problem Solving', 'Team Collaboration', 'Quality Assurance', 'Time Management'],
+        salaryRange: level === 'Executive' ? '$3,000 – $6,000 / mo' : level === 'Senior' || level === 'Lead' ? '$1,800 – $3,500 / mo' : level === 'Junior' ? '$600 – $1,200 / mo' : '$1,000 – $2,200 / mo',
+        employmentType: 'Full-time / Permanent',
+        experienceReq: level === 'Executive' ? '7+ Years' : level === 'Senior' ? '4 – 7 Years' : level === 'Junior' ? '0 – 2 Years' : '2 – 4 Years',
+        workPolicy: 'Hybrid / On-site'
+    };
+}
 
 export default function PositionDetailPage() {
     const params = useParams();
@@ -22,19 +142,38 @@ export default function PositionDetailPage() {
     const id = params.id as string;
 
     const [pos, setPos] = useState<PositionItem | null>(null);
+    const [assignedEmployees, setAssignedEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const load = async () => {
             try {
                 setLoading(true);
+                let currentPos: PositionItem | null = null;
                 const data = await PositionService.getById(id);
                 if (data) {
-                    setPos(data);
+                    currentPos = data;
                 } else {
                     const all = await PositionService.getAll();
                     const found = all.find(p => p.id === id || p._id === id);
-                    if (found) setPos(found);
+                    if (found) currentPos = found;
+                }
+                setPos(currentPos);
+
+                // Fetch employees to find assigned team members
+                try {
+                    const empRes = await EmployeeService.getAllEmployees({ limit: 100 });
+                    const list = empRes.employees || [];
+                    if (currentPos) {
+                        const targetTitle = currentPos.title.toLowerCase().trim();
+                        const matching = list.filter(e => {
+                            const empPos = (e.position || '').toLowerCase().trim();
+                            return empPos === targetTitle || (targetTitle.includes(empPos) && empPos.length > 2);
+                        });
+                        setAssignedEmployees(matching);
+                    }
+                } catch (empErr) {
+                    console.warn('Failed to load assigned employees:', empErr);
                 }
             } catch {
                 toast.error('Failed to load position');
@@ -75,23 +214,35 @@ export default function PositionDetailPage() {
         );
     }
 
+    const blueprint = getBlueprint(pos.title, pos.level, pos.description);
+    const activeStaffCount = assignedEmployees.length || pos.employeeCount || 0;
+
     return (
-        <div className="w-full space-y-6 pb-12 font-sans">
-            {/* Header */}
+        <div className="w-full space-y-6 pb-16 font-sans">
+            {/* Top Navigation & Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3.5">
                     <Link
                         href="/dashboard/management/positions"
                         className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-black transition-colors"
+                        title="Back to Positions List"
                     >
                         <ArrowLeft size={16} />
                     </Link>
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
-                            <span>{pos.title}</span>
-                        </h1>
-                        <p className="text-xs sm:text-sm font-medium text-black mt-0.5">
-                            {pos.department} • Tier: {pos.level}
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                            <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">
+                                {pos.title}
+                            </h1>
+                            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-300 text-xs font-bold">
+                                {pos.department}
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold">
+                                Tier: {pos.level}
+                            </span>
+                        </div>
+                        <p className="text-xs sm:text-sm font-medium text-slate-600 mt-1">
+                            Organizational Job Profile & Position Specifications
                         </p>
                     </div>
                 </div>
@@ -114,41 +265,212 @@ export default function PositionDetailPage() {
                 </div>
             </div>
 
-            {/* Position Details Card */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                        <span className="text-xs font-bold text-black uppercase">Department</span>
-                        <div className="flex items-center gap-2 mt-2 font-black text-black text-base">
-                            <Building2 size={18} />
-                            <span>{pos.department}</span>
+            {/* Metrics Overview Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+                    <div className="flex items-center justify-between text-slate-500 mb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Department</span>
+                        <Building2 size={18} className="text-slate-800" />
+                    </div>
+                    <div className="text-base font-black text-black">{pos.department}</div>
+                    <div className="text-xs font-medium text-slate-500 mt-0.5">Primary Operational Unit</div>
+                </div>
+
+                <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+                    <div className="flex items-center justify-between text-slate-500 mb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Seniority Track</span>
+                        <ShieldCheck size={18} className="text-blue-700" />
+                    </div>
+                    <div className="text-base font-black text-blue-900">{pos.level}</div>
+                    <div className="text-xs font-medium text-slate-500 mt-0.5">Req. Exp: {blueprint.experienceReq}</div>
+                </div>
+
+                <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+                    <div className="flex items-center justify-between text-slate-500 mb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Active Headcount</span>
+                        <Users size={18} className="text-emerald-700" />
+                    </div>
+                    <div className="text-base font-black text-black flex items-center gap-1.5">
+                        <span>{activeStaffCount}</span>
+                        <span className="text-xs font-bold text-slate-500">Staff Assigned</span>
+                    </div>
+                    <div className="text-xs font-medium text-slate-500 mt-0.5">Active in workforce roster</div>
+                </div>
+
+                <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+                    <div className="flex items-center justify-between text-slate-500 mb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Salary Band</span>
+                        <DollarSign size={18} className="text-amber-700" />
+                    </div>
+                    <div className="text-base font-black text-black">{blueprint.salaryRange}</div>
+                    <div className="text-xs font-medium text-slate-500 mt-0.5">{blueprint.employmentType}</div>
+                </div>
+            </div>
+
+            {/* Main Content Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left 2 Columns: Full Job Description & Core Duties */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Role Overview */}
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+                        <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                            <FileText size={18} className="text-black" />
+                            <h2 className="text-base font-black text-black">Role Overview & Executive Summary</h2>
+                        </div>
+                        <p className="text-sm font-medium text-slate-800 leading-relaxed">
+                            {blueprint.summary}
+                        </p>
+                    </div>
+
+                    {/* Key Responsibilities */}
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div className="flex items-center gap-2">
+                                <Layers size={18} className="text-black" />
+                                <h2 className="text-base font-black text-black">Core Responsibilities & Deliverables</h2>
+                            </div>
+                            <span className="text-xs font-bold text-slate-500">{blueprint.responsibilities.length} Key Duties</span>
+                        </div>
+
+                        <div className="space-y-3">
+                            {blueprint.responsibilities.map((resp, idx) => (
+                                <div key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/70 border border-slate-100">
+                                    <CheckCircle2 size={16} className="text-emerald-700 mt-0.5 shrink-0" />
+                                    <span className="text-xs sm:text-sm font-medium text-slate-900 leading-normal">
+                                        {resp}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                        <span className="text-xs font-bold text-black uppercase">Seniority Level</span>
-                        <div className="flex items-center gap-2 mt-2 font-black text-blue-900 text-base">
-                            <ShieldCheck size={18} />
-                            <span>{pos.level}</span>
+                    {/* Required Skills & Competencies */}
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+                        <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                            <Award size={18} className="text-black" />
+                            <h2 className="text-base font-black text-black">Required Technical Competencies & Tooling</h2>
                         </div>
-                    </div>
 
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                        <span className="text-xs font-bold text-black uppercase">Current Headcount</span>
-                        <div className="flex items-center gap-2 mt-2 font-black text-black text-base">
-                            <Users size={18} />
-                            <span>{pos.employeeCount || 0} Staff Members</span>
+                        <div className="flex flex-wrap gap-2">
+                            {blueprint.skills.map((skill, idx) => (
+                                <span
+                                    key={idx}
+                                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-bold text-slate-900 transition-colors"
+                                >
+                                    {skill}
+                                </span>
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                <div className="space-y-2 pt-4 border-t border-slate-200">
-                    <h2 className="text-base font-black text-black">Scope of Responsibilities</h2>
-                    <p className="text-sm font-medium text-black leading-relaxed">
-                        {pos.description || 'Core organizational role responsible for operational directives and attendance logging compliance.'}
-                    </p>
+                {/* Right Column: Work Policy & Assigned Staff Roster */}
+                <div className="space-y-6">
+                    {/* Employment & Shift Details */}
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+                        <h2 className="text-sm font-black text-black uppercase tracking-wider">Working Conditions</h2>
+                        <div className="space-y-3 text-xs font-medium text-slate-800">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                <div className="flex items-center gap-2 text-slate-600">
+                                    <Clock size={14} />
+                                    <span>Standard Hours:</span>
+                                </div>
+                                <span className="font-bold text-black">08:00 – 17:00 (Mon–Fri)</span>
+                            </div>
+
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                <div className="flex items-center gap-2 text-slate-600">
+                                    <MapPin size={14} />
+                                    <span>Workplace Policy:</span>
+                                </div>
+                                <span className="font-bold text-black">{blueprint.workPolicy}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                <div className="flex items-center gap-2 text-slate-600">
+                                    <Briefcase size={14} />
+                                    <span>Contract Type:</span>
+                                </div>
+                                <span className="font-bold text-black">{blueprint.employmentType}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-slate-600">
+                                    <ShieldCheck size={14} />
+                                    <span>Biometric Logging:</span>
+                                </div>
+                                <span className="font-bold text-emerald-800">Required (Kiosk / App)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Assigned Employees Roster */}
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div className="flex items-center gap-2">
+                                <Users size={16} className="text-black" />
+                                <h2 className="text-sm font-black text-black">Assigned Team Members</h2>
+                            </div>
+                            <span className="text-xs font-bold text-slate-500">
+                                {assignedEmployees.length}
+                            </span>
+                        </div>
+
+                        {assignedEmployees.length > 0 ? (
+                            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                                {assignedEmployees.map(emp => (
+                                    <div
+                                        key={emp._id || emp.id}
+                                        className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between hover:bg-slate-100/80 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            {emp.photoUrl ? (
+                                                <img
+                                                    src={emp.photoUrl}
+                                                    alt={emp.firstName}
+                                                    className="w-9 h-9 rounded-xl object-cover border border-slate-200"
+                                                />
+                                            ) : (
+                                                <div className="w-9 h-9 rounded-xl bg-black text-white font-black text-xs flex items-center justify-center shrink-0">
+                                                    {emp.firstName?.[0]}{emp.lastName?.[0]}
+                                                </div>
+                                            )}
+                                            <div className="min-w-0">
+                                                <div className="text-xs font-bold text-black truncate">
+                                                    {emp.firstName} {emp.lastName}
+                                                </div>
+                                                <div className="text-[11px] font-medium text-slate-500 truncate">
+                                                    {emp.email}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Link
+                                            href={`/dashboard/management/employee/${emp._id || emp.id}`}
+                                            className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-200 text-black transition-colors shrink-0 ml-2"
+                                            title="View Staff Profile"
+                                        >
+                                            <ExternalLink size={13} />
+                                        </Link>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 px-3 bg-slate-50 border border-dashed border-slate-200 rounded-xl space-y-2">
+                                <p className="text-xs font-medium text-slate-600">No staff currently designated with this title.</p>
+                                <Link
+                                    href="/dashboard/management/employee/create"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors"
+                                >
+                                    <UserPlus size={13} />
+                                    <span>Add Staff Member</span>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
+
