@@ -182,7 +182,7 @@ export default function PortalPage() {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full min-w-[550px] text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                                     <th className="px-5 py-3">Date</th>

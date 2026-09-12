@@ -60,9 +60,9 @@ export default function CreateAttendanceRecordPage() {
     };
 
     return (
-        <div className="w-full space-y-6 pb-12 font-sans">
+        <div className="w-full space-y-5 sm:space-y-6 pb-12 font-sans max-w-full overflow-x-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-xs">
                 <div className="flex items-center gap-3">
                     <Link
                         href="/dashboard/attendance/records"
@@ -71,7 +71,7 @@ export default function CreateAttendanceRecordPage() {
                         <ArrowLeft size={16} />
                     </Link>
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">
+                        <h1 className="text-lg sm:text-2xl font-black text-black tracking-tight">
                             Log Manual Attendance Record
                         </h1>
                         <p className="text-xs sm:text-sm font-medium text-black mt-0.5">
@@ -82,8 +82,8 @@ export default function CreateAttendanceRecordPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-8 shadow-xs space-y-5 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-1.5 sm:col-span-2">
                         <label className="text-xs font-bold text-black">Select Staff Member *</label>
                         <CustomDropdown

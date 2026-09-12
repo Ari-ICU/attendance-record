@@ -163,7 +163,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     if (loading || initializing || !user) return null;
 
     return (
-        <div className="flex min-h-screen bg-slate-50/70 text-black font-sans antialiased">
+        <div className="flex min-h-screen bg-slate-50/70 text-black font-sans antialiased max-w-full overflow-x-hidden">
             {/* Sidebar */}
             <div className={`fixed inset-y-0 left-0 z-40 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-sm print:hidden`}>
                 <Suspense fallback={<div className="w-64 bg-white" />}>
@@ -180,7 +180,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             )}
 
             {/* Main Content */}
-            <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} min-h-screen print:ml-0`}>
+            <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} min-h-screen print:ml-0 max-w-full overflow-x-hidden`}>
                 {/* Header */}
                 <div className="print:hidden">
                     <Suspense fallback={null}>
@@ -188,7 +188,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </Suspense>
                 </div>
 
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full">
+                <main className="flex-1 p-3 sm:p-5 lg:p-8 w-full max-w-full overflow-x-hidden">
                     <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" /></div>}>
                         {children}
                     </Suspense>

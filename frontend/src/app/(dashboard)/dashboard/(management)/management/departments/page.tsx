@@ -212,15 +212,15 @@ export default function DepartmentsPage() {
     );
 
     return (
-        <div className="w-full space-y-6 pb-12">
+        <div className="w-full space-y-5 sm:space-y-6 pb-12 font-sans max-w-full overflow-x-hidden">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-xs">
                 <div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
+                    <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                        <h1 className="text-lg sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
                             <span>{activeView === 'departments' ? 'Classes & Departments' : 'Staff Positions & Designations'}</span>
                         </h1>
-                        <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-xs font-bold shadow-2xs">
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[11px] sm:text-xs font-bold shadow-2xs shrink-0">
                             {activeView === 'departments' ? `${departments.length} Units` : `${positions.length} Roles`}
                         </span>
                     </div>
@@ -231,17 +231,17 @@ export default function DepartmentsPage() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
                     <Link
                         href={activeView === 'departments' ? "/dashboard/management/departments/create" : "/dashboard/management/positions/create"}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
                     >
                         <Plus size={16} />
                         <span>{activeView === 'departments' ? 'Add Class / Dept' : 'Add Position'}</span>
                     </Link>
                     <button
                         onClick={fetchData}
-                        className="p-2.5 rounded-xl bg-white border border-slate-300 text-black hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer"
+                        className="p-2.5 rounded-xl bg-white border border-slate-300 text-black hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer shrink-0"
                         title="Reload Data"
                     >
                         <RotateCcw size={15} />
@@ -250,30 +250,30 @@ export default function DepartmentsPage() {
             </div>
 
             {/* Navigation Switcher & Search Toolbar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-xs">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 bg-white border border-slate-200/80 p-3 sm:p-3.5 rounded-2xl shadow-xs">
                 {/* View Switcher Tabs */}
                 <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
                     <button
                         onClick={() => handleSwitchView('departments')}
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                        className={`inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all flex-1 sm:flex-initial cursor-pointer ${
                             activeView === 'departments'
                                 ? 'bg-black text-white shadow-xs'
                                 : 'text-black hover:bg-slate-200'
                         }`}
                     >
                         <Building2 size={14} />
-                        <span>Departments & Classes</span>
+                        <span>Departments</span>
                     </button>
                     <button
                         onClick={() => handleSwitchView('positions')}
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                        className={`inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all flex-1 sm:flex-initial cursor-pointer ${
                             activeView === 'positions'
                                 ? 'bg-black text-white shadow-xs'
                                 : 'text-black hover:bg-slate-200'
                         }`}
                     >
                         <Briefcase size={14} />
-                        <span>Positions & Roles</span>
+                        <span>Positions</span>
                     </button>
                 </div>
 

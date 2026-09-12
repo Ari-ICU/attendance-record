@@ -79,7 +79,7 @@ export default function PayslipDetailPage() {
             </div>
 
             {/* A4 Printable Sheet (Clean, Monochrome, No Backgrounds) */}
-            <div className="max-w-[210mm] mx-auto bg-white border border-black p-8 sm:p-12 print:border-none print:p-0 print:m-0 print:w-full print:max-w-none text-black">
+            <div className="w-full max-w-[210mm] mx-auto bg-white border border-black p-4 sm:p-8 lg:p-12 print:border-none print:p-0 print:m-0 print:w-full print:max-w-none text-black">
                 {/* Document Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-4 border-b-2 border-black">
                     <div>

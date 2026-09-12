@@ -93,15 +93,15 @@ export default function LeavePage() {
     };
 
     return (
-        <div className="w-full space-y-6 pb-12 font-sans">
+        <div className="w-full space-y-5 sm:space-y-6 pb-12 font-sans max-w-full overflow-x-hidden">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-xs">
                 <div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
+                    <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                        <h1 className="text-lg sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
                             <span>Time Off & Leave Management</span>
                         </h1>
-                        <span className="px-2.5 py-0.5 rounded-full bg-black text-white text-xs font-bold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-black text-white text-[11px] sm:text-xs font-bold shrink-0">
                             {leaves.length} Applications
                         </span>
                     </div>
@@ -112,7 +112,7 @@ export default function LeavePage() {
 
                 <Link
                     href="/dashboard/leave/create"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
                 >
                     <Plus size={16} />
                     <span>Apply for Leave</span>
@@ -120,29 +120,29 @@ export default function LeavePage() {
             </div>
 
             {/* Quick Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
-                    <span className="text-xs font-bold text-black uppercase">Pending Review</span>
-                    <h3 className="text-2xl font-black text-amber-900 mt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-5">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+                    <span className="text-[11px] font-bold text-black uppercase">Pending Review</span>
+                    <h3 className="text-xl sm:text-2xl font-black text-amber-900 mt-1">
                         {leaves.filter(l => l.status === 'pending').length} Requests
                     </h3>
                 </div>
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
-                    <span className="text-xs font-bold text-black uppercase">Approved This Month</span>
-                    <h3 className="text-2xl font-black text-emerald-800 mt-1">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+                    <span className="text-[11px] font-bold text-black uppercase">Approved This Month</span>
+                    <h3 className="text-xl sm:text-2xl font-black text-emerald-800 mt-1">
                         {leaves.filter(l => l.status === 'approved').length} Requests
                     </h3>
                 </div>
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
-                    <span className="text-xs font-bold text-black uppercase">Total Days Taken</span>
-                    <h3 className="text-2xl font-black text-black mt-1">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+                    <span className="text-[11px] font-bold text-black uppercase">Total Days Taken</span>
+                    <h3 className="text-xl sm:text-2xl font-black text-black mt-1">
                         {leaves.reduce((acc, curr) => acc + (curr.days || curr.totalDays || 0), 0)} Days
                     </h3>
                 </div>
             </div>
 
             {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-xs">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 bg-white border border-slate-200/80 p-3 sm:p-3.5 rounded-2xl shadow-xs">
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" size={15} />
                     <input

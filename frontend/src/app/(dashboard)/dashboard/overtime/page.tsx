@@ -119,29 +119,29 @@ export default function OvertimePage() {
             </div>
 
             {/* Quick Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
                     <span className="text-xs font-bold text-black uppercase">Pending Approval</span>
-                    <h3 className="text-2xl font-black text-amber-900 mt-1">
+                    <h3 className="text-xl sm:text-2xl font-black text-amber-900 mt-1">
                         {overtimes.filter(o => o.status === 'pending').length} Submissions
                     </h3>
                 </div>
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
                     <span className="text-xs font-bold text-black uppercase">Approved Extra Hours</span>
-                    <h3 className="text-2xl font-black text-emerald-800 mt-1">
+                    <h3 className="text-xl sm:text-2xl font-black text-emerald-800 mt-1">
                         {overtimes.filter(o => o.status === 'approved').reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs
                     </h3>
                 </div>
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
                     <span className="text-xs font-bold text-black uppercase">Total Requests</span>
-                    <h3 className="text-2xl font-black text-black mt-1">
+                    <h3 className="text-xl sm:text-2xl font-black text-black mt-1">
                         {overtimes.length} Submissions
                     </h3>
                 </div>
             </div>
 
             {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-xs">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-xs">
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" size={15} />
                     <input
@@ -168,10 +168,87 @@ export default function OvertimePage() {
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
+            {/* Mobile Card List View */}
+            <div className="block md:hidden space-y-3">
+                {filtered.length > 0 ? (
+                    filtered.map((req) => (
+                        <div key={req.id || req._id} className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                                <div>
+                                    <Link href={`/dashboard/overtime/${req.id || req._id}`} className="font-bold text-black text-sm hover:underline">
+                                        {req.employeeName}
+                                    </Link>
+                                    <div className="text-xs font-medium text-slate-700">{req.department}</div>
+                                </div>
+                                <div>{getStatusBadge(req.status)}</div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
+                                <div>
+                                    <span className="text-[11px] font-semibold text-slate-600 block">Project / Scope</span>
+                                    <span className="font-bold text-black line-clamp-1">{req.project}</span>
+                                </div>
+                                <div>
+                                    <span className="text-[11px] font-semibold text-slate-600 block">Duration</span>
+                                    <span className="font-bold text-black">{req.hours} hrs</span>
+                                </div>
+                                <div className="col-span-2">
+                                    <span className="text-[11px] font-semibold text-slate-600 block">Date & Window</span>
+                                    <span className="font-medium text-black">{req.date} ({req.startTime || '17:30'} - {req.endTime || '20:30'})</span>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                                {req.status === 'pending' && (
+                                    <>
+                                        <button
+                                            onClick={() => handleApprove(req.id || req._id || '')}
+                                            className="px-2.5 py-1.5 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                                        >
+                                            Approve
+                                        </button>
+                                        <button
+                                            onClick={() => handleReject(req.id || req._id || '')}
+                                            className="px-2.5 py-1.5 bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200 font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                                        >
+                                            Reject
+                                        </button>
+                                    </>
+                                )}
+                                <Link
+                                    href={`/dashboard/overtime/${req.id || req._id}`}
+                                    className="px-3 py-1.5 bg-slate-100 hover:bg-black hover:text-white text-black font-bold rounded-lg text-xs transition-colors"
+                                >
+                                    View
+                                </Link>
+                                <Link
+                                    href={`/dashboard/overtime/${req.id || req._id}/edit`}
+                                    className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
+                                    title="Edit Overtime"
+                                >
+                                    <Edit2 size={14} />
+                                </Link>
+                                <button
+                                    onClick={() => handleDelete(req.id || req._id || '')}
+                                    className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                    title="Delete Submission"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-xs font-bold text-black">
+                        No overtime submissions found.
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full min-w-[700px] text-left border-collapse">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-black text-black uppercase tracking-wider">
                                 <th className="py-3 px-5">Staff Member</th>
@@ -185,7 +262,7 @@ export default function OvertimePage() {
                         <tbody className="divide-y divide-slate-100 text-xs">
                             {filtered.length > 0 ? (
                                 filtered.map((req) => (
-                                    <tr key={req.id} className="hover:bg-slate-50/80 transition-colors">
+                                    <tr key={req.id || req._id} className="hover:bg-slate-50/80 transition-colors">
                                         <td className="py-3.5 px-5">
                                             <div>
                                                 <Link href={`/dashboard/overtime/${req.id || req._id}`} className="font-bold text-black block text-sm hover:underline">

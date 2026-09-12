@@ -33,27 +33,27 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     if (loading || initializing || !user) return null;
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans antialiased">
+        <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans antialiased max-w-full overflow-x-hidden">
             {/* Top Navigation Bar */}
             <header className="sticky top-0 z-30 w-full bg-white border-b border-slate-200/80 shadow-xs">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
                     {/* Brand */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
                             <Building2 size={17} />
                         </div>
-                        <div>
-                            <span className="text-sm font-bold text-slate-900 leading-tight">
-                                Corporate Workforce Portal
+                        <div className="min-w-0">
+                            <span className="text-xs sm:text-sm font-bold text-slate-900 leading-tight block truncate">
+                                Workforce Portal
                             </span>
-                            <span className="text-[10px] text-slate-400 block font-medium">Staff Self-Service Portal</span>
+                            <span className="text-[10px] text-slate-400 font-medium hidden sm:block truncate">Staff Self-Service Portal</span>
                         </div>
                     </div>
 
                     {/* Right actions */}
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                         {/* Live Clock */}
-                        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs font-mono font-semibold text-slate-600">
+                        <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs font-mono font-semibold text-slate-600">
                             <Clock size={14} className="text-blue-600" />
                             <span>{currentTime || '08:00:00 AM'}</span>
                         </div>
@@ -63,10 +63,10 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                         {user.role === 'admin' && (
                             <Link
                                 href="/dashboard"
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 text-xs font-semibold transition-colors"
+                                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 text-xs font-semibold transition-colors"
                             >
                                 <LayoutDashboard size={14} />
-                                <span className="hidden sm:inline">Admin View</span>
+                                <span className="hidden sm:inline">Admin</span>
                             </Link>
                         )}
 
@@ -94,7 +94,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
                             <button
                                 onClick={() => logout()}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-1"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-1 cursor-pointer"
                                 title="Sign out"
                             >
                                 <LogOut size={15} />
@@ -105,7 +105,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
             </header>
 
             {/* Content Body */}
-            <main className="flex-1 w-full p-4 sm:p-6 lg:p-8">
+            <main className="flex-1 w-full max-w-7xl mx-auto p-3 sm:p-6 lg:p-8">
                 {children}
             </main>
         </div>

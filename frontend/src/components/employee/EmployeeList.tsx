@@ -51,8 +51,99 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                 </div>
             </div>
 
-            {/* Table Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+            {/* Mobile Cards View (block md:hidden) */}
+            <div className="grid grid-cols-1 gap-3.5 md:hidden">
+                {filteredEmployees.length > 0 ? (
+                    filteredEmployees.map((employee) => {
+                        const deptName = typeof employee.department === 'object' ? (employee.department as any)?.name : employee.department;
+                        const hasBio = employee.faceDescriptor && employee.faceDescriptor.length > 0;
+
+                        return (
+                            <div key={employee._id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
+                                <div className="flex items-start justify-between gap-2.5">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/80 overflow-hidden flex items-center justify-center text-slate-700 font-bold text-xs shrink-0">
+                                            {employee.photoUrl ? (
+                                                <img
+                                                    src={getFullImageUrl(employee.photoUrl) || ''}
+                                                    alt=""
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).style.display = 'none';
+                                                        (e.target as HTMLImageElement).parentElement!.innerText = (employee.firstName?.[0] || '') + (employee.lastName?.[0] || '');
+                                                    }}
+                                                />
+                                            ) : (
+                                                <span>{employee.firstName?.[0]}{employee.lastName?.[0]}</span>
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <Link href={`/dashboard/management/employee/${employee._id}`} className="font-bold text-slate-900 text-sm hover:underline block truncate">
+                                                {employee.fullName || `${employee.firstName} ${employee.lastName}`}
+                                            </Link>
+                                            <span className="text-[11px] text-slate-500 font-semibold block truncate">
+                                                {employee.position || 'Staff Member'} • {deptName || 'General'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                                        hasBio
+                                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                                            : 'bg-amber-50 text-amber-800 border border-amber-300'
+                                    }`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${hasBio ? 'bg-emerald-600' : 'bg-amber-600'}`} />
+                                        <span>{hasBio ? 'Active' : 'Pending'}</span>
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 rounded-xl text-xs">
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] text-slate-500 uppercase block font-bold">Email</span>
+                                        <span className="text-slate-900 font-medium truncate block">{employee.email}</span>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] text-slate-500 uppercase block font-bold">Phone</span>
+                                        <span className="text-slate-900 font-medium truncate block">{employee.phone || '--'}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
+                                    <Link
+                                        href={`/dashboard/management/employee/${employee._id}`}
+                                        className="px-3 py-1.5 bg-slate-100 hover:bg-black hover:text-white text-black font-bold text-xs rounded-lg transition-colors inline-flex items-center gap-1"
+                                    >
+                                        <Eye size={13} />
+                                        <span>View Profile</span>
+                                    </Link>
+                                    <button
+                                        onClick={() => onEdit(employee)}
+                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                                        title="Edit Record"
+                                    >
+                                        <Edit2 size={14} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(employee._id, employee.fullName || `${employee.firstName} ${employee.lastName}`)}
+                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                        title="Delete Record"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-700">
+                        <User size={28} className="mx-auto mb-2 opacity-50 text-slate-600" />
+                        <p className="text-sm font-bold text-slate-900">No employees found</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop Table View (hidden md:block) */}
+            <div className="hidden md:block bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>

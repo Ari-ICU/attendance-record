@@ -154,17 +154,17 @@ function AttendanceRecordsContent() {
             : 'Review biometric scans, check-in timestamps, and manual attendance entries';
 
     return (
-        <div className="w-full space-y-6 pb-12 font-sans">
+        <div className="w-full space-y-5 sm:space-y-6 pb-12 font-sans max-w-full overflow-x-hidden">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 shadow-xs">
                 <div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
-                            {isLateView && <AlertTriangle size={22} className="text-amber-600" />}
-                            {isHistoryView && <History size={22} className="text-black" />}
+                    <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                        <h1 className="text-lg sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
+                            {isLateView && <AlertTriangle size={20} className="text-amber-600 shrink-0" />}
+                            {isHistoryView && <History size={20} className="text-black shrink-0" />}
                             <span>{pageTitle}</span>
                         </h1>
-                        <span className="px-2.5 py-0.5 rounded-full bg-black text-white text-xs font-bold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-black text-white text-[11px] sm:text-xs font-bold shrink-0">
                             {filtered.length} {filtered.length === 1 ? 'Record' : 'Records'}
                         </span>
                     </div>
@@ -173,10 +173,10 @@ function AttendanceRecordsContent() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
                     <Link
                         href="/dashboard/attendance/records/create"
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
                     >
                         <Plus size={16} />
                         <span>Log Attendance Entry</span>
@@ -185,7 +185,7 @@ function AttendanceRecordsContent() {
             </div>
 
             {/* Filter Toolbar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white border border-slate-200/90 p-3.5 rounded-2xl shadow-xs">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 bg-white border border-slate-200/90 p-3 sm:p-3.5 rounded-2xl shadow-xs">
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" size={15} />
                     <input
@@ -212,10 +212,96 @@ function AttendanceRecordsContent() {
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
+            {/* Mobile Cards View (block md:hidden) */}
+            <div className="grid grid-cols-1 gap-3.5 md:hidden">
+                {loading ? (
+                    <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-black font-bold text-xs">
+                        <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                        Loading attendance logs...
+                    </div>
+                ) : filtered.length > 0 ? (
+                    filtered.map((record) => {
+                        const emp = typeof record.employeeId === 'object' ? record.employeeId : null;
+                        return (
+                            <div key={record._id} className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-9 h-9 rounded-full bg-black text-white font-black flex items-center justify-center text-xs shrink-0">
+                                            {emp?.firstName?.[0] || 'U'}{emp?.lastName?.[0] || ''}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <Link href={`/dashboard/attendance/records/${record._id}`} className="font-black text-black text-sm hover:underline block truncate">
+                                                {emp ? `${emp.firstName} ${emp.lastName}` : 'Unassigned'}
+                                            </Link>
+                                            <span className="text-[11px] font-semibold text-slate-700 block truncate">
+                                                {typeof emp?.department === 'object' ? (emp.department as any)?.name : emp?.department || 'General'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="shrink-0">
+                                        {getStatusBadge(record.status)}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 rounded-xl text-xs font-semibold">
+                                    <div>
+                                        <span className="text-[10px] text-slate-500 uppercase block font-bold">Date</span>
+                                        <span className="text-black font-bold font-mono">{formatDateToCustom(record.date || record.createdAt)}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] text-slate-500 uppercase block font-bold">Method</span>
+                                        <span className="text-black font-bold">{record.checkIn?.method || 'Manual'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] text-slate-500 uppercase block font-bold">Check-In</span>
+                                        <span className="text-black font-mono font-bold">
+                                            {record.checkIn?.time ? new Date(record.checkIn.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] text-slate-500 uppercase block font-bold">Check-Out</span>
+                                        <span className="text-slate-800 font-mono font-bold">
+                                            {record.checkOut?.time ? new Date(record.checkOut.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
+                                    <Link
+                                        href={`/dashboard/attendance/records/${record._id}`}
+                                        className="px-3 py-1.5 bg-slate-100 hover:bg-black hover:text-white text-black font-bold text-xs rounded-lg transition-colors"
+                                    >
+                                        View Details
+                                    </Link>
+                                    <Link
+                                        href={`/dashboard/attendance/records/${record._id}/edit`}
+                                        className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
+                                        title="Edit Record"
+                                    >
+                                        <Edit2 size={14} />
+                                    </Link>
+                                    <button
+                                        onClick={() => handleDelete(record._id)}
+                                        className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                        title="Delete Record"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-700 font-bold text-xs">
+                        No {statusFilter !== 'all' ? `${statusFilter} ` : ''}attendance records found.
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop Table View (hidden md:block) */}
+            <div className="hidden md:block bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black text-black uppercase tracking-wider">
                                 <th className="py-3 px-5">Staff Member</th>

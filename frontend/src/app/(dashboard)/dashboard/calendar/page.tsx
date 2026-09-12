@@ -357,57 +357,57 @@ export default function UnifiedCalendarPage() {
     };
 
     return (
-        <div className="w-full space-y-6 animate-in fade-in duration-300 font-sans select-none">
+        <div className="w-full space-y-5 sm:space-y-6 animate-in fade-in duration-300 font-sans select-none max-w-full overflow-x-hidden">
             {/* Top Navigation Bar & Sub-Tabs */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-3.5 sm:p-5 rounded-3xl border border-slate-200 shadow-xs">
                 {/* Tabs */}
-                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl w-fit flex-wrap">
+                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl w-full sm:w-fit overflow-x-auto">
                     <button
                         onClick={() => setActiveTab('calendar')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                        className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer flex-1 sm:flex-initial ${
                             activeTab === 'calendar'
                                 ? 'bg-black text-white shadow-xs'
                                 : 'text-slate-800 hover:text-black hover:bg-slate-200/60'
                         }`}
                     >
-                        <CalendarDays size={15} />
-                        <span>Calendar & Timeline</span>
+                        <CalendarDays size={14} />
+                        <span>Timeline</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('shifts')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                        className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer flex-1 sm:flex-initial ${
                             activeTab === 'shifts'
                                 ? 'bg-black text-white shadow-xs'
                                 : 'text-slate-800 hover:text-black hover:bg-slate-200/60'
                         }`}
                     >
-                        <Clock size={15} />
-                        <span>Shift Configuration</span>
+                        <Clock size={14} />
+                        <span>Shifts</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('holidays')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                        className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer flex-1 sm:flex-initial ${
                             activeTab === 'holidays'
                                 ? 'bg-black text-white shadow-xs'
                                 : 'text-slate-800 hover:text-black hover:bg-slate-200/60'
                         }`}
                     >
-                        <Sparkles size={15} />
-                        <span>Public Holidays</span>
+                        <Sparkles size={14} />
+                        <span>Holidays</span>
                     </button>
                 </div>
 
                 {/* Live Real-time Status Badge & Actions */}
-                <div className="flex items-center gap-3">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <div className="flex items-center justify-between sm:justify-end gap-2.5 sm:gap-3 flex-wrap">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>Live Real-Time Sync</span>
+                        <span>Live Sync</span>
                     </div>
 
                     {activeTab === 'calendar' && (
                         <button
                             onClick={() => setShowEventModal(true)}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-black hover:bg-slate-900 text-white text-xs font-black transition-all shadow-xs active:scale-95 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-black hover:bg-slate-900 text-white text-xs font-black transition-all shadow-xs active:scale-95 cursor-pointer"
                         >
                             <Plus size={15} />
                             <span>Add Event</span>
@@ -416,7 +416,7 @@ export default function UnifiedCalendarPage() {
                     {activeTab === 'shifts' && (
                         <button
                             onClick={() => setShowShiftModal(true)}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-black hover:bg-slate-900 text-white text-xs font-black transition-all shadow-xs active:scale-95 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-black hover:bg-slate-900 text-white text-xs font-black transition-all shadow-xs active:scale-95 cursor-pointer"
                         >
                             <Plus size={15} />
                             <span>Create Shift</span>
@@ -425,7 +425,7 @@ export default function UnifiedCalendarPage() {
                     {activeTab === 'holidays' && (
                         <button
                             onClick={() => setShowHolidayModal(true)}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-black hover:bg-slate-900 text-white text-xs font-black transition-all shadow-xs active:scale-95 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-black hover:bg-slate-900 text-white text-xs font-black transition-all shadow-xs active:scale-95 cursor-pointer"
                         >
                             <Plus size={15} />
                             <span>Add Holiday</span>
@@ -436,7 +436,7 @@ export default function UnifiedCalendarPage() {
 
             {/* TAB 1: CALENDAR VIEW */}
             {activeTab === 'calendar' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
                     {/* Left Sidebar (Mini Calendar & Category Filters) */}
                     <div className="lg:col-span-3 space-y-5 bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
                         {/* Mini Calendar Header */}

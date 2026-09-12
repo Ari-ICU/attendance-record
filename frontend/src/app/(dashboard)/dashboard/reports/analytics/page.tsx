@@ -159,8 +159,8 @@ function AnalyticsPageContent() {
                 </div>
 
                 {/* Top Action Filters */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="w-40">
+                <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                    <div className="w-full sm:w-40">
                         <CustomDropdown
                             value={timeRange}
                             onChange={(val) => setTimeRange(val)}
@@ -173,7 +173,7 @@ function AnalyticsPageContent() {
                         />
                     </div>
 
-                    <div className="w-48">
+                    <div className="w-full sm:w-48">
                         <CustomDropdown
                             value={selectedDepartment}
                             onChange={(val) => setSelectedDepartment(val)}
@@ -190,7 +190,7 @@ function AnalyticsPageContent() {
                     <button
                         onClick={handleExport}
                         disabled={isExporting}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-black hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-black hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
                     >
                         <Download size={14} />
                         <span>Export Report</span>
@@ -426,7 +426,7 @@ function AnalyticsPageContent() {
                                 </div>
 
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
+                                    <table className="w-full min-w-[650px] text-left border-collapse">
                                         <thead>
                                             <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-black uppercase tracking-wider">
                                                 <th className="py-3 px-5">Department Unit</th>
@@ -661,7 +661,7 @@ function AnalyticsPageContent() {
                                 </div>
 
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
+                                    <table className="w-full min-w-[650px] text-left border-collapse">
                                         <thead>
                                             <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-black uppercase tracking-wider">
                                                 <th className="py-3 px-5">Staff Member</th>

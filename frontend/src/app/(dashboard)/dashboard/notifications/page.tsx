@@ -97,7 +97,7 @@ export default function NotificationTestPage() {
                         Monitor WebSocket connection status and broadcast real-time campus events.
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
                         isConnected
                             ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
@@ -108,7 +108,7 @@ export default function NotificationTestPage() {
                     </div>
                     <button
                         onClick={checkSocketStatus}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <RefreshCw size={13} />
                         <span>Check Status</span>
@@ -138,7 +138,7 @@ export default function NotificationTestPage() {
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-black">Notice Type</label>
                                 <CustomDropdown

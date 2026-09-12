@@ -237,24 +237,24 @@ export default function LiveMonitorPage() {
     ];
 
     return (
-        <div className="w-full space-y-6 pb-16 font-sans">
+        <div className="w-full space-y-5 sm:space-y-6 pb-16 font-sans max-w-full overflow-x-hidden">
             {/* Real-time Telemetry Master Header */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-7 shadow-xs relative overflow-hidden">
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-7 shadow-xs relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
                 
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-6 relative z-10">
                     <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2.5">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] sm:text-xs font-black">
                                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
-                                <Radio size={13} className="text-emerald-600 animate-pulse" />
+                                <Radio size={13} className="text-emerald-600 animate-pulse shrink-0" />
                                 <span>LIVE TELEMETRY ACTIVE</span>
                             </div>
-                            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200/80">
+                            <span className="text-[11px] sm:text-xs font-bold text-slate-700 bg-slate-100 px-2.5 sm:px-3 py-1 rounded-full border border-slate-200/80">
                                 Terminal Sync: {lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                             </span>
                         </div>
-                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-black tracking-tight">
+                        <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-black tracking-tight">
                             Live Attendance Monitor
                         </h1>
                         <p className="text-xs sm:text-sm font-semibold text-slate-800 max-w-2xl">
@@ -263,9 +263,9 @@ export default function LiveMonitorPage() {
                     </div>
 
                     {/* Clock & Real-time Action Controls */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/90">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-50 p-3 sm:p-4 rounded-2xl border border-slate-200/90">
                         {/* Live Clock Display */}
-                        <div className="px-3.5 py-2 bg-white rounded-xl border border-slate-200 shadow-2xs text-left min-w-[160px]">
+                        <div className="px-3.5 py-2 bg-white rounded-xl border border-slate-200 shadow-2xs text-left min-w-[140px]">
                             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-700">
                                 <Clock size={12} className="text-black" />
                                 <span>Current Time</span>
@@ -273,7 +273,7 @@ export default function LiveMonitorPage() {
                             <div className="text-base sm:text-lg font-black text-black tracking-tight font-mono">
                                 {currentTime || '--:--:-- --'}
                             </div>
-                            <div className="text-[10px] font-bold text-slate-600">
+                            <div className="text-[10px] font-bold text-slate-600 truncate">
                                 {currentDate || 'Loading date...'}
                             </div>
                         </div>
@@ -282,36 +282,36 @@ export default function LiveMonitorPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                             <Link
                                 href="/dashboard/attendance/scan"
-                                className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
                                 title="Open Live Biometric & QR Camera Kiosk"
                             >
-                                <Scan size={15} />
-                                <span>Open Scanner</span>
+                                <Scan size={14} />
+                                <span>Scanner</span>
                             </Link>
 
                             <button
                                 onClick={simulateBiometricScan}
-                                className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-black hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2.5 bg-black hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
                                 title="Simulate incoming biometric event"
                             >
                                 <Sparkles size={14} className="text-amber-300" />
-                                <span>Simulate Scan</span>
+                                <span>Simulate</span>
                             </button>
 
                             <button
                                 onClick={() => loadData(false)}
                                 disabled={refreshing}
-                                className={`p-2.5 rounded-xl bg-white border border-slate-200 text-black hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer ${
+                                className={`p-2 sm:p-2.5 rounded-xl bg-white border border-slate-200 text-black hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer ${
                                     refreshing ? 'animate-spin text-black' : ''
                                 }`}
                                 title="Force sync"
                             >
-                                <RefreshCw size={16} />
+                                <RefreshCw size={15} />
                             </button>
 
                             <button
                                 onClick={() => setAutoRefresh(!autoRefresh)}
-                                className={`px-3 py-2.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                                className={`px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
                                     autoRefresh
                                         ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                                         : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
@@ -327,7 +327,7 @@ export default function LiveMonitorPage() {
             </div>
 
             {/* Live KPI Metric Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
                 {/* 1. Present Today */}
                 <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs relative overflow-hidden flex flex-col justify-between">
                     <div className="flex items-center justify-between">

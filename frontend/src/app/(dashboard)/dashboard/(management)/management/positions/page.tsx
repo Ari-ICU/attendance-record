@@ -55,15 +55,15 @@ export default function PositionsPage() {
     );
 
     return (
-        <div className="w-full space-y-6 pb-12 font-sans">
+        <div className="w-full space-y-5 sm:space-y-6 pb-12 font-sans max-w-full overflow-x-hidden">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-xs">
                 <div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
+                    <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                        <h1 className="text-lg sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
                             <span>Staff Positions & Roles</span>
                         </h1>
-                        <span className="px-2.5 py-0.5 rounded-full bg-black text-white text-xs font-bold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-black text-white text-[11px] sm:text-xs font-bold shrink-0">
                             {positions.length} Titles
                         </span>
                     </div>
@@ -74,7 +74,7 @@ export default function PositionsPage() {
 
                 <Link
                     href="/dashboard/management/positions/create"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
                 >
                     <Plus size={16} />
                     <span>Add Position</span>
@@ -82,7 +82,7 @@ export default function PositionsPage() {
             </div>
 
             {/* Search Toolbar */}
-            <div className="flex items-center bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-xs">
+            <div className="flex items-center bg-white border border-slate-200/80 p-3 sm:p-3.5 rounded-2xl shadow-xs">
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" size={15} />
                     <input

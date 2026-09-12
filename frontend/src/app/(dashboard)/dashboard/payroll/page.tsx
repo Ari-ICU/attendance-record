@@ -121,21 +121,21 @@ export default function PayrollManagementPage() {
     ];
 
     return (
-        <div className="w-full space-y-6 pb-16 font-sans">
+        <div className="w-full space-y-5 sm:space-y-6 pb-16 font-sans max-w-full overflow-x-hidden">
             {/* Header */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-7 shadow-xs">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-7 shadow-xs">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-6">
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-black border border-emerald-200">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] sm:text-xs font-black border border-emerald-200">
                                 <DollarSign size={13} className="text-emerald-600" />
-                                <span>PAYROLL & COMPENSATION ENGINE</span>
+                                <span>PAYROLL & COMPENSATION</span>
                             </div>
-                            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full">
-                                Fiscal Period: {selectedMonth} {selectedYear}
+                            <span className="text-[11px] sm:text-xs font-bold text-slate-700 bg-slate-100 px-2.5 sm:px-3 py-1 rounded-full">
+                                {selectedMonth} {selectedYear}
                             </span>
                         </div>
-                        <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
+                        <h1 className="text-xl sm:text-3xl font-black text-black tracking-tight">
                             Workforce Payroll & Compensation
                         </h1>
                         <p className="text-xs sm:text-sm font-semibold text-slate-700 max-w-2xl">
@@ -144,19 +144,19 @@ export default function PayrollManagementPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <button
                             onClick={handleRunPayroll}
                             disabled={refreshing}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 bg-black hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
                         >
                             <Sparkles size={14} className="text-amber-300" />
-                            <span>Recalculate Payroll</span>
+                            <span>Recalculate</span>
                         </button>
 
                         <button
                             onClick={handleMarkAllPaid}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
                         >
                             <CheckCircle2 size={14} />
                             <span>Disburse All</span>
@@ -164,7 +164,7 @@ export default function PayrollManagementPage() {
 
                         <button
                             onClick={handleExportCSV}
-                            className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-white hover:bg-slate-100 text-black border border-slate-300 text-xs sm:text-sm font-bold rounded-xl shadow-2xs transition-all active:scale-95 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2.5 bg-white hover:bg-slate-100 text-black border border-slate-300 text-xs sm:text-sm font-bold rounded-xl shadow-2xs transition-all active:scale-95 cursor-pointer"
                             title="Export Bank CSV File"
                         >
                             <Download size={14} />
@@ -174,7 +174,7 @@ export default function PayrollManagementPage() {
                         <button
                             onClick={() => loadPayroll(false)}
                             disabled={refreshing}
-                            className={`p-2.5 rounded-xl bg-white border border-slate-200 text-black hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer ${
+                            className={`p-2 sm:p-2.5 rounded-xl bg-white border border-slate-200 text-black hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer ${
                                 refreshing ? 'animate-spin text-black' : ''
                             }`}
                             title="Refresh"
@@ -186,18 +186,18 @@ export default function PayrollManagementPage() {
             </div>
 
             {/* KPI Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
                 {/* 1. Total Net Payout */}
-                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">Total Net Disbursed</span>
-                        <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-                            <DollarSign size={17} />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                            <DollarSign size={16} />
                         </div>
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-3 sm:mt-4">
                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black text-black font-mono">
+                            <span className="text-2xl sm:text-3xl font-black text-black font-mono">
                                 ${summary?.totalNetPayout ? summary.totalNetPayout.toLocaleString() : '0'}
                             </span>
                             <span className="text-xs font-bold text-slate-600">USD</span>
@@ -209,16 +209,16 @@ export default function PayrollManagementPage() {
                 </div>
 
                 {/* 2. Total Base Salaries */}
-                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">Base Salary Cost</span>
-                        <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
-                            <Building2 size={17} />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+                            <Building2 size={16} />
                         </div>
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-3 sm:mt-4">
                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black text-black font-mono">
+                            <span className="text-2xl sm:text-3xl font-black text-black font-mono">
                                 ${summary?.totalGrossSalary ? summary.totalGrossSalary.toLocaleString() : '0'}
                             </span>
                             <span className="text-xs font-bold text-slate-600">USD</span>
@@ -230,16 +230,16 @@ export default function PayrollManagementPage() {
                 </div>
 
                 {/* 3. Overtime Compensation */}
-                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">Overtime Compensation</span>
-                        <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
-                            <Clock size={17} />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+                            <Clock size={16} />
                         </div>
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-3 sm:mt-4">
                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black text-black font-mono">
+                            <span className="text-2xl sm:text-3xl font-black text-black font-mono">
                                 ${summary?.totalOvertimePay ? summary.totalOvertimePay.toLocaleString() : '0'}
                             </span>
                             <span className="text-xs font-bold text-amber-900">@ 1.5x Rate</span>
@@ -251,16 +251,16 @@ export default function PayrollManagementPage() {
                 </div>
 
                 {/* 4. Taxes & Deductions */}
-                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">Total Deductions & Tax</span>
-                        <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
-                            <Receipt size={17} />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+                            <Receipt size={16} />
                         </div>
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-3 sm:mt-4">
                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black text-black font-mono">
+                            <span className="text-2xl sm:text-3xl font-black text-black font-mono">
                                 -${summary?.totalDeductions ? summary.totalDeductions.toLocaleString() : '0'}
                             </span>
                             <span className="text-xs font-bold text-purple-900">Withheld</span>
@@ -273,7 +273,7 @@ export default function PayrollManagementPage() {
             </div>
 
             {/* Filter Toolbar */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">
                 {/* Search */}
                 <div className="relative flex-1">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" size={16} />

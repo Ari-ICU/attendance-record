@@ -453,7 +453,7 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
                 {/* Sidebar Navigation */}
                 <div className="lg:col-span-4 xl:col-span-3">
-                    <div className="bg-white border border-slate-200/90 rounded-2xl p-2 space-y-1 shadow-xs sticky top-20">
+                    <div className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible gap-1.5 lg:gap-1 bg-white border border-slate-200/90 rounded-2xl p-2 shadow-xs sticky top-20">
                         {tabs.map((tab) => {
                             const isActive = activeTab === tab.id;
                             const IconComponent = tab.icon;
@@ -461,13 +461,13 @@ export default function SettingsPage() {
                                 <button
                                     key={tab.id}
                                     onClick={() => handleTabChange(tab.id)}
-                                    className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-left cursor-pointer ${
+                                    className={`flex items-center gap-2.5 sm:gap-3 px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-xl transition-all text-left cursor-pointer shrink-0 lg:shrink ${
                                         isActive
                                             ? 'bg-black text-white shadow-xs'
                                             : 'text-black hover:bg-slate-100 hover:text-black'
                                     }`}
                                 >
-                                    <div className={`p-2 rounded-lg transition-colors ${
+                                    <div className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
                                         isActive ? 'bg-slate-800 text-white' : 'bg-slate-100 text-black'
                                     }`}>
                                         <IconComponent className="w-4 h-4" />
@@ -476,7 +476,7 @@ export default function SettingsPage() {
                                         <div className={`text-xs sm:text-sm font-bold truncate ${isActive ? 'text-white' : 'text-black'}`}>
                                             {tab.label}
                                         </div>
-                                        <div className={`text-[11px] font-medium truncate ${isActive ? 'text-slate-300' : 'text-slate-600'}`}>
+                                        <div className={`text-[11px] font-medium truncate hidden sm:block ${isActive ? 'text-slate-300' : 'text-slate-600'}`}>
                                             {tab.description}
                                         </div>
                                     </div>
@@ -610,7 +610,8 @@ export default function SettingsPage() {
 
                                             {/* Table */}
                                             <div className="border border-slate-200/90 rounded-2xl overflow-hidden bg-white shadow-xs">
-                                                <table className="w-full text-left border-collapse">
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full min-w-[650px] text-left border-collapse">
                                                     <thead>
                                                         <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-black uppercase tracking-wider">
                                                             <th className="py-3 px-4">Operator Name</th>
@@ -677,6 +678,7 @@ export default function SettingsPage() {
                                                         )}
                                                     </tbody>
                                                 </table>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -688,7 +690,8 @@ export default function SettingsPage() {
                                             </div>
 
                                             <div className="border border-slate-200/90 rounded-2xl overflow-hidden bg-white shadow-xs">
-                                                <table className="w-full text-left border-collapse">
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full min-w-[600px] text-left border-collapse">
                                                     <thead>
                                                         <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-black uppercase tracking-wider">
                                                             <th className="py-3 px-4">System Module & Capability</th>
@@ -739,6 +742,7 @@ export default function SettingsPage() {
                                                         ))}
                                                     </tbody>
                                                 </table>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -944,7 +948,8 @@ export default function SettingsPage() {
                                         </div>
 
                                         <div className="border border-slate-200/90 rounded-2xl overflow-hidden bg-white shadow-xs">
-                                            <table className="w-full text-left border-collapse">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full min-w-[600px] text-left border-collapse">
                                                 <thead>
                                                     <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-black uppercase tracking-wider">
                                                         <th className="py-3 px-4">Snapshot File</th>
@@ -1000,6 +1005,7 @@ export default function SettingsPage() {
                                                     )}
                                                 </tbody>
                                             </table>
+                                            </div>
                                         </div>
                                     </div>
                                 )}

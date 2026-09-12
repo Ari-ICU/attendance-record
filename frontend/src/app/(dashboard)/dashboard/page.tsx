@@ -115,24 +115,24 @@ export default function DashboardPage() {
     ];
 
     return (
-        <div className="w-full space-y-6 pb-16 font-sans">
+        <div className="w-full space-y-5 sm:space-y-6 pb-16 font-sans max-w-full overflow-x-hidden">
             {/* Executive Welcome Hero Banner */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-7 shadow-xs relative overflow-hidden">
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-7 shadow-xs relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-6 relative z-10">
                     <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black">
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] sm:text-xs font-black">
                                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
-                                <Radio size={13} className="text-emerald-600 animate-pulse" />
+                                <Radio size={13} className="text-emerald-600 animate-pulse shrink-0" />
                                 <span>WORKFORCE SYSTEM ONLINE</span>
                             </div>
-                            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200/80">
+                            <span className="text-[11px] sm:text-xs font-bold text-slate-700 bg-slate-100 px-2.5 sm:px-3 py-1 rounded-full border border-slate-200/80">
                                 {totalStaffCount} Active Employees · {totalDeptCount} Departments
                             </span>
                         </div>
-                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-black tracking-tight">
+                        <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-black tracking-tight">
                             Welcome back, {user?.firstName || 'Administrator'} 👋
                         </h1>
                         <p className="text-xs sm:text-sm font-semibold text-slate-700 max-w-2xl">
@@ -141,8 +141,8 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Clock & Action Shortcuts */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/90">
-                        <div className="px-3.5 py-2 bg-white rounded-xl border border-slate-200 shadow-2xs text-left min-w-[150px]">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-50 p-3 sm:p-4 rounded-2xl border border-slate-200/90">
+                        <div className="px-3.5 py-2 bg-white rounded-xl border border-slate-200 shadow-2xs text-left min-w-[140px]">
                             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-700">
                                 <Clock size={11} className="text-black" />
                                 <span>Local System Time</span>
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                             <div className="text-base sm:text-lg font-black text-black font-mono tracking-tight">
                                 {todayTime || '--:--:-- --'}
                             </div>
-                            <div className="text-[10px] font-bold text-slate-600">
+                            <div className="text-[10px] font-bold text-slate-600 truncate">
                                 {todayDate || 'Loading date...'}
                             </div>
                         </div>
@@ -158,7 +158,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                             <Link
                                 href="/dashboard/attendance/monitor"
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-black hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2.5 bg-black hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
                             >
                                 <Activity size={14} className="text-emerald-400" />
                                 <span>Live Monitor</span>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
 
                             <Link
                                 href="/dashboard/management/employee/create"
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-100 text-black border border-slate-300 text-xs sm:text-sm font-bold rounded-xl shadow-2xs transition-all active:scale-95 cursor-pointer"
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2.5 bg-white hover:bg-slate-100 text-black border border-slate-300 text-xs sm:text-sm font-bold rounded-xl shadow-2xs transition-all active:scale-95 cursor-pointer"
                             >
                                 <Plus size={14} />
                                 <span>Add Staff</span>
@@ -175,7 +175,7 @@ export default function DashboardPage() {
                             <button
                                 onClick={() => loadDashboardData(false)}
                                 disabled={refreshing}
-                                className={`p-2.5 rounded-xl bg-white border border-slate-200 text-black hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer ${
+                                className={`p-2 sm:p-2.5 rounded-xl bg-white border border-slate-200 text-black hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer ${
                                     refreshing ? 'animate-spin text-black' : ''
                                 }`}
                                 title="Refresh Dashboard"

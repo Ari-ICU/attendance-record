@@ -28,12 +28,12 @@ export default function AHeader({ sidebarCollapsed, setSidebarCollapsed }: AHead
 
     return (
         <header className="sticky top-0 z-20 w-full bg-white border-b border-slate-200 select-none">
-            <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8">
                 {/* Left: Mobile Sidebar Toggle */}
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                        className="p-2 -ml-2 rounded-xl text-slate-800 hover:bg-slate-100 hover:text-black transition-colors lg:hidden cursor-pointer"
+                        className="p-2 -ml-1 rounded-xl text-slate-800 hover:bg-slate-100 hover:text-black transition-colors lg:hidden cursor-pointer"
                         title="Toggle menu"
                     >
                         <Menu size={20} />
@@ -41,12 +41,12 @@ export default function AHeader({ sidebarCollapsed, setSidebarCollapsed }: AHead
                 </div>
 
                 {/* Right: Notification & User Profile Actions */}
-                <div className="flex items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
                     {/* Notifications Button & Dropdown */}
                     <div className="relative">
                         <button
                             onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                            className="relative p-2.5 rounded-xl text-slate-800 hover:text-black hover:bg-slate-100 transition-colors cursor-pointer"
+                            className="relative p-2 sm:p-2.5 rounded-xl text-slate-800 hover:text-black hover:bg-slate-100 transition-colors cursor-pointer"
                             title="Notifications"
                         >
                             <Bell size={18} />
@@ -62,7 +62,7 @@ export default function AHeader({ sidebarCollapsed, setSidebarCollapsed }: AHead
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                                     transition={{ duration: 0.15 }}
-                                    className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-50"
+                                    className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-50"
                                 >
                                     <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                                         <div className="flex items-center gap-2">

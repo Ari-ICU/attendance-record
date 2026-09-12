@@ -96,17 +96,17 @@ export default function ProfilePage() {
                             <div className="space-y-1">
                                 <div className="flex items-center flex-wrap gap-2.5">
                                     {isEditing ? (
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             <input
                                                 value={formData.firstName}
                                                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                                className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1 text-base font-bold text-black outline-none focus:bg-white focus:border-black w-36"
+                                                className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1 text-sm sm:text-base font-bold text-black outline-none focus:bg-white focus:border-black w-28 sm:w-36"
                                                 placeholder="First Name"
                                             />
                                             <input
                                                 value={formData.lastName}
                                                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                                className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1 text-base font-bold text-black outline-none focus:bg-white focus:border-black w-36"
+                                                className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1 text-sm sm:text-base font-bold text-black outline-none focus:bg-white focus:border-black w-28 sm:w-36"
                                                 placeholder="Last Name"
                                             />
                                         </div>

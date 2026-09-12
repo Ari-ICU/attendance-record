@@ -94,9 +94,9 @@ export default function AttendanceRecordDetailPage() {
     const emp = typeof record.employeeId === 'object' ? record.employeeId : null;
 
     return (
-        <div className="w-full space-y-6 pb-12 font-sans">
+        <div className="w-full space-y-5 sm:space-y-6 pb-12 font-sans max-w-full overflow-x-hidden">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-xs">
                 <div className="flex items-center gap-3">
                     <Link
                         href="/dashboard/attendance/records"
@@ -105,24 +105,24 @@ export default function AttendanceRecordDetailPage() {
                         <ArrowLeft size={16} />
                     </Link>
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h1 className="text-lg sm:text-2xl font-black text-black tracking-tight">
                                 Attendance Log Detail
                             </h1>
                             <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold capitalize">
                                 {record.status}
                             </span>
                         </div>
-                        <p className="text-xs sm:text-sm font-medium text-black mt-0.5">
+                        <p className="text-xs sm:text-sm font-medium text-black mt-0.5 truncate">
                             {emp ? `${emp.firstName} ${emp.lastName}` : 'Staff Member'} • Date: {record.date}
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
                     <Link
                         href={`/dashboard/attendance/records/${id}/edit`}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold cursor-pointer"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold cursor-pointer"
                     >
                         <Edit2 size={15} />
                         <span>Edit Log</span>
@@ -138,8 +138,8 @@ export default function AttendanceRecordDetailPage() {
             </div>
 
             {/* Main Log Card */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-8 shadow-xs space-y-5 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     {/* Check In Details */}
                     <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                         <div className="flex items-center justify-between pb-2 border-b border-slate-200">
