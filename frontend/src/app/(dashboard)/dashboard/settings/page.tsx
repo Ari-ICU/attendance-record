@@ -944,8 +944,8 @@ export default function SettingsPage() {
             {/* ==================== ADD SYSTEM USER MODAL ==================== */}
             {isAddUserModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden">
-                        <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full">
+                        <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-2xl">
                             <div>
                                 <h3 className="text-base font-black text-black">Add New System Operator</h3>
                                 <p className="text-xs font-semibold text-slate-700">Create an operator login with specific role clearance</p>

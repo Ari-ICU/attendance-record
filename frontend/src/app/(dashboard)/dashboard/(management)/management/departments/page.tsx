@@ -467,7 +467,7 @@ export default function DepartmentsPage() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="w-full max-w-md bg-white border border-slate-300 rounded-2xl shadow-2xl overflow-hidden p-6 space-y-4"
+                            className="w-full max-w-md bg-white border border-slate-300 rounded-2xl shadow-2xl p-6 space-y-4"
                         >
                             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                                 <h3 className="text-base font-black text-black">
