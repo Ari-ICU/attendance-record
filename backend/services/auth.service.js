@@ -9,7 +9,8 @@ class AuthService {
         const { error, value } = loginSchema.validate(data);
         if (error) throw new Error(error.details[0].message);
 
-        const { identifier, password } = value;
+        const { password } = value;
+        const identifier = value.identifier || value.email || value.username;
         const user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] });
         if (!user) throw new Error('User not found');
         if (user.isLocked) throw new Error('Account is locked');

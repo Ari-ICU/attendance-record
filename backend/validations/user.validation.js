@@ -51,13 +51,13 @@ const userUpdateSchema = Joi.object({
 
 // Login schema
 const loginSchema = Joi.object({
-    identifier: Joi.string().trim().required().messages({
-        'string.empty': 'Email or Username is required'
-    }),
+    identifier: Joi.string().trim(),
+    email: Joi.string().trim(),
+    username: Joi.string().trim(),
     password: Joi.string().required().messages({
         'string.empty': 'Password is required'
     })
-});
+}).or('identifier', 'email', 'username');
 
 // Password change schema
 const passwordChangeSchema = Joi.object({
