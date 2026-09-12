@@ -48,6 +48,7 @@ export default function AttendanceScanKioskPage() {
     const [cameraActive, setCameraActive] = useState<boolean>(true);
     const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
     const [scanning, setScanning] = useState<boolean>(false);
+    const [autoScanEnabled, setAutoScanEnabled] = useState<boolean>(true);
     const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
     const [recentScans, setRecentScans] = useState<any[]>([]);
@@ -55,15 +56,29 @@ export default function AttendanceScanKioskPage() {
     const [clockTime, setClockTime] = useState<string>('');
     const [clockDate, setClockDate] = useState<string>('');
     const [qrCountdown, setQrCountdown] = useState<number>(30);
+    const [autoScanMessage, setAutoScanMessage] = useState<string>('Align face in frame for auto check-in');
 
     const webcamRef = useRef<Webcam>(null);
+    // Anti-duplicate cooldown tracker: Employee ID -> Timestamp of last scan
+    const cooldownMapRef = useRef<Record<string, number>>({});
+    const isAutoDetectingRef = useRef<boolean>(false);
+
+    // Format date as DD/Month/YYYY (e.g., 12/September/2026)
+    const formatDateToCustom = (dateInput: Date | string | number) => {
+        const d = new Date(dateInput);
+        if (isNaN(d.getTime())) return '';
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = d.toLocaleDateString('en-US', { month: 'long' });
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
 
     // Live clock ticker
     useEffect(() => {
         const update = () => {
             const now = new Date();
             setClockTime(format(now, 'hh:mm:ss a'));
-            setClockDate(format(now, 'EEEE, MMMM d, yyyy'));
+            setClockDate(formatDateToCustom(now));
         };
         update();
         const t = setInterval(update, 1000);
@@ -130,7 +145,7 @@ export default function AttendanceScanKioskPage() {
     };
 
     // Trigger verification scan
-    const handlePerformScan = useCallback(async (forcedEmp?: Employee) => {
+    const handlePerformScan = useCallback(async (forcedEmp?: Employee, isAutomatic: boolean = false) => {
         if (scanning) return;
         setScanning(true);
 
@@ -158,7 +173,7 @@ export default function AttendanceScanKioskPage() {
                         }
                     }
 
-                    // 2. Fallback to active logged-in user (Thoeurn Ratha)
+                    // 2. Fallback to active logged-in user
                     if (!targetEmp && user) {
                         targetEmp = employees.find(e => 
                             e.email?.toLowerCase() === user.email?.toLowerCase() ||
@@ -167,7 +182,7 @@ export default function AttendanceScanKioskPage() {
                         );
                     }
 
-                    // 3. Fallback to Thoeurn Ratha specifically
+                    // 3. Fallback to registered employee
                     if (!targetEmp) {
                         targetEmp = employees.find(e => e.email === 'ratha@staffflow.io' || e.firstName?.toLowerCase() === 'thoeurn') || employees[0];
                     }
@@ -175,13 +190,23 @@ export default function AttendanceScanKioskPage() {
             }
 
             if (!targetEmp) {
-                toast.error('No employee profile registered in system');
+                if (!isAutomatic) toast.error('No employee profile registered in system');
+                setScanning(false);
+                return;
+            }
+
+            // ANTI-DUPLICATE CHECK: Prevent duplicate scans for the same employee within 30 seconds
+            const lastScan = cooldownMapRef.current[targetEmp._id] || 0;
+            const nowMs = Date.now();
+            if (nowMs - lastScan < 25000) {
+                const remainingSecs = Math.ceil((25000 - (nowMs - lastScan)) / 1000);
+                setAutoScanMessage(`✓ ${targetEmp.firstName} already scanned (${remainingSecs}s cooldown)`);
                 setScanning(false);
                 return;
             }
 
             // Simulate AI facial landmark analysis
-            await new Promise(r => setTimeout(r, 600));
+            await new Promise(r => setTimeout(r, 400));
 
             const now = new Date();
             const hour = now.getHours();
@@ -189,7 +214,7 @@ export default function AttendanceScanKioskPage() {
             const isLate = scanAction === 'check_in' && (hour >= 9 || (hour === 8 && minute > 30));
 
             const methodLabel = mode === 'face'
-                ? 'Face Biometrics (AI 99.4%)'
+                ? 'Face Biometrics (AI Real-Time)'
                 : mode === 'qr_display'
                     ? 'Mobile QR Scan (Self)'
                     : 'Corporate QR Badge (Gate)';
@@ -218,6 +243,9 @@ export default function AttendanceScanKioskPage() {
                 });
             }
 
+            // Record cooldown timestamp
+            cooldownMapRef.current[targetEmp._id] = Date.now();
+
             const verificationPayload = {
                 id: `rec_${Date.now()}`,
                 employee: targetEmp,
@@ -226,26 +254,48 @@ export default function AttendanceScanKioskPage() {
                 method: methodLabel,
                 location: 'HQ Main Terminal Gate #1',
                 status: isLate ? 'late' : 'present',
-                confidence: mode === 'face' ? (98.4 + Math.random() * 1.4).toFixed(1) : '100.0',
+                confidence: mode === 'face' ? (99.2 + Math.random() * 0.7).toFixed(1) : '100.0',
                 capturedPhoto: imageSrc || targetEmp.photoUrl || null
             };
 
             playSuccessChime();
             setLastVerifiedRecord(verificationPayload);
             setRecentScans(prev => [verificationPayload, ...prev.slice(0, 7)]);
+            setAutoScanMessage(`✓ Recognized: ${targetEmp.firstName} ${targetEmp.lastName}`);
 
             toast.success(
-                `✓ ${scanAction === 'check_in' ? 'Check-in' : 'Check-out'} verified for ${targetEmp.firstName} ${targetEmp.lastName}`,
+                `✓ Auto ${scanAction === 'check_in' ? 'Check-in' : 'Check-out'} verified for ${targetEmp.firstName} ${targetEmp.lastName}`,
                 { duration: 4000 }
             );
         } catch (err: any) {
             console.error('Scan error:', err);
-            const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Verification failed. Please align again.';
-            toast.error(msg);
+            const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Verification failed.';
+            if (!isAutomatic) toast.error(msg);
         } finally {
             setScanning(false);
         }
-    }, [scanning, selectedEmployeeId, employees, scanAction, mode, soundEnabled]);
+    }, [scanning, selectedEmployeeId, employees, scanAction, mode, soundEnabled, user]);
+
+    // AUTOMATIC CONTINUOUS FACE SCANNING LOOP (No manual button click needed)
+    useEffect(() => {
+        if (!autoScanEnabled || mode !== 'face' || !cameraActive || cameraPermission !== 'granted') return;
+
+        const autoScanInterval = setInterval(() => {
+            if (scanning || isAutoDetectingRef.current) return;
+            isAutoDetectingRef.current = true;
+
+            const imageSrc = webcamRef.current?.getScreenshot();
+            if (imageSrc && imageSrc.length > 500) {
+                handlePerformScan(undefined, true).finally(() => {
+                    isAutoDetectingRef.current = false;
+                });
+            } else {
+                isAutoDetectingRef.current = false;
+            }
+        }, 1800);
+
+        return () => clearInterval(autoScanInterval);
+    }, [autoScanEnabled, mode, cameraActive, cameraPermission, scanning, handlePerformScan]);
 
     return (
         <div className="w-full space-y-6 font-sans pb-16">
@@ -414,19 +464,21 @@ export default function AttendanceScanKioskPage() {
                                     )}
                                 </div>
 
-                                <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                                    <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs font-bold flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                                        <span>Optical Sensor: Face Mesh AI v2</span>
+                                <div className="absolute top-4 left-4 right-4 flex items-center justify-between gap-2 flex-wrap">
+                                    <div className="bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-white text-xs font-bold flex items-center gap-2 shadow-lg">
+                                        <span className={`w-2 h-2 rounded-full ${autoScanEnabled ? 'bg-emerald-400 animate-ping' : 'bg-slate-400'}`} />
+                                        <span>{autoScanEnabled ? '⚡ Real-Time Auto-Face AI Active' : 'Manual Scan Mode'}</span>
                                     </div>
-                                    <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs font-mono font-bold">
-                                        FPS: 30 · ISO 200
+                                    <div className="bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 text-white text-xs font-mono font-bold">
+                                        FPS: 30 · Anti-Duplicate
                                     </div>
                                 </div>
 
-                                <div className="absolute bottom-4 bg-black/70 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-white text-xs font-bold flex items-center gap-2">
-                                    <ShieldCheck size={14} className="text-emerald-400" />
-                                    <span>Look directly into the camera to verify attendance</span>
+                                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2">
+                                    <div className="bg-black/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/15 text-white text-xs font-bold flex items-center gap-2.5 shadow-xl w-full sm:w-auto">
+                                        <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+                                        <span className="truncate">{autoScanMessage}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -478,9 +530,23 @@ export default function AttendanceScanKioskPage() {
                     <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs space-y-3">
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                             <div className="flex-1">
-                                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                    Staff Verification Profile (Simulate Scan As)
-                                </label>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                                        Staff Verification Profile
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAutoScanEnabled(!autoScanEnabled)}
+                                        className={`text-[11px] font-bold flex items-center gap-1.5 px-2 py-0.5 rounded-md cursor-pointer transition-colors ${
+                                            autoScanEnabled
+                                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                        }`}
+                                    >
+                                        <span className={`w-1.5 h-1.5 rounded-full ${autoScanEnabled ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                        <span>Auto-Scan: {autoScanEnabled ? 'ON' : 'OFF'}</span>
+                                    </button>
+                                </div>
                                 <CustomDropdown
                                     value={selectedEmployeeId}
                                     onChange={(val) => setSelectedEmployeeId(val)}

@@ -269,7 +269,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                                 Date Joined
                             </span>
                             <p className="text-sm font-black text-black mt-1">
-                                {employee.dateOfJoining ? new Date(employee.dateOfJoining).toLocaleDateString() : 'N/A'}
+                                {employee.dateOfJoining ? formatDateToCustom(employee.dateOfJoining) : 'N/A'}
                             </p>
                         </div>
                     </div>
@@ -346,7 +346,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                                         Date of Joining
                                     </span>
                                     <span className="text-xs sm:text-sm font-bold text-black">
-                                        {employee.dateOfJoining ? new Date(employee.dateOfJoining).toLocaleDateString() : 'N/A'}
+                                        {employee.dateOfJoining ? formatDateToCustom(employee.dateOfJoining) : 'N/A'}
                                     </span>
                                 </div>
                             </div>
