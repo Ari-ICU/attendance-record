@@ -504,6 +504,7 @@ export default function StandalonePublicKioskScanPage() {
                                         }))
                                     ]}
                                     searchable
+                                    placement="top"
                                     className="w-full text-black"
                                 />
                             </div>

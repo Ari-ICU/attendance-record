@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, Check, Search } from 'lucide-react';
 
 export interface DropdownOption {
@@ -25,6 +25,7 @@ interface CustomDropdownProps {
     required?: boolean;
     name?: string;
     id?: string;
+    placement?: 'auto' | 'top' | 'bottom';
 }
 
 export default function CustomDropdown({
@@ -39,25 +40,57 @@ export default function CustomDropdown({
     icon,
     searchable = false,
     name,
-    id
+    id,
+    placement = 'auto'
 }: CustomDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [openUpward, setOpenUpward] = useState(false);
+    const [openUpward, setOpenUpward] = useState(placement === 'top');
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Auto-detect space below to flip upward if near screen bottom
-    useEffect(() => {
-        if (isOpen && dropdownRef.current) {
+    // Calculate upward/downward placement based on viewport space
+    const updatePlacement = useCallback(() => {
+        if (placement === 'top') {
+            setOpenUpward(true);
+            return;
+        }
+        if (placement === 'bottom') {
+            setOpenUpward(false);
+            return;
+        }
+        if (dropdownRef.current) {
             const rect = dropdownRef.current.getBoundingClientRect();
             const spaceBelow = window.innerHeight - rect.bottom;
-            if (spaceBelow < 260 && rect.top > 260) {
+            const spaceAbove = rect.top;
+            // If space below is less than 320px and there is more space above, open upward
+            if (spaceBelow < 320 && spaceAbove > 200) {
                 setOpenUpward(true);
             } else {
                 setOpenUpward(false);
             }
         }
-    }, [isOpen]);
+    }, [placement]);
+
+    // Check placement immediately when opening
+    const handleToggle = () => {
+        if (disabled) return;
+        if (!isOpen) {
+            updatePlacement();
+        }
+        setIsOpen(prev => !prev);
+    };
+
+    // Auto-update placement on scroll or resize while open
+    useEffect(() => {
+        if (!isOpen) return;
+        updatePlacement();
+        window.addEventListener('scroll', updatePlacement, true);
+        window.addEventListener('resize', updatePlacement);
+        return () => {
+            window.removeEventListener('scroll', updatePlacement, true);
+            window.removeEventListener('resize', updatePlacement);
+        };
+    }, [isOpen, updatePlacement]);
 
     // Normalize options into standard format
     const normalizedOptions: DropdownOption[] = options.map(opt => {
@@ -115,7 +148,7 @@ export default function CustomDropdown({
                 type="button"
                 name={name}
                 disabled={disabled}
-                onClick={() => !disabled && setIsOpen(!isOpen)}
+                onClick={handleToggle}
                 className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-50 hover:bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-black outline-none focus:border-black focus:bg-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                     isOpen ? 'border-black bg-white ring-2 ring-black/5' : ''
                 } ${buttonClassName}`}
