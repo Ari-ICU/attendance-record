@@ -57,6 +57,21 @@ class AttendanceController {
             }
 
             const result = await AttendanceService.checkIn(targetEmployee, req.body, ip, userAgent);
+            
+            // Broadcast real-time socket event across system
+            try {
+                const { socketUtils } = require('../config/socket.config');
+                socketUtils.broadcast('attendance_update', {
+                    type: 'check_in',
+                    employeeId: targetEmployee._id.toString(),
+                    employeeName: `${targetEmployee.firstName} ${targetEmployee.lastName}`,
+                    record: result,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (socketErr) {
+                console.warn('[Socket] Attendance broadcast warning:', socketErr?.message);
+            }
+
             return res.status(200).json(ApiResponse.success(result, 'Check-in successful', 200));
         } catch (err) {
             if (err.message && err.message.toLowerCase().includes('already checked')) {
@@ -109,6 +124,21 @@ class AttendanceController {
             }
 
             const result = await AttendanceService.checkOut(targetEmployee, req.body, ip, userAgent);
+            
+            // Broadcast real-time socket event across system
+            try {
+                const { socketUtils } = require('../config/socket.config');
+                socketUtils.broadcast('attendance_update', {
+                    type: 'check_out',
+                    employeeId: targetEmployee._id.toString(),
+                    employeeName: `${targetEmployee.firstName} ${targetEmployee.lastName}`,
+                    record: result,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (socketErr) {
+                console.warn('[Socket] Attendance check-out broadcast warning:', socketErr?.message);
+            }
+
             return res.status(200).json(ApiResponse.success(result, 'Check-out successful', 200));
         } catch (err) {
             if (err.message && err.message.toLowerCase().includes('already checked')) {

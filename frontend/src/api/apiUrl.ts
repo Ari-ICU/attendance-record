@@ -43,6 +43,17 @@ export const API_URLS = {
     },
     REPORTS: {
         ANALYTICS: `${BASE_URL}/reports/analytics`
+    },
+    CALENDAR: {
+        DASHBOARD: `${BASE_URL}/calendar`,
+        CREATE_EVENT: `${BASE_URL}/calendar/events`,
+        UPDATE_EVENT: (id: string) => `${BASE_URL}/calendar/events/${id}`,
+        DELETE_EVENT: (id: string) => `${BASE_URL}/calendar/events/${id}`,
+        CREATE_SHIFT: `${BASE_URL}/calendar/shifts`,
+        UPDATE_SHIFT: (id: string) => `${BASE_URL}/calendar/shifts/${id}`,
+        DELETE_SHIFT: (id: string) => `${BASE_URL}/calendar/shifts/${id}`,
+        CREATE_HOLIDAY: `${BASE_URL}/calendar/holidays`,
+        DELETE_HOLIDAY: (id: string) => `${BASE_URL}/calendar/holidays/${id}`,
     }
 };
 

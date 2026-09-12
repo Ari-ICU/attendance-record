@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
     Calendar as CalendarIcon,
     ChevronLeft,
@@ -22,7 +22,8 @@ import {
     Sun,
     Moon,
     Coffee,
-    Briefcase
+    Briefcase,
+    Radio
 } from 'lucide-react';
 import {
     format,
@@ -41,50 +42,15 @@ import {
     isToday,
     isSameMonth,
     parseISO,
-    setHours,
-    setMinutes
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
+import { CalendarService, EventItem, ShiftItem, HolidayItem } from '@/services/calendar.service';
+import { useSocket } from '@/contexts/SocketContext';
 
 // Types
 type CalendarView = 'week' | 'day' | 'month';
 type ActiveTab = 'calendar' | 'shifts' | 'holidays';
-
-interface EventItem {
-    id: string;
-    title: string;
-    category: 'work' | 'meeting' | 'holiday' | 'personal' | 'special';
-    date: string; // YYYY-MM-DD
-    startHour: number; // e.g. 8.5 for 8:30 AM
-    endHour: number; // e.g. 10 for 10:00 AM
-    isAllDay?: boolean;
-    location?: string;
-    description?: string;
-    color: string;
-    bgColor: string;
-    borderColor: string;
-}
-
-interface ShiftItem {
-    id: string;
-    name: string;
-    type: 'morning' | 'afternoon' | 'night' | 'flexible';
-    startTime: string; // "08:00"
-    endTime: string; // "17:00"
-    gracePeriod: number; // minutes
-    assignedDepts: string[];
-    assignedCount: number;
-    color: string;
-    bgColor: string;
-}
-
-interface HolidayItem {
-    id: string;
-    name: string;
-    date: string;
-    type: 'national' | 'academic' | 'observance';
-    status: 'paid' | 'unpaid';
-}
 
 const CATEGORIES = [
     { id: 'work', name: 'Work & Shifts', color: 'bg-emerald-500', text: 'text-emerald-700', border: 'border-emerald-500' },
@@ -94,165 +60,109 @@ const CATEGORIES = [
     { id: 'special', name: 'Exam & Training', color: 'bg-rose-500', text: 'text-rose-700', border: 'border-rose-500' },
 ];
 
-const INITIAL_EVENTS: EventItem[] = [
-    {
-        id: '1',
-        title: 'Morning Operations Sync',
-        category: 'work',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        startHour: 8,
-        endHour: 8.75,
-        location: 'Briefing Hall A',
-        color: 'text-emerald-950',
-        bgColor: 'bg-emerald-50',
-        borderColor: 'border-emerald-500'
-    },
-    {
-        id: '2',
-        title: 'Executive Attendance Review',
-        category: 'meeting',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        startHour: 9.5,
-        endHour: 11,
-        location: 'Conference Room 02',
-        color: 'text-amber-950',
-        bgColor: 'bg-amber-50',
-        borderColor: 'border-amber-500'
-    },
-    {
-        id: '3',
-        title: 'Roadmap & Shift Planning',
-        category: 'personal',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        startHour: 11.25,
-        endHour: 13,
-        location: 'Main Lab 04',
-        color: 'text-blue-950',
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-500'
-    },
-    {
-        id: '4',
-        title: 'Lunch & Faculty Sync',
-        category: 'personal',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        startHour: 13.25,
-        endHour: 14.25,
-        location: 'Cafeteria Lounge',
-        color: 'text-blue-950',
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-500'
-    },
-    {
-        id: '5',
-        title: 'Department Code Review & Audit',
-        category: 'work',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        startHour: 14.5,
-        endHour: 16,
-        location: 'Dev Hub',
-        color: 'text-emerald-950',
-        bgColor: 'bg-emerald-50',
-        borderColor: 'border-emerald-500'
-    },
-    {
-        id: '6',
-        title: 'Company Foundation Day',
-        category: 'holiday',
-        date: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
-        startHour: 0,
-        endHour: 24,
-        isAllDay: true,
-        color: 'text-purple-950',
-        bgColor: 'bg-purple-50',
-        borderColor: 'border-purple-500'
-    },
-    {
-        id: '7',
-        title: 'Midterm Assessment Session',
-        category: 'special',
-        date: format(addDays(new Date(), 2), 'yyyy-MM-dd'),
-        startHour: 9,
-        endHour: 12,
-        location: 'Hall 301',
-        color: 'text-rose-950',
-        bgColor: 'bg-rose-50',
-        borderColor: 'border-rose-500'
-    }
-];
-
-const INITIAL_SHIFTS: ShiftItem[] = [
-    {
-        id: 's1',
-        name: 'Regular Day Shift',
-        type: 'morning',
-        startTime: '08:00',
-        endTime: '17:00',
-        gracePeriod: 15,
-        assignedDepts: ['Engineering', 'Administration', 'HR'],
-        assignedCount: 42,
-        color: 'text-blue-900',
-        bgColor: 'bg-blue-50'
-    },
-    {
-        id: 's2',
-        name: 'Afternoon & Lab Shift',
-        type: 'afternoon',
-        startTime: '13:00',
-        endTime: '21:00',
-        gracePeriod: 10,
-        assignedDepts: ['IT Support', 'Library & Labs'],
-        assignedCount: 18,
-        color: 'text-amber-900',
-        bgColor: 'bg-amber-50'
-    },
-    {
-        id: 's3',
-        name: 'Overnight Security & Facility',
-        type: 'night',
-        startTime: '21:00',
-        endTime: '06:00',
-        gracePeriod: 20,
-        assignedDepts: ['Security', 'Maintenance'],
-        assignedCount: 8,
-        color: 'text-purple-900',
-        bgColor: 'bg-purple-50'
-    },
-    {
-        id: 's4',
-        name: 'Faculty Flexible Roster',
-        type: 'flexible',
-        startTime: '09:00',
-        endTime: '16:00',
-        gracePeriod: 30,
-        assignedDepts: ['Academic Staff'],
-        assignedCount: 24,
-        color: 'text-emerald-900',
-        bgColor: 'bg-emerald-50'
-    }
-];
-
-const INITIAL_HOLIDAYS: HolidayItem[] = [
-    { id: 'h1', name: 'International New Year Day', date: '2026-01-01', type: 'national', status: 'paid' },
-    { id: 'h2', name: 'Victory over Genocide Day', date: '2026-01-07', type: 'national', status: 'paid' },
-    { id: 'h3', name: 'International Women’s Day', date: '2026-03-08', type: 'observance', status: 'paid' },
-    { id: 'h4', name: 'Khmer New Year Holiday', date: '2026-04-13', type: 'national', status: 'paid' },
-    { id: 'h5', name: 'King’s Birthday Commemoration', date: '2026-05-14', type: 'national', status: 'paid' },
-    { id: 'h6', name: 'Pchum Ben Festival', date: '2026-10-09', type: 'national', status: 'paid' },
-    { id: 'h7', name: 'Water & Moon Festival', date: '2026-11-23', type: 'national', status: 'paid' },
-];
-
 export default function UnifiedCalendarPage() {
+    const { socket, isConnected } = useSocket();
     const [activeTab, setActiveTab] = useState<ActiveTab>('calendar');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<CalendarView>('week');
     const [selectedCategories, setSelectedCategories] = useState<string[]>(['work', 'meeting', 'personal', 'holiday', 'special']);
-    const [events, setEvents] = useState<EventItem[]>(INITIAL_EVENTS);
-    const [shifts, setShifts] = useState<ShiftItem[]>(INITIAL_SHIFTS);
-    const [holidays, setHolidays] = useState<HolidayItem[]>(INITIAL_HOLIDAYS);
+    
+    // Live Data from Backend API
+    const [events, setEvents] = useState<EventItem[]>([]);
+    const [shifts, setShifts] = useState<ShiftItem[]>([]);
+    const [holidays, setHolidays] = useState<HolidayItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Modal States
     const [showEventModal, setShowEventModal] = useState(false);
     const [showShiftModal, setShowShiftModal] = useState(false);
+    const [showHolidayModal, setShowHolidayModal] = useState(false);
     const [currentTimePosition, setCurrentTimePosition] = useState<number>(0);
+
+    // New Event Form State
+    const [newEvent, setNewEvent] = useState<{
+        title: string;
+        category: 'work' | 'meeting' | 'holiday' | 'personal' | 'special';
+        date: string;
+        startHour: number;
+        endHour: number;
+        location: string;
+        description: string;
+    }>({
+        title: '',
+        category: 'work',
+        date: format(new Date(), 'yyyy-MM-dd'),
+        startHour: 9,
+        endHour: 10,
+        location: 'Office Room 1',
+        description: ''
+    });
+
+    // New Shift Form State
+    const [newShift, setNewShift] = useState<{
+        name: string;
+        type: 'morning' | 'afternoon' | 'night' | 'flexible';
+        startTime: string;
+        endTime: string;
+        gracePeriod: number;
+        assignedDepts: string;
+    }>({
+        name: '',
+        type: 'morning',
+        startTime: '08:00',
+        endTime: '17:00',
+        gracePeriod: 15,
+        assignedDepts: 'Engineering & IT, Operations'
+    });
+
+    // New Holiday Form State
+    const [newHoliday, setNewHoliday] = useState<{
+        name: string;
+        date: string;
+        type: 'national' | 'academic' | 'observance';
+        status: 'paid' | 'unpaid';
+    }>({
+        name: '',
+        date: format(new Date(), 'yyyy-MM-dd'),
+        type: 'national',
+        status: 'paid'
+    });
+
+    // Fetch Calendar Dashboard Data from Backend API
+    const fetchCalendarData = useCallback(async () => {
+        try {
+            const data = await CalendarService.getDashboard();
+            setEvents(data.events || []);
+            setShifts(data.shifts || []);
+            setHolidays(data.holidays || []);
+        } catch (error) {
+            console.error('Failed to fetch calendar data:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchCalendarData();
+    }, [fetchCalendarData]);
+
+    // Real-Time WebSocket Synchronization
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleRealtimeUpdate = (data: any) => {
+            console.log('⚡ [RealTime Calendar Sync]:', data);
+            fetchCalendarData();
+        };
+
+        socket.on('calendar_updated', handleRealtimeUpdate);
+        socket.on('schedule_updated', handleRealtimeUpdate);
+
+        return () => {
+            socket.off('calendar_updated', handleRealtimeUpdate);
+            socket.off('schedule_updated', handleRealtimeUpdate);
+        };
+    }, [socket, fetchCalendarData]);
 
     // Live Time Indicator Calculation
     useEffect(() => {
@@ -260,7 +170,6 @@ export default function UnifiedCalendarPage() {
             const now = new Date();
             const hours = now.getHours();
             const minutes = now.getMinutes();
-            // Assuming time grid starts at 7 AM (hour 7 = 0px) and each hour is 64px
             const gridStartHour = 7;
             const hourOffset = (hours + minutes / 60) - gridStartHour;
             setCurrentTimePosition(Math.max(0, hourOffset * 64));
@@ -310,12 +219,149 @@ export default function UnifiedCalendarPage() {
 
     const hoursRange = Array.from({ length: 14 }, (_, i) => i + 7); // 7 AM to 8 PM
 
+    // Backend Handlers
+    const handleCreateEvent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newEvent.title.trim()) {
+            toast.error('Event title is required');
+            return;
+        }
+
+        const colorMap: Record<string, { color: string; bgColor: string; borderColor: string }> = {
+            work: { color: 'text-emerald-950', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-500' },
+            meeting: { color: 'text-amber-950', bgColor: 'bg-amber-50', borderColor: 'border-amber-500' },
+            personal: { color: 'text-blue-950', bgColor: 'bg-blue-50', borderColor: 'border-blue-500' },
+            holiday: { color: 'text-purple-950', bgColor: 'bg-purple-50', borderColor: 'border-purple-500' },
+            special: { color: 'text-rose-950', bgColor: 'bg-rose-50', borderColor: 'border-rose-500' }
+        };
+
+        const config = colorMap[newEvent.category] || colorMap.work;
+
+        try {
+            await CalendarService.createEvent({
+                title: newEvent.title.trim(),
+                category: newEvent.category,
+                date: newEvent.date,
+                startHour: Number(newEvent.startHour),
+                endHour: Number(newEvent.endHour),
+                location: newEvent.location.trim(),
+                description: newEvent.description.trim(),
+                color: config.color,
+                bgColor: config.bgColor,
+                borderColor: config.borderColor
+            });
+            toast.success('Calendar event saved in backend database!');
+            setShowEventModal(false);
+            setNewEvent({
+                title: '',
+                category: 'work',
+                date: format(new Date(), 'yyyy-MM-dd'),
+                startHour: 9,
+                endHour: 10,
+                location: '',
+                description: ''
+            });
+            fetchCalendarData();
+        } catch {
+            toast.error('Failed to create event');
+        }
+    };
+
+    const handleDeleteEvent = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this event?')) return;
+        try {
+            await CalendarService.deleteEvent(id);
+            toast.success('Event deleted');
+            fetchCalendarData();
+        } catch {
+            toast.error('Failed to delete event');
+        }
+    };
+
+    const handleCreateShift = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newShift.name.trim()) {
+            toast.error('Shift name is required');
+            return;
+        }
+
+        const colorConfig = newShift.type === 'morning' ? { color: 'text-blue-900', bgColor: 'bg-blue-50' }
+            : newShift.type === 'afternoon' ? { color: 'text-amber-900', bgColor: 'bg-amber-50' }
+            : newShift.type === 'night' ? { color: 'text-purple-900', bgColor: 'bg-purple-50' }
+            : { color: 'text-emerald-900', bgColor: 'bg-emerald-50' };
+
+        const depts = newShift.assignedDepts.split(',').map(d => d.trim()).filter(Boolean);
+
+        try {
+            await CalendarService.createShift({
+                name: newShift.name.trim(),
+                type: newShift.type,
+                startTime: newShift.startTime,
+                endTime: newShift.endTime,
+                gracePeriod: Number(newShift.gracePeriod),
+                assignedDepts: depts,
+                assignedCount: 15,
+                color: colorConfig.color,
+                bgColor: colorConfig.bgColor
+            });
+            toast.success('Work shift created in backend database!');
+            setShowShiftModal(false);
+            fetchCalendarData();
+        } catch {
+            toast.error('Failed to create shift');
+        }
+    };
+
+    const handleDeleteShift = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this shift?')) return;
+        try {
+            await CalendarService.deleteShift(id);
+            toast.success('Shift deleted');
+            fetchCalendarData();
+        } catch {
+            toast.error('Failed to delete shift');
+        }
+    };
+
+    const handleCreateHoliday = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newHoliday.name.trim()) {
+            toast.error('Holiday name is required');
+            return;
+        }
+
+        try {
+            await CalendarService.createHoliday({
+                name: newHoliday.name.trim(),
+                date: newHoliday.date,
+                type: newHoliday.type,
+                status: newHoliday.status
+            });
+            toast.success('Holiday registered in backend database!');
+            setShowHolidayModal(false);
+            fetchCalendarData();
+        } catch {
+            toast.error('Failed to create holiday');
+        }
+    };
+
+    const handleDeleteHoliday = async (id: string) => {
+        if (!confirm('Delete this public holiday?')) return;
+        try {
+            await CalendarService.deleteHoliday(id);
+            toast.success('Holiday removed');
+            fetchCalendarData();
+        } catch {
+            toast.error('Failed to remove holiday');
+        }
+    };
+
     return (
         <div className="w-full space-y-6 animate-in fade-in duration-300 font-sans select-none">
             {/* Top Navigation Bar & Sub-Tabs */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs">
                 {/* Tabs */}
-                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl w-fit">
+                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl w-fit flex-wrap">
                     <button
                         onClick={() => setActiveTab('calendar')}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
@@ -351,8 +397,13 @@ export default function UnifiedCalendarPage() {
                     </button>
                 </div>
 
-                {/* Primary Action */}
-                <div className="flex items-center gap-2">
+                {/* Live Real-time Status Badge & Actions */}
+                <div className="flex items-center gap-3">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>Live Real-Time Sync</span>
+                    </div>
+
                     {activeTab === 'calendar' && (
                         <button
                             onClick={() => setShowEventModal(true)}
@@ -371,6 +422,15 @@ export default function UnifiedCalendarPage() {
                             <span>Create Shift</span>
                         </button>
                     )}
+                    {activeTab === 'holidays' && (
+                        <button
+                            onClick={() => setShowHolidayModal(true)}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-black hover:bg-slate-900 text-white text-xs font-black transition-all shadow-xs active:scale-95 cursor-pointer"
+                        >
+                            <Plus size={15} />
+                            <span>Add Holiday</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -380,50 +440,50 @@ export default function UnifiedCalendarPage() {
                     {/* Left Sidebar (Mini Calendar & Category Filters) */}
                     <div className="lg:col-span-3 space-y-5 bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
                         {/* Mini Calendar Header */}
-                        <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-black text-black">
+                        <div className="flex items-center justify-between">
+                            <span className="font-black text-sm text-black">
                                 {format(currentDate, 'MMMM yyyy')}
                             </span>
                             <div className="flex items-center gap-1">
                                 <button
                                     onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-                                    className="p-1.5 rounded-lg hover:bg-slate-100 text-black transition-colors cursor-pointer"
+                                    className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-black cursor-pointer"
                                 >
-                                    <ChevronLeft size={16} />
+                                    <ChevronLeft size={14} />
                                 </button>
                                 <button
                                     onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-                                    className="p-1.5 rounded-lg hover:bg-slate-100 text-black transition-colors cursor-pointer"
+                                    className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-black cursor-pointer"
                                 >
-                                    <ChevronRight size={16} />
+                                    <ChevronRight size={14} />
                                 </button>
                             </div>
                         </div>
 
                         {/* Mini Calendar Grid */}
-                        <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                            {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((d) => (
-                                <span key={d} className="py-1 text-[11px] font-black text-slate-800 uppercase">
-                                    {d}
+                        <div className="grid grid-cols-7 gap-1 text-center">
+                            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
+                                <span key={idx} className="text-[10px] font-black text-slate-400 py-1">
+                                    {day}
                                 </span>
                             ))}
                             {miniCalendarDays.map((day, idx) => {
-                                const isSelected = isSameDay(day, currentDate);
-                                const isCurrentMonth = isSameMonth(day, currentDate);
+                                const isCurrent = isSameDay(day, currentDate);
                                 const isTodayDate = isToday(day);
+                                const inCurrentMonth = isSameMonth(day, currentDate);
 
                                 return (
                                     <button
                                         key={idx}
                                         onClick={() => setCurrentDate(day)}
-                                        className={`h-7 w-7 mx-auto flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                                            isSelected
-                                                ? 'bg-blue-600 text-white font-black shadow-xs'
+                                        className={`h-8 w-8 mx-auto rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
+                                            isCurrent
+                                                ? 'bg-black text-white shadow-xs font-black'
                                                 : isTodayDate
-                                                    ? 'bg-slate-200 text-black font-black'
-                                                    : isCurrentMonth
-                                                        ? 'text-black hover:bg-slate-100 font-semibold'
-                                                        : 'text-slate-400 hover:bg-slate-50'
+                                                ? 'bg-blue-50 text-blue-600 border border-blue-200 font-black'
+                                                : inCurrentMonth
+                                                ? 'text-slate-800 hover:bg-slate-100'
+                                                : 'text-slate-300'
                                         }`}
                                     >
                                         {format(day, 'd')}
@@ -432,33 +492,31 @@ export default function UnifiedCalendarPage() {
                             })}
                         </div>
 
-                        <hr className="border-slate-200" />
-
-                        {/* Category Checkboxes */}
-                        <div>
-                            <p className="text-[11px] font-black text-black uppercase tracking-wider mb-3">
-                                My Availability & Layers
-                            </p>
-                            <div className="space-y-2">
+                        {/* Category Filter Checkboxes */}
+                        <div className="pt-4 border-t border-slate-100 space-y-3">
+                            <span className="text-xs font-black uppercase tracking-wider text-slate-400 block">
+                                Filter Calendars
+                            </span>
+                            <div className="space-y-1.5">
                                 {CATEGORIES.map((cat) => {
-                                    const isChecked = selectedCategories.includes(cat.id);
+                                    const isSelected = selectedCategories.includes(cat.id);
                                     return (
                                         <button
                                             key={cat.id}
                                             onClick={() => toggleCategory(cat.id)}
-                                            className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors text-left cursor-pointer group"
+                                            className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors text-left group cursor-pointer"
                                         >
                                             <div className="flex items-center gap-2.5">
-                                                <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
-                                                    isChecked ? `${cat.color} border-transparent text-white` : 'border-slate-300 bg-white'
-                                                }`}>
-                                                    {isChecked && <Check size={12} className="stroke-[3]" />}
-                                                </div>
-                                                <span className="text-xs font-bold text-black group-hover:text-blue-600">
+                                                <div className={`w-3 h-3 rounded-md ${cat.color}`} />
+                                                <span className="text-xs font-bold text-slate-800 group-hover:text-black">
                                                     {cat.name}
                                                 </span>
                                             </div>
-                                            <span className="w-2 h-2 rounded-full opacity-60 group-hover:opacity-100" />
+                                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
+                                                isSelected ? 'bg-black border-black text-white' : 'border-slate-300'
+                                            }`}>
+                                                {isSelected && <Check size={10} />}
+                                            </div>
                                         </button>
                                     );
                                 })}
@@ -466,88 +524,80 @@ export default function UnifiedCalendarPage() {
                         </div>
                     </div>
 
-                    {/* Main Timeline Grid */}
+                    {/* Main Timeline Calendar Workspace */}
                     <div className="lg:col-span-9 bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-                        {/* Timeline Header Controller */}
-                        <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white">
+                        {/* Main View Header & Navigation */}
+                        <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
-                                <h2 className="text-xl sm:text-2xl font-black text-black tracking-tight">
-                                    {format(weekStart, 'MMMM d')} – {format(weekEnd, 'd, yyyy')}
+                                <h2 className="text-lg sm:text-xl font-black text-black">
+                                    {format(currentDate, 'MMMM yyyy')}
                                 </h2>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                {/* Navigation & Today */}
-                                <div className="flex items-center bg-slate-100 p-1 rounded-2xl">
+                                <button
+                                    onClick={handleToday}
+                                    className="px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-black text-xs font-bold transition-colors cursor-pointer"
+                                >
+                                    Today
+                                </button>
+                                <div className="flex items-center gap-1">
                                     <button
                                         onClick={handlePrev}
-                                        className="p-1.5 rounded-xl hover:bg-white text-black transition-colors cursor-pointer"
-                                        title="Previous"
+                                        className="p-2 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-black transition-colors cursor-pointer"
                                     >
                                         <ChevronLeft size={16} />
                                     </button>
                                     <button
-                                        onClick={handleToday}
-                                        className="px-3 py-1 rounded-xl hover:bg-white text-xs font-black text-black uppercase tracking-wider transition-colors cursor-pointer"
-                                    >
-                                        Today
-                                    </button>
-                                    <button
                                         onClick={handleNext}
-                                        className="p-1.5 rounded-xl hover:bg-white text-black transition-colors cursor-pointer"
-                                        title="Next"
+                                        className="p-2 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-black transition-colors cursor-pointer"
                                     >
                                         <ChevronRight size={16} />
                                     </button>
                                 </div>
+                            </div>
 
-                                {/* View Switcher */}
-                                <div className="flex items-center bg-slate-100 p-1 rounded-2xl">
-                                    {(['day', 'week', 'month'] as CalendarView[]).map((v) => (
-                                        <button
-                                            key={v}
-                                            onClick={() => setViewMode(v)}
-                                            className={`px-3 py-1 rounded-xl text-xs font-black capitalize transition-all cursor-pointer ${
-                                                viewMode === v
-                                                    ? 'bg-white text-black shadow-xs'
-                                                    : 'text-slate-800 hover:text-black'
-                                            }`}
-                                        >
-                                            {v}
-                                        </button>
-                                    ))}
-                                </div>
+                            {/* View Switcher: Day, Week, Month */}
+                            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl w-fit">
+                                {(['day', 'week', 'month'] as CalendarView[]).map((v) => (
+                                    <button
+                                        key={v}
+                                        onClick={() => setViewMode(v)}
+                                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black capitalize transition-all cursor-pointer ${
+                                            viewMode === v
+                                                ? 'bg-white text-black shadow-2xs'
+                                                : 'text-slate-600 hover:text-black'
+                                        }`}
+                                    >
+                                        {v}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
-                        {/* WEEK GRID VIEW */}
+                        {/* WEEK VIEW */}
                         {viewMode === 'week' && (
-                            <div className="overflow-x-auto custom-scrollbar">
-                                <div className="min-w-[760px]">
-                                    {/* Days Header */}
+                            <div className="overflow-x-auto">
+                                <div className="min-w-[800px]">
+                                    {/* Week Header (Mon - Sun) */}
                                     <div className="grid grid-cols-8 border-b border-slate-200 bg-slate-50/70">
-                                        <div className="p-3 text-center border-r border-slate-200 text-[11px] font-black text-slate-800 uppercase">
-                                            Time
+                                        <div className="p-3 text-[11px] font-black text-slate-400 uppercase text-center border-r border-slate-200">
+                                            Time (GMT+7)
                                         </div>
                                         {weekDays.map((day, idx) => {
-                                            const isCurrentDay = isSameDay(day, currentDate);
+                                            const isCurr = isSameDay(day, new Date());
                                             return (
                                                 <div
                                                     key={idx}
-                                                    onClick={() => setCurrentDate(day)}
-                                                    className="p-3 text-center border-r border-slate-200 last:border-r-0 cursor-pointer hover:bg-slate-100/60 transition-colors"
+                                                    className={`p-3 text-center border-r border-slate-200 last:border-r-0 ${
+                                                        isCurr ? 'bg-blue-50/50' : ''
+                                                    }`}
                                                 >
-                                                    {isCurrentDay ? (
-                                                        <div className="inline-flex items-center justify-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-xl shadow-xs">
-                                                            <span className="text-sm font-black">{format(day, 'd')}</span>
-                                                            <span className="text-[10px] font-black uppercase">{format(day, 'EEE')}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex flex-col items-center">
-                                                            <span className="text-base font-black text-black">{format(day, 'd')}</span>
-                                                            <span className="text-[10px] font-bold text-slate-800 uppercase">{format(day, 'EEE')}</span>
-                                                        </div>
-                                                    )}
+                                                    <span className="text-[11px] font-bold text-slate-500 uppercase block">
+                                                        {format(day, 'EEE')}
+                                                    </span>
+                                                    <span className={`text-base font-black inline-block mt-0.5 ${
+                                                        isCurr ? 'w-7 h-7 rounded-full bg-blue-600 text-white leading-7' : 'text-black'
+                                                    }`}>
+                                                        {format(day, 'd')}
+                                                    </span>
                                                 </div>
                                             );
                                         })}
@@ -564,9 +614,17 @@ export default function UnifiedCalendarPage() {
                                             return (
                                                 <div key={idx} className="p-1 border-r border-slate-200 last:border-r-0 flex items-center">
                                                     {allDayEvt && (
-                                                        <div className="w-full px-2 py-1 bg-purple-100 border border-purple-300 text-purple-900 rounded-lg text-xs font-bold truncate flex items-center gap-1.5">
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0" />
-                                                            <span className="truncate">{allDayEvt.title}</span>
+                                                        <div className="w-full px-2 py-1 bg-purple-100 border border-purple-300 text-purple-900 rounded-lg text-xs font-bold truncate flex items-center gap-1.5 group justify-between">
+                                                            <div className="flex items-center gap-1.5 truncate">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0" />
+                                                                <span className="truncate">{allDayEvt.title}</span>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => allDayEvt.id && handleDeleteEvent(allDayEvt.id)}
+                                                                className="opacity-0 group-hover:opacity-100 hover:text-rose-700"
+                                                            >
+                                                                <Trash2 size={11} />
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>
@@ -576,7 +634,7 @@ export default function UnifiedCalendarPage() {
 
                                     {/* Hourly Timeline Rows */}
                                     <div className="relative">
-                                        {/* Current Live Time Red/Blue Indicator Line */}
+                                        {/* Current Live Time Line */}
                                         <div
                                             className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
                                             style={{ top: `${currentTimePosition}px` }}
@@ -611,21 +669,32 @@ export default function UnifiedCalendarPage() {
                                                             className="border-r border-slate-100 last:border-r-0 relative p-1 hover:bg-slate-50/50 transition-colors"
                                                         >
                                                             {matchingEvents.map((evt) => {
-                                                                const durationHours = evt.endHour - evt.startHour;
+                                                                const durationHours = (evt.endHour || hour + 1) - (evt.startHour || hour);
                                                                 const heightPx = Math.max(38, durationHours * 64 - 4);
-                                                                const topOffsetPx = (evt.startHour - hour) * 64;
+                                                                const topOffsetPx = ((evt.startHour || hour) - hour) * 64;
 
                                                                 return (
                                                                     <div
                                                                         key={evt.id}
-                                                                        className={`absolute left-1 right-1 rounded-xl p-2 border-l-4 ${evt.borderColor} ${evt.bgColor} ${evt.color} shadow-xs z-10 overflow-hidden cursor-pointer hover:shadow-md transition-all`}
+                                                                        className={`absolute left-1 right-1 rounded-xl p-2 border-l-4 ${evt.borderColor || 'border-emerald-500'} ${evt.bgColor || 'bg-emerald-50'} ${evt.color || 'text-emerald-950'} shadow-xs z-10 overflow-hidden cursor-pointer hover:shadow-md transition-all group`}
                                                                         style={{
                                                                             top: `${topOffsetPx + 2}px`,
                                                                             height: `${heightPx}px`
                                                                         }}
                                                                     >
-                                                                        <div className="font-black text-xs leading-tight truncate">
-                                                                            {evt.title}
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="font-black text-xs leading-tight truncate">
+                                                                                {evt.title}
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    if (evt.id) handleDeleteEvent(evt.id);
+                                                                                }}
+                                                                                className="opacity-0 group-hover:opacity-100 hover:text-rose-700 text-slate-400 p-0.5"
+                                                                            >
+                                                                                <Trash2 size={11} />
+                                                                            </button>
                                                                         </div>
                                                                         <div className="text-[10px] font-bold text-slate-700 mt-0.5 flex items-center gap-1">
                                                                             <Clock size={10} />
@@ -651,49 +720,45 @@ export default function UnifiedCalendarPage() {
                             </div>
                         )}
 
-                        {/* MONTH MATRIX VIEW */}
+                        {/* MONTH VIEW */}
                         {viewMode === 'month' && (
-                            <div className="p-4 sm:p-6">
-                                <div className="grid grid-cols-7 gap-2">
+                            <div className="p-4">
+                                <div className="grid grid-cols-7 border-b border-slate-200 pb-2 mb-2 text-center text-xs font-black text-slate-500 uppercase">
                                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
-                                        <div key={d} className="p-2 text-center text-xs font-black text-black uppercase">
-                                            {d}
-                                        </div>
+                                        <div key={d}>{d}</div>
                                     ))}
+                                </div>
+                                <div className="grid grid-cols-7 gap-2">
                                     {miniCalendarDays.map((day, idx) => {
                                         const dayKey = format(day, 'yyyy-MM-dd');
                                         const dayEvents = filteredEvents.filter(e => e.date === dayKey);
-                                        const isSelected = isSameDay(day, currentDate);
-                                        const isCurrentMonth = isSameMonth(day, currentDate);
+                                        const isCurrMonth = isSameMonth(day, currentDate);
+                                        const isCurrDay = isToday(day);
 
                                         return (
                                             <div
                                                 key={idx}
-                                                onClick={() => {
-                                                    setCurrentDate(day);
-                                                    setViewMode('day');
-                                                }}
-                                                className={`min-h-[100px] p-2 rounded-2xl border transition-all cursor-pointer ${
-                                                    isSelected
-                                                        ? 'border-blue-600 bg-blue-50/30'
-                                                        : isCurrentMonth
-                                                            ? 'border-slate-200 bg-white hover:border-slate-400'
-                                                            : 'border-slate-100 bg-slate-50/50 opacity-40'
+                                                className={`min-h-[90px] p-2 rounded-2xl border transition-all ${
+                                                    isCurrDay
+                                                        ? 'bg-blue-50/40 border-blue-200'
+                                                        : isCurrMonth
+                                                        ? 'bg-white border-slate-200 hover:border-slate-300'
+                                                        : 'bg-slate-50/50 border-slate-100 opacity-60'
                                                 }`}
                                             >
-                                                <div className="flex items-center justify-between mb-1.5">
-                                                    <span className={`text-xs font-black ${isToday(day) ? 'px-2 py-0.5 rounded-lg bg-blue-600 text-white' : 'text-black'}`}>
+                                                <div className="text-right">
+                                                    <span className={`text-xs font-black inline-block px-1.5 py-0.5 rounded-lg ${
+                                                        isCurrDay ? 'bg-blue-600 text-white' : 'text-slate-700'
+                                                    }`}>
                                                         {format(day, 'd')}
                                                     </span>
-                                                    {dayEvents.length > 0 && (
-                                                        <span className="text-[10px] font-bold text-slate-800 bg-slate-100 px-1.5 py-0.2 rounded-md">
-                                                            {dayEvents.length}
-                                                        </span>
-                                                    )}
                                                 </div>
-                                                <div className="space-y-1">
+                                                <div className="mt-1.5 space-y-1">
                                                     {dayEvents.slice(0, 2).map((ev) => (
-                                                        <div key={ev.id} className={`text-[10px] font-bold p-1 rounded-md truncate border-l-2 ${ev.borderColor} ${ev.bgColor} ${ev.color}`}>
+                                                        <div
+                                                            key={ev.id}
+                                                            className={`p-1 rounded-lg text-[10px] font-bold truncate ${ev.bgColor} ${ev.color} border border-slate-200/60`}
+                                                        >
                                                             {ev.title}
                                                         </div>
                                                     ))}
@@ -724,9 +789,9 @@ export default function UnifiedCalendarPage() {
                                     </div>
                                     <button
                                         onClick={() => setShowEventModal(true)}
-                                        className="px-4 py-2 rounded-xl bg-black text-white text-xs font-bold hover:bg-slate-900"
+                                        className="px-4 py-2 rounded-xl bg-black text-white text-xs font-bold hover:bg-slate-900 cursor-pointer"
                                     >
-                                        + Add Time Block
+                                        + Add Event
                                     </button>
                                 </div>
 
@@ -736,7 +801,7 @@ export default function UnifiedCalendarPage() {
                                         .map((ev) => (
                                             <div
                                                 key={ev.id}
-                                                className={`p-4 rounded-2xl border-l-4 ${ev.borderColor} ${ev.bgColor} flex items-center justify-between`}
+                                                className={`p-4 rounded-2xl border-l-4 ${ev.borderColor} ${ev.bgColor} flex items-center justify-between group`}
                                             >
                                                 <div>
                                                     <div className="font-black text-sm text-black">{ev.title}</div>
@@ -745,9 +810,17 @@ export default function UnifiedCalendarPage() {
                                                         {ev.location && <span>📍 {ev.location}</span>}
                                                     </div>
                                                 </div>
-                                                <span className="px-3 py-1 rounded-xl bg-white border border-slate-200 text-xs font-black capitalize text-black">
-                                                    {ev.category}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="px-3 py-1 rounded-xl bg-white border border-slate-200 text-xs font-black capitalize text-black">
+                                                        {ev.category}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => ev.id && handleDeleteEvent(ev.id)}
+                                                        className="p-2 rounded-xl text-slate-400 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                 </div>
@@ -770,11 +843,12 @@ export default function UnifiedCalendarPage() {
                                     <span className="px-3 py-1 rounded-full bg-slate-100 text-black text-[11px] font-black uppercase">
                                         {shift.type}
                                     </span>
-                                    <div className="flex items-center gap-1">
-                                        <button className="p-1.5 text-slate-700 hover:text-black rounded-lg hover:bg-slate-100 cursor-pointer">
-                                            <Edit2 size={14} />
-                                        </button>
-                                    </div>
+                                    <button
+                                        onClick={() => shift.id && handleDeleteShift(shift.id)}
+                                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer transition-colors"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
 
                                 <div>
@@ -791,11 +865,11 @@ export default function UnifiedCalendarPage() {
                                     <div className="flex items-center justify-between text-xs font-bold text-black">
                                         <span>Active Personnel</span>
                                         <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md">
-                                            {shift.assignedCount} Staff
+                                            {shift.assignedCount || 15} Staff
                                         </span>
                                     </div>
                                     <div className="flex flex-wrap gap-1">
-                                        {shift.assignedDepts.map((d, i) => (
+                                        {shift.assignedDepts?.map((d, i) => (
                                             <span key={i} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[10px] font-bold">
                                                 {d}
                                             </span>
@@ -816,7 +890,10 @@ export default function UnifiedCalendarPage() {
                             <h3 className="text-lg font-black text-black">Annual Statutory & Company Holidays</h3>
                             <p className="text-xs font-bold text-slate-800 mt-0.5">Automated non-working days for attendance calculation</p>
                         </div>
-                        <button className="px-4 py-2 rounded-xl bg-black text-white text-xs font-bold hover:bg-slate-900 cursor-pointer">
+                        <button
+                            onClick={() => setShowHolidayModal(true)}
+                            className="px-4 py-2 rounded-xl bg-black text-white text-xs font-bold hover:bg-slate-900 cursor-pointer"
+                        >
                             + Add Holiday
                         </button>
                     </div>
@@ -840,9 +917,293 @@ export default function UnifiedCalendarPage() {
                                     <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
                                         Active
                                     </span>
+                                    <button
+                                        onClick={() => h.id && handleDeleteHoliday(h.id)}
+                                        className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 1: ADD EVENT MODAL */}
+            {showEventModal && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 className="text-lg font-black text-black">Create Calendar Event</h3>
+                            <button
+                                onClick={() => setShowEventModal(false)}
+                                className="p-2 rounded-xl hover:bg-slate-100 text-slate-500"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreateEvent} className="space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-black block mb-1">Event Title *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. Engineering Sprint Planning"
+                                    value={newEvent.title}
+                                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black focus:outline-hidden focus:border-black"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs font-bold text-black block mb-1">Category</label>
+                                    <select
+                                        value={newEvent.category}
+                                        onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value as any })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black focus:outline-hidden"
+                                    >
+                                        <option value="work">Work & Shifts</option>
+                                        <option value="meeting">Meeting</option>
+                                        <option value="personal">Team Review</option>
+                                        <option value="holiday">Holiday</option>
+                                        <option value="special">Training</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-black block mb-1">Date</label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={newEvent.date}
+                                        onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs font-bold text-black block mb-1">Start Hour (24h)</label>
+                                    <input
+                                        type="number"
+                                        min="7"
+                                        max="20"
+                                        step="0.5"
+                                        value={newEvent.startHour}
+                                        onChange={(e) => setNewEvent({ ...newEvent, startHour: Number(e.target.value) })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-black block mb-1">End Hour (24h)</label>
+                                    <input
+                                        type="number"
+                                        min="7"
+                                        max="21"
+                                        step="0.5"
+                                        value={newEvent.endHour}
+                                        onChange={(e) => setNewEvent({ ...newEvent, endHour: Number(e.target.value) })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-bold text-black block mb-1">Location / Room</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Conference Room 3"
+                                    value={newEvent.location}
+                                    onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowEventModal(false)}
+                                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-5 py-2 rounded-xl bg-black text-white text-xs font-black hover:bg-slate-800 shadow-xs"
+                                >
+                                    Save Event
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 2: ADD SHIFT MODAL */}
+            {showShiftModal && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 className="text-lg font-black text-black">Create Work Shift</h3>
+                            <button
+                                onClick={() => setShowShiftModal(false)}
+                                className="p-2 rounded-xl hover:bg-slate-100 text-slate-500"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreateShift} className="space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-black block mb-1">Shift Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. Early Morning Security"
+                                    value={newShift.name}
+                                    onChange={(e) => setNewShift({ ...newShift, name: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label className="text-xs font-bold text-black block mb-1">Type</label>
+                                    <select
+                                        value={newShift.type}
+                                        onChange={(e) => setNewShift({ ...newShift, type: e.target.value as any })}
+                                        className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                    >
+                                        <option value="morning">Morning</option>
+                                        <option value="afternoon">Afternoon</option>
+                                        <option value="night">Night</option>
+                                        <option value="flexible">Flexible</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-black block mb-1">Start</label>
+                                    <input
+                                        type="time"
+                                        required
+                                        value={newShift.startTime}
+                                        onChange={(e) => setNewShift({ ...newShift, startTime: e.target.value })}
+                                        className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-black block mb-1">End</label>
+                                    <input
+                                        type="time"
+                                        required
+                                        value={newShift.endTime}
+                                        onChange={(e) => setNewShift({ ...newShift, endTime: e.target.value })}
+                                        className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-bold text-black block mb-1">Assigned Departments (comma separated)</label>
+                                <input
+                                    type="text"
+                                    placeholder="Engineering & IT, Operations"
+                                    value={newShift.assignedDepts}
+                                    onChange={(e) => setNewShift({ ...newShift, assignedDepts: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowShiftModal(false)}
+                                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-5 py-2 rounded-xl bg-black text-white text-xs font-black hover:bg-slate-800 shadow-xs"
+                                >
+                                    Create Shift
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 3: ADD HOLIDAY MODAL */}
+            {showHolidayModal && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 className="text-lg font-black text-black">Add Public Holiday</h3>
+                            <button
+                                onClick={() => setShowHolidayModal(false)}
+                                className="p-2 rounded-xl hover:bg-slate-100 text-slate-500"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreateHoliday} className="space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-black block mb-1">Holiday Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. Independence Day"
+                                    value={newHoliday.name}
+                                    onChange={(e) => setNewHoliday({ ...newHoliday, name: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs font-bold text-black block mb-1">Date</label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={newHoliday.date}
+                                        onChange={(e) => setNewHoliday({ ...newHoliday, date: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-black block mb-1">Type</label>
+                                    <select
+                                        value={newHoliday.type}
+                                        onChange={(e) => setNewHoliday({ ...newHoliday, type: e.target.value as any })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-black"
+                                    >
+                                        <option value="national">National</option>
+                                        <option value="observance">Observance</option>
+                                        <option value="academic">Academic</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowHolidayModal(false)}
+                                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-5 py-2 rounded-xl bg-black text-white text-xs font-black hover:bg-slate-800 shadow-xs"
+                                >
+                                    Save Holiday
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

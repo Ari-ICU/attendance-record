@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Employee } from '@/types/employee.types';
 import { AttendanceService } from '@/services/attendance.service';
+import { useSocket } from '@/contexts/SocketContext';
 import { getFullImageUrl } from '@/utils/url.utils';
 import {
     Mail,
@@ -24,7 +25,8 @@ import {
     ChevronRight,
     Users,
     CreditCard,
-    DollarSign
+    DollarSign,
+    Radio
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -36,6 +38,7 @@ interface EmployeeDetailProps {
 
 export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
     const router = useRouter();
+    const { socket, isConnected } = useSocket();
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'payroll' | 'biometrics'>('overview');
 
@@ -70,25 +73,48 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
 
     const [dbAttendanceLogs, setDbAttendanceLogs] = useState<any[]>([]);
 
-    useEffect(() => {
-        if (employee?._id) {
-            AttendanceService.getRecords({ employeeId: employee._id })
-                .then(res => {
-                    const records = Array.isArray(res) ? res : res?.records || res?.data || [];
-                    if (records.length > 0) {
-                        const formatted = records.map((r: any) => ({
-                            date: r.date ? formatDateToCustom(r.date) : formatDateToCustom(r.createdAt || new Date()),
-                            checkIn: r.checkInTime || (r.checkIn ? new Date(r.checkIn).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '08:00 AM'),
-                            checkOut: r.checkOutTime || (r.checkOut ? new Date(r.checkOut).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '05:00 PM'),
-                            status: r.status === 'present' || r.status === 'On Time' ? 'On Time' : (r.status === 'late' ? 'Late' : (r.status || 'On Time')),
-                            hours: r.workDuration || r.loggedHours || '8h 00m'
-                        }));
-                        setDbAttendanceLogs(formatted);
-                    }
-                })
-                .catch(err => console.warn('Could not fetch employee attendance records:', err));
-        }
+    const fetchAttendance = useCallback(() => {
+        if (!employee?._id) return;
+        AttendanceService.getRecords({ employeeId: employee._id })
+            .then(res => {
+                const records = Array.isArray(res) ? res : res?.records || res?.data || [];
+                if (records.length > 0) {
+                    const formatted = records.map((r: any) => ({
+                        date: r.date ? formatDateToCustom(r.date) : formatDateToCustom(r.createdAt || new Date()),
+                        checkIn: r.checkInTime || (r.checkIn?.time ? new Date(r.checkIn.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : (r.checkIn ? '08:00 AM' : '--:--')),
+                        checkOut: r.checkOutTime || (r.checkOut?.time ? new Date(r.checkOut.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '--:--'),
+                        status: r.status === 'present' || r.status === 'On Time' ? 'On Time' : (r.status === 'late' ? 'Late' : (r.status || 'On Time')),
+                        hours: r.workDuration || r.loggedHours || (r.checkIn && r.checkOut ? '8h 00m' : '--')
+                    }));
+                    setDbAttendanceLogs(formatted);
+                }
+            })
+            .catch(err => console.warn('Could not fetch employee attendance records:', err));
     }, [employee?._id]);
+
+    useEffect(() => {
+        fetchAttendance();
+    }, [fetchAttendance]);
+
+    // Real-time WebSocket listener for instant live updates when staff scans biometric kiosk
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleRealTimeAttendance = (data: any) => {
+            const incomingId = data?.employeeId || data?.record?.employeeId;
+            if (!incomingId || incomingId === employee?._id) {
+                fetchAttendance();
+            }
+        };
+
+        socket.on('attendance_update', handleRealTimeAttendance);
+        socket.on('attendance_record_created', handleRealTimeAttendance);
+
+        return () => {
+            socket.off('attendance_update', handleRealTimeAttendance);
+            socket.off('attendance_record_created', handleRealTimeAttendance);
+        };
+    }, [socket, employee?._id, fetchAttendance]);
 
     // High fidelity recent activity logs formatted as DD/Month/YYYY
     const recentAttendanceLogs = dbAttendanceLogs.length > 0 ? dbAttendanceLogs : [
@@ -414,10 +440,16 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                 {/* Tab 3: Attendance History */}
                 {activeTab === 'attendance' && (
                     <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                        <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <h3 className="text-sm font-black text-black">Recent Attendance Logs</h3>
-                                <p className="text-xs font-semibold text-slate-800">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-black text-black">Recent Attendance Logs</h3>
+                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span>Live Socket</span>
+                                    </span>
+                                </div>
+                                <p className="text-xs font-semibold text-slate-800 mt-0.5">
                                     Real-time biometric timestamps registered from smart kiosk terminals.
                                 </p>
                             </div>

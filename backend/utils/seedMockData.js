@@ -10,6 +10,7 @@ const Position = require('../models/position.model');
 const SystemSetting = require('../models/systemSetting.model');
 const BusinessBalance = require('../models/businessBalance.model');
 const Token = require('../models/token.model');
+const { CalendarEvent, WorkShift, Holiday } = require('../models/calendar.model');
 const crypto = require('crypto');
 
 const seedMockData = async () => {
@@ -764,7 +765,49 @@ const seedMockData = async () => {
                 await SystemSetting.create({ key, value: val });
             }
         }
-        console.log('✅ System settings seeded');
+        // 10. Seed Calendar Events, Shifts & Holidays
+        const eventCount = await CalendarEvent.countDocuments();
+        if (eventCount === 0) {
+            const todayStr = '2026-09-12';
+            const sampleEvents = [
+                { title: 'Morning Operations Sync', category: 'work', date: todayStr, startHour: 8, endHour: 8.75, location: 'Briefing Hall A', color: 'text-emerald-950', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-500' },
+                { title: 'Executive Attendance Review', category: 'meeting', date: todayStr, startHour: 9.5, endHour: 11, location: 'Conference Room 02', color: 'text-amber-950', bgColor: 'bg-amber-50', borderColor: 'border-amber-500' },
+                { title: 'Roadmap & Shift Planning', category: 'personal', date: todayStr, startHour: 11.25, endHour: 13, location: 'Main Lab 04', color: 'text-blue-950', bgColor: 'bg-blue-50', borderColor: 'border-blue-500' },
+                { title: 'Lunch & Faculty Sync', category: 'personal', date: todayStr, startHour: 13.25, endHour: 14.25, location: 'Cafeteria Lounge', color: 'text-blue-950', bgColor: 'bg-blue-50', borderColor: 'border-blue-500' },
+                { title: 'Department Code Review & Audit', category: 'work', date: todayStr, startHour: 14.5, endHour: 16, location: 'Dev Hub', color: 'text-emerald-950', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-500' },
+                { title: 'Company Foundation Day', category: 'holiday', date: '2026-09-13', startHour: 0, endHour: 24, isAllDay: true, color: 'text-purple-950', bgColor: 'bg-purple-50', borderColor: 'border-purple-500' },
+                { title: 'Midterm Assessment Session', category: 'special', date: '2026-09-14', startHour: 9, endHour: 12, location: 'Hall 301', color: 'text-rose-950', bgColor: 'bg-rose-50', borderColor: 'border-rose-500' }
+            ];
+            await CalendarEvent.insertMany(sampleEvents);
+            console.log('✅ Calendar events seeded');
+        }
+
+        const shiftCount = await WorkShift.countDocuments();
+        if (shiftCount === 0) {
+            const sampleShifts = [
+                { name: 'Regular Day Shift', type: 'morning', startTime: '08:00', endTime: '17:00', gracePeriod: 15, assignedDepts: ['Engineering & IT', 'Operations & Facilities', 'Human Resources'], assignedCount: 42, color: 'text-blue-900', bgColor: 'bg-blue-50' },
+                { name: 'Afternoon & Lab Shift', type: 'afternoon', startTime: '13:00', endTime: '21:00', gracePeriod: 10, assignedDepts: ['Product & Design', 'Engineering & IT'], assignedCount: 18, color: 'text-amber-900', bgColor: 'bg-amber-50' },
+                { name: 'Overnight Security & Facility', type: 'night', startTime: '21:00', endTime: '06:00', gracePeriod: 20, assignedDepts: ['Operations & Facilities'], assignedCount: 8, color: 'text-purple-900', bgColor: 'bg-purple-50' },
+                { name: 'Faculty Flexible Roster', type: 'flexible', startTime: '09:00', endTime: '16:00', gracePeriod: 30, assignedDepts: ['Human Resources'], assignedCount: 24, color: 'text-emerald-900', bgColor: 'bg-emerald-50' }
+            ];
+            await WorkShift.insertMany(sampleShifts);
+            console.log('✅ Work shifts seeded');
+        }
+
+        const holidayCount = await Holiday.countDocuments();
+        if (holidayCount === 0) {
+            const sampleHolidays = [
+                { name: 'International New Year Day', date: '2026-01-01', type: 'national', status: 'paid' },
+                { name: 'Victory over Genocide Day', date: '2026-01-07', type: 'national', status: 'paid' },
+                { name: 'International Women’s Day', date: '2026-03-08', type: 'observance', status: 'paid' },
+                { name: 'Khmer New Year Holiday', date: '2026-04-13', type: 'national', status: 'paid' },
+                { name: 'King’s Birthday Commemoration', date: '2026-05-14', type: 'national', status: 'paid' },
+                { name: 'Pchum Ben Festival', date: '2026-10-09', type: 'national', status: 'paid' },
+                { name: 'Water & Moon Festival', date: '2026-11-23', type: 'national', status: 'paid' },
+            ];
+            await Holiday.insertMany(sampleHolidays);
+            console.log('✅ Holidays seeded');
+        }
 
         console.log('🚀 Backend mock database seeding complete!');
     } catch (error) {

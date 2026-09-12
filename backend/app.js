@@ -43,6 +43,7 @@ const notificationRoutes = require('./routes/notification.routes');
 const leaveRoutes = require('./routes/leave.routes');
 const overtimeRoutes = require('./routes/overtime.routes');
 const positionRoutes = require('./routes/position.routes');
+const calendarRoutes = require('./routes/calendar.routes');
 
 const { initializeAdminAndPermissions } = require('./utils/initAdminUser');
 const { seedMockData } = require('./utils/seedMockData');
@@ -178,6 +179,7 @@ app.use('/api/leaves', leaveRoutes);
 app.use('/api/overtime', overtimeRoutes);
 app.use('/api/overtimes', overtimeRoutes);
 app.use('/api/positions', positionRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // Payroll routes
 app.use('/api/payroll', payrollRoutes);
