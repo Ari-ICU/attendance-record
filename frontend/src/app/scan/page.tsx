@@ -112,6 +112,50 @@ export default function StandalonePublicKioskScanPage() {
         }
     };
 
+    // Best natural AI Voice selector
+    const getBestAIVoice = useCallback((): SpeechSynthesisVoice | null => {
+        if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || voices.length === 0) return null;
+
+        // Preferred neural & enhanced AI voices
+        const preferredVoiceNames = [
+            'Siri',
+            'Samantha (Enhanced)',
+            'Samantha',
+            'Google US English',
+            'Google UK English Female',
+            'Microsoft Jenny Online (Natural)',
+            'Microsoft Aria Online (Natural)',
+            'Microsoft Guy Online (Natural)',
+            'Karen',
+            'Daniel',
+            'Victoria',
+            'Moira',
+            'Fiona'
+        ];
+
+        for (const name of preferredVoiceNames) {
+            const match = voices.find(v => v.name.includes(name) || v.voiceURI.includes(name));
+            if (match) return match;
+        }
+
+        // Fallback to any en-US or en voice
+        return voices.find(v => v.lang === 'en-US') ||
+               voices.find(v => v.lang.startsWith('en')) ||
+               voices[0] || null;
+    }, []);
+
+    // Preload voices
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+    }, []);
+
     // Initialize or unlock browser AudioContext
     const getAudioContext = useCallback(async () => {
         try {
@@ -146,59 +190,77 @@ export default function StandalonePublicKioskScanPage() {
         };
     }, [getAudioContext]);
 
-    // High-fidelity crystal chime sound on verification
+    // High-tech Futuristic Cyber Biometric Sound FX + Neural AI Voice
     const playSuccessChime = useCallback(async (isOut: boolean = false, staffFirstName?: string) => {
         if (!soundEnabled) return;
         try {
             const ctx = await getAudioContext();
-            if (!ctx) return;
+            if (ctx) {
+                const now = ctx.currentTime;
 
-            const now = ctx.currentTime;
+                // 1. Sub-Harmonic Cyber Warmth Sweep (Body)
+                const subOsc = ctx.createOscillator();
+                const subGain = ctx.createGain();
+                subOsc.type = 'triangle';
+                subOsc.frequency.setValueAtTime(isOut ? 320 : 220, now);
+                subOsc.frequency.exponentialRampToValueAtTime(isOut ? 160 : 440, now + 0.18);
+                subGain.gain.setValueAtTime(0.2, now);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                subOsc.connect(subGain);
+                subGain.connect(ctx.destination);
+                subOsc.start(now);
+                subOsc.stop(now + 0.35);
 
-            // Note 1: Root Tone
-            const osc1 = ctx.createOscillator();
-            const gain1 = ctx.createGain();
-            osc1.type = 'sine';
-            const f1 = isOut ? 880 : 587.33; // A5 or D5
-            osc1.frequency.setValueAtTime(f1, now);
-            gain1.gain.setValueAtTime(0.35, now);
-            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-            osc1.connect(gain1);
-            gain1.connect(ctx.destination);
-            osc1.start(now);
-            osc1.stop(now + 0.3);
+                // 2. High-Tech Cyber Digital Triad (Ascending for In, Descending for Out)
+                const frequencies = isOut
+                    ? [1567.98, 1174.66, 880] // G6 -> D6 -> A5
+                    : [880, 1318.51, 1760];   // A5 -> E6 -> A6
 
-            // Note 2: Harmonic Chime (Higher Octave)
-            const osc2 = ctx.createOscillator();
-            const gain2 = ctx.createGain();
-            osc2.type = 'sine';
-            const f2 = isOut ? 587.33 : 1046.5; // D5 or C6
-            osc2.frequency.setValueAtTime(f2, now + 0.12);
-            gain2.gain.setValueAtTime(0.45, now + 0.12);
-            gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
-            osc2.connect(gain2);
-            gain2.connect(ctx.destination);
-            osc2.start(now + 0.12);
-            osc2.stop(now + 0.6);
+                frequencies.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    const startTime = now + idx * 0.07;
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    gain.gain.setValueAtTime(0.28, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.45);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.45);
+                });
+            }
 
-            // Optional voice greeting
+            // 3. Natural AI Voice Greeting (Speaks clearly right after chime)
             if (typeof window !== 'undefined' && 'speechSynthesis' in window && staffFirstName) {
-                try {
-                    const phrase = isOut ? `Thank you, ${staffFirstName}` : `Welcome, ${staffFirstName}`;
-                    const utterance = new SpeechSynthesisUtterance(phrase);
-                    utterance.rate = 1.05;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 0.85;
-                    window.speechSynthesis.cancel();
-                    window.speechSynthesis.speak(utterance);
-                } catch {}
+                setTimeout(() => {
+                    try {
+                        const phrase = isOut
+                            ? `Identity verified. Goodbye, ${staffFirstName}.`
+                            : `Identity verified. Welcome, ${staffFirstName}.`;
+
+                        const utterance = new SpeechSynthesisUtterance(phrase);
+                        const aiVoice = getBestAIVoice();
+                        if (aiVoice) {
+                            utterance.voice = aiVoice;
+                        }
+                        utterance.rate = 1.0;
+                        utterance.pitch = 1.06;
+                        utterance.volume = 1.0;
+
+                        window.speechSynthesis.cancel();
+                        window.speechSynthesis.speak(utterance);
+                    } catch (speakErr) {
+                        console.warn('[AI Voice] Speech error:', speakErr);
+                    }
+                }, 220);
             }
         } catch (e) {
             console.warn('[Audio] play error:', e);
         }
-    }, [soundEnabled, getAudioContext]);
+    }, [soundEnabled, getAudioContext, getBestAIVoice]);
 
-    // Sound toggle handler with immediate audio test chime
+    // Sound toggle handler with futuristic test chime and AI voice intro
     const toggleSound = async () => {
         const nextState = !soundEnabled;
         setSoundEnabled(nextState);
@@ -209,16 +271,34 @@ export default function StandalonePublicKioskScanPage() {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, now);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.frequency.setValueAtTime(1046.5, now);
+                osc.frequency.exponentialRampToValueAtTime(1567.98, now + 0.12);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
                 osc.connect(gain);
                 gain.connect(ctx.destination);
                 osc.start(now);
-                osc.stop(now + 0.2);
+                osc.stop(now + 0.25);
             }
-            toast.success('Terminal sound enabled', { icon: '🔊' });
+
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                setTimeout(() => {
+                    const utterance = new SpeechSynthesisUtterance('AI Voice active.');
+                    const aiVoice = getBestAIVoice();
+                    if (aiVoice) utterance.voice = aiVoice;
+                    utterance.rate = 1.0;
+                    utterance.pitch = 1.08;
+                    utterance.volume = 1.0;
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.speak(utterance);
+                }, 150);
+            }
+
+            toast.success('AI Biometric Voice Enabled', { icon: '🎙️' });
         } else {
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
             toast('Terminal sound muted', { icon: '🔇' });
         }
     };
