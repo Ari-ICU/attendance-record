@@ -105,19 +105,13 @@ const ROLE_BLUEPRINTS: Record<string, {
     }
 };
 
-function getBlueprint(title: string, level: string, description?: string) {
+function getBlueprint(pos: PositionItem) {
+    const title = pos.title || '';
+    const level = pos.level || 'Mid-Level';
+    const description = pos.description || '';
     const key = title.toLowerCase().trim();
-    for (const [k, blueprint] of Object.entries(ROLE_BLUEPRINTS)) {
-        if (key.includes(k) || k.includes(key)) {
-            return {
-                ...blueprint,
-                summary: description && description.length > 30 ? description : blueprint.summary
-            };
-        }
-    }
 
-    // Generic intelligent fallback
-    return {
+    let base = {
         summary: description && description.length > 20
             ? description
             : `Core organizational role responsible for operational directives, daily project delivery, and cross-functional team collaboration within the designated department.`,
@@ -132,7 +126,31 @@ function getBlueprint(title: string, level: string, description?: string) {
         salaryRange: level === 'Executive' ? '$3,000 – $6,000 / mo' : level === 'Senior' || level === 'Lead' ? '$1,800 – $3,500 / mo' : level === 'Junior' ? '$600 – $1,200 / mo' : '$1,000 – $2,200 / mo',
         employmentType: 'Full-time / Permanent',
         experienceReq: level === 'Executive' ? '7+ Years' : level === 'Senior' ? '4 – 7 Years' : level === 'Junior' ? '0 – 2 Years' : '2 – 4 Years',
-        workPolicy: 'Hybrid / On-site'
+        workPolicy: 'Hybrid / On-site',
+        workingHours: '08:00 – 17:00 (Mon–Fri)'
+    };
+
+    for (const [k, blueprint] of Object.entries(ROLE_BLUEPRINTS)) {
+        if (key.includes(k) || k.includes(key)) {
+            base = {
+                ...blueprint,
+                summary: description && description.length > 20 ? description : blueprint.summary,
+                workingHours: '08:00 – 17:00 (Mon–Fri)'
+            };
+            break;
+        }
+    }
+
+    // Explicit Backend Overrides (whenever backend has stored values)
+    return {
+        summary: pos.description && pos.description.trim().length > 0 ? pos.description : base.summary,
+        responsibilities: pos.responsibilities && pos.responsibilities.length > 0 ? pos.responsibilities : base.responsibilities,
+        skills: pos.skills && pos.skills.length > 0 ? pos.skills : base.skills,
+        salaryRange: pos.salaryRange || base.salaryRange,
+        employmentType: pos.employmentType || base.employmentType,
+        experienceReq: pos.experienceReq || base.experienceReq,
+        workPolicy: pos.workPolicy || base.workPolicy,
+        workingHours: pos.workingHours || base.workingHours,
     };
 }
 
@@ -214,7 +232,7 @@ export default function PositionDetailPage() {
         );
     }
 
-    const blueprint = getBlueprint(pos.title, pos.level, pos.description);
+    const blueprint = getBlueprint(pos);
     const activeStaffCount = assignedEmployees.length || pos.employeeCount || 0;
 
     return (
