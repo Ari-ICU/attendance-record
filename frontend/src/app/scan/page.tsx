@@ -49,6 +49,7 @@ export default function StandalonePublicKioskScanPage() {
     const cooldownMapRef = useRef<Record<string, number>>({});
     const scannedActionsMapRef = useRef<Record<string, boolean>>({});
     const isAutoDetectingRef = useRef<boolean>(false);
+    const audioCtxRef = useRef<AudioContext | null>(null);
 
     // Format date as DD/Month/YYYY
     const formatDateToCustom = (dateInput: Date | string | number) => {
@@ -111,23 +112,115 @@ export default function StandalonePublicKioskScanPage() {
         }
     };
 
-    // Chime sound on success
-    const playSuccessChime = () => {
+    // Initialize or unlock browser AudioContext
+    const getAudioContext = useCallback(async () => {
+        try {
+            if (!audioCtxRef.current) {
+                const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtxRef.current = new AudioContextClass();
+                }
+            }
+            if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+                await audioCtxRef.current.resume();
+            }
+            return audioCtxRef.current;
+        } catch (e) {
+            console.warn('[AudioContext] init error:', e);
+            return null;
+        }
+    }, []);
+
+    // Unlock AudioContext on the first user interaction anywhere
+    useEffect(() => {
+        const unlock = () => {
+            getAudioContext();
+        };
+        window.addEventListener('pointerdown', unlock, { once: true });
+        window.addEventListener('keydown', unlock, { once: true });
+        window.addEventListener('touchstart', unlock, { once: true });
+        return () => {
+            window.removeEventListener('pointerdown', unlock);
+            window.removeEventListener('keydown', unlock);
+            window.removeEventListener('touchstart', unlock);
+        };
+    }, [getAudioContext]);
+
+    // High-fidelity crystal chime sound on verification
+    const playSuccessChime = useCallback(async (isOut: boolean = false, staffFirstName?: string) => {
         if (!soundEnabled) return;
         try {
-            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.2, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.4);
-        } catch {}
+            const ctx = await getAudioContext();
+            if (!ctx) return;
+
+            const now = ctx.currentTime;
+
+            // Note 1: Root Tone
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            const f1 = isOut ? 880 : 587.33; // A5 or D5
+            osc1.frequency.setValueAtTime(f1, now);
+            gain1.gain.setValueAtTime(0.35, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.3);
+
+            // Note 2: Harmonic Chime (Higher Octave)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            const f2 = isOut ? 587.33 : 1046.5; // D5 or C6
+            osc2.frequency.setValueAtTime(f2, now + 0.12);
+            gain2.gain.setValueAtTime(0.45, now + 0.12);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now + 0.12);
+            osc2.stop(now + 0.6);
+
+            // Optional voice greeting
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window && staffFirstName) {
+                try {
+                    const phrase = isOut ? `Thank you, ${staffFirstName}` : `Welcome, ${staffFirstName}`;
+                    const utterance = new SpeechSynthesisUtterance(phrase);
+                    utterance.rate = 1.05;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 0.85;
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.speak(utterance);
+                } catch {}
+            }
+        } catch (e) {
+            console.warn('[Audio] play error:', e);
+        }
+    }, [soundEnabled, getAudioContext]);
+
+    // Sound toggle handler with immediate audio test chime
+    const toggleSound = async () => {
+        const nextState = !soundEnabled;
+        setSoundEnabled(nextState);
+        if (nextState) {
+            const ctx = await getAudioContext();
+            if (ctx) {
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+            toast.success('Terminal sound enabled', { icon: '🔊' });
+        } else {
+            toast('Terminal sound muted', { icon: '🔇' });
+        }
     };
 
     // Perform scan verification
@@ -242,7 +335,7 @@ export default function StandalonePublicKioskScanPage() {
                 capturedPhoto: imageSrc || targetEmp.photoUrl || null
             };
 
-            playSuccessChime();
+            playSuccessChime(scanAction === 'check_out', targetEmp.firstName);
             setLastVerifiedRecord(verificationPayload);
             setRecentScans(prev => [verificationPayload, ...prev.slice(0, 7)]);
             setAutoScanMessage(`✓ Recognized: ${targetEmp.firstName} ${targetEmp.lastName}`);
@@ -258,7 +351,7 @@ export default function StandalonePublicKioskScanPage() {
         } finally {
             setScanning(false);
         }
-    }, [scanning, selectedEmployeeId, employees, scanAction, mode, soundEnabled]);
+    }, [scanning, selectedEmployeeId, employees, scanAction, mode, soundEnabled, playSuccessChime]);
 
     // Continuous AI Face scanning loop
     useEffect(() => {
@@ -314,7 +407,7 @@ export default function StandalonePublicKioskScanPage() {
                     </div>
 
                     <button
-                        onClick={() => setSoundEnabled(!soundEnabled)}
+                        onClick={toggleSound}
                         className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
                             soundEnabled ? 'bg-slate-100 border-slate-300 text-black' : 'bg-slate-50 border-slate-200 text-slate-400'
                         }`}
