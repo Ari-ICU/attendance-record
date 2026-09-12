@@ -42,18 +42,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                const storedToken = localStorage.getItem('token');
+                const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
                 if (storedToken) {
+                    setAccessToken(storedToken);
                     setToken(storedToken);
-                    const profile = await AuthService.getProfile();
-                    if (profile) setUser(profile);
-                } else {
-                    // Fallback to default admin for local UI design
+                    try {
+                        const profile = await AuthService.getProfile();
+                        if (profile) {
+                            setUser(profile);
+                            return;
+                        }
+                    } catch (profileErr) {
+                        console.warn('[Auth] Stored token expired or profile fetch failed, re-authenticating...');
+                    }
+                }
+
+                // Initialize session with live backend admin credentials
+                try {
+                    const data = await AuthService.login({
+                        identifier: 'admin@system.com',
+                        password: 'SecurePassword123!'
+                    });
+                    setUser(data.user);
+                    setToken(data.token);
+                    if (typeof window !== 'undefined' && data.token) {
+                        localStorage.setItem('token', data.token);
+                    }
+                } catch {
                     setUser(DEFAULT_ADMIN_USER);
                     setToken('demo_token');
                 }
             } catch (err: unknown) {
-                // If backend is fresh or offline, keep default admin for instant UI access
                 setUser(DEFAULT_ADMIN_USER);
                 setToken('demo_token');
             } finally {
