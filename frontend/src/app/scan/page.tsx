@@ -7,24 +7,18 @@ import {
     Scan,
     Camera,
     QrCode,
-    CheckCircle2,
     Clock,
     Maximize2,
     Minimize2,
     Volume2,
     VolumeX,
     Building2,
-    MapPin,
-    Radio,
     Sparkles,
-    Check,
-    X,
-    Smartphone,
     UserCheck,
     ShieldCheck,
-    AlertTriangle,
+    RefreshCw,
     ArrowLeft,
-    RefreshCw
+    Shield
 } from 'lucide-react';
 import { AttendanceService } from '@/services/attendance.service';
 import { EmployeeService } from '@/services/employee.service';
@@ -34,7 +28,7 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 export default function StandalonePublicKioskScanPage() {
-    const [mode, setMode] = useState<'face' | 'qr_display' | 'qr_camera'>('face');
+    const [mode, setMode] = useState<'face' | 'qr_display'>('face');
     const [scanAction, setScanAction] = useState<'check_in' | 'check_out'>('check_in');
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('auto');
@@ -49,14 +43,14 @@ export default function StandalonePublicKioskScanPage() {
     const [clockTime, setClockTime] = useState<string>('');
     const [clockDate, setClockDate] = useState<string>('');
     const [qrCountdown, setQrCountdown] = useState<number>(30);
-    const [autoScanMessage, setAutoScanMessage] = useState<string>('Align face in frame for instant check-in');
+    const [autoScanMessage, setAutoScanMessage] = useState<string>('Align face in frame for auto check-in');
 
     const webcamRef = useRef<Webcam>(null);
     const cooldownMapRef = useRef<Record<string, number>>({});
     const scannedActionsMapRef = useRef<Record<string, boolean>>({});
     const isAutoDetectingRef = useRef<boolean>(false);
 
-    // Format date DD/Month/YYYY
+    // Format date as DD/Month/YYYY
     const formatDateToCustom = (dateInput: Date | string | number) => {
         const d = new Date(dateInput);
         if (isNaN(d.getTime())) return '';
@@ -86,7 +80,7 @@ export default function StandalonePublicKioskScanPage() {
         return () => clearInterval(timer);
     }, []);
 
-    // Load registered staff and today's attendance records (public endpoints)
+    // Load registered staff roster for verification
     useEffect(() => {
         const fetchEmployees = async () => {
             try {
@@ -100,7 +94,7 @@ export default function StandalonePublicKioskScanPage() {
         fetchEmployees();
     }, []);
 
-    // Fullscreen state listener
+    // Fullscreen event listener
     useEffect(() => {
         const handleFullscreenChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
@@ -117,7 +111,7 @@ export default function StandalonePublicKioskScanPage() {
         }
     };
 
-    // Audio chime on successful verification
+    // Chime sound on success
     const playSuccessChime = () => {
         if (!soundEnabled) return;
         try {
@@ -125,8 +119,8 @@ export default function StandalonePublicKioskScanPage() {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
             gain.gain.setValueAtTime(0.2, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
             osc.connect(gain);
@@ -136,7 +130,7 @@ export default function StandalonePublicKioskScanPage() {
         } catch {}
     };
 
-    // Main verification logic
+    // Perform scan verification
     const handlePerformScan = useCallback(async (forcedEmp?: Employee, isAutomatic: boolean = false) => {
         if (scanning) return;
         setScanning(true);
@@ -151,7 +145,7 @@ export default function StandalonePublicKioskScanPage() {
                 if (selectedEmployeeId !== 'auto') {
                     targetEmp = employees.find(e => (e._id || e.id) === selectedEmployeeId);
                 } else {
-                    // 1. Live biometric facial recognition
+                    // 1. Attempt live biometric face identification
                     if (cleanImage) {
                         try {
                             const identifyRes = await EmployeeService.verifyFace({ image: cleanImage });
@@ -164,7 +158,7 @@ export default function StandalonePublicKioskScanPage() {
                         }
                     }
 
-                    // 2. Default to matched staff or first active staff
+                    // 2. Fallback to first available employee
                     if (!targetEmp && employees.length > 0) {
                         targetEmp = employees.find(e => e.email === 'ratha@staffflow.io' || e.firstName?.toLowerCase() === 'thoeurn') || employees[0];
                     }
@@ -180,7 +174,7 @@ export default function StandalonePublicKioskScanPage() {
             const empId = targetEmp._id || targetEmp.id || '';
             const actionKey = `${empId}_${scanAction}`;
 
-            // Anti-duplicate check 1: Already scanned in this action session
+            // Anti-duplicate check 1
             if (isAutomatic && scannedActionsMapRef.current[actionKey]) {
                 const actionLabel = scanAction === 'check_in' ? 'Clocked In' : 'Clocked Out';
                 setAutoScanMessage(`✓ ${targetEmp.firstName} ${targetEmp.lastName} is already ${actionLabel} today`);
@@ -188,7 +182,7 @@ export default function StandalonePublicKioskScanPage() {
                 return;
             }
 
-            // Anti-duplicate check 2: 60s cooldown per employee
+            // Anti-duplicate check 2 (60s cooldown)
             const lastScan = cooldownMapRef.current[empId] || 0;
             const nowMs = Date.now();
             if (nowMs - lastScan < 60000 && isAutomatic) {
@@ -198,7 +192,6 @@ export default function StandalonePublicKioskScanPage() {
                 return;
             }
 
-            // Brief facial landmark delay
             await new Promise(r => setTimeout(r, 350));
 
             const now = new Date();
@@ -208,9 +201,7 @@ export default function StandalonePublicKioskScanPage() {
 
             const methodLabel = mode === 'face'
                 ? 'Face Biometrics (AI Real-Time)'
-                : mode === 'qr_display'
-                    ? 'Mobile QR Scan (Self)'
-                    : 'Corporate QR Badge (Gate)';
+                : 'Mobile QR Scan (Self)';
 
             if (scanAction === 'check_in') {
                 await AttendanceService.checkIn({
@@ -220,7 +211,7 @@ export default function StandalonePublicKioskScanPage() {
                     location: {
                         latitude: 11.5564,
                         longitude: 104.9282,
-                        address: 'HQ Public Kiosk Terminal Gate #1'
+                        address: 'HQ Main Terminal Gate #1'
                     }
                 });
             } else {
@@ -231,7 +222,7 @@ export default function StandalonePublicKioskScanPage() {
                     location: {
                         latitude: 11.5564,
                         longitude: 104.9282,
-                        address: 'HQ Public Kiosk Terminal Gate #1'
+                        address: 'HQ Main Terminal Gate #1'
                     }
                 });
             }
@@ -245,7 +236,7 @@ export default function StandalonePublicKioskScanPage() {
                 action: scanAction,
                 time: now.toISOString(),
                 method: methodLabel,
-                location: 'HQ Public Kiosk Gate #1',
+                location: 'HQ Main Terminal Gate #1',
                 status: isLate ? 'late' : 'present',
                 confidence: mode === 'face' ? (99.2 + Math.random() * 0.7).toFixed(1) : '100.0',
                 capturedPhoto: imageSrc || targetEmp.photoUrl || null
@@ -254,10 +245,10 @@ export default function StandalonePublicKioskScanPage() {
             playSuccessChime();
             setLastVerifiedRecord(verificationPayload);
             setRecentScans(prev => [verificationPayload, ...prev.slice(0, 7)]);
-            setAutoScanMessage(`✓ Verified: ${targetEmp.firstName} ${targetEmp.lastName}`);
+            setAutoScanMessage(`✓ Recognized: ${targetEmp.firstName} ${targetEmp.lastName}`);
 
             toast.success(
-                `✓ ${scanAction === 'check_in' ? 'Check-in' : 'Check-out'} verified: ${targetEmp.firstName} ${targetEmp.lastName}`,
+                `✓ ${scanAction === 'check_in' ? 'Check-in' : 'Check-out'} verified for ${targetEmp.firstName} ${targetEmp.lastName}`,
                 { duration: 4000 }
             );
         } catch (err: any) {
@@ -269,7 +260,7 @@ export default function StandalonePublicKioskScanPage() {
         }
     }, [scanning, selectedEmployeeId, employees, scanAction, mode, soundEnabled]);
 
-    // Automatic Continuous AI Face Detection loop
+    // Continuous AI Face scanning loop
     useEffect(() => {
         if (!autoScanEnabled || mode !== 'face' || !cameraActive || cameraPermission !== 'granted') return;
 
@@ -291,24 +282,24 @@ export default function StandalonePublicKioskScanPage() {
     }, [autoScanEnabled, mode, cameraActive, cameraPermission, scanning, handlePerformScan]);
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white font-sans flex flex-col justify-between selection:bg-blue-600/30">
+        <div className="min-h-screen bg-slate-50/80 text-black font-sans flex flex-col justify-between selection:bg-blue-500/20">
             {/* Top Terminal Kiosk Bar */}
-            <header className="px-6 py-4 bg-slate-950/80 border-b border-slate-800 backdrop-blur-md flex items-center justify-between sticky top-0 z-40">
+            <header className="px-6 py-4 bg-white border-b border-slate-200/90 shadow-xs flex items-center justify-between sticky top-0 z-40">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-500/20">
+                    <div className="w-10 h-10 rounded-2xl bg-black flex items-center justify-center font-black text-white shadow-sm">
                         SF
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-base font-black text-white tracking-tight">
-                                StaffFlow Biometric Terminal
+                            <h1 className="text-base font-black text-black tracking-tight">
+                                StaffFlow Biometric Gate Terminal
                             </h1>
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
                                 Kiosk Active
                             </span>
                         </div>
-                        <p className="text-xs text-slate-400 font-medium">
+                        <p className="text-xs text-slate-600 font-semibold">
                             Self-Service Staff Check-in • Gate Terminal #1 (No Login Required)
                         </p>
                     </div>
@@ -317,15 +308,15 @@ export default function StandalonePublicKioskScanPage() {
                 {/* Right Utilities */}
                 <div className="flex items-center gap-3">
                     {/* Live Clock */}
-                    <div className="hidden sm:flex flex-col items-end px-3.5 py-1.5 bg-slate-800/60 rounded-xl border border-slate-700/60">
-                        <span className="text-[10px] font-mono text-slate-400 font-semibold uppercase">{clockDate}</span>
-                        <span className="text-sm font-mono font-black text-white">{clockTime || '--:--:-- --'}</span>
+                    <div className="hidden sm:flex flex-col items-end px-3.5 py-1.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] font-mono text-slate-500 font-bold uppercase">{clockDate}</span>
+                        <span className="text-sm font-mono font-black text-black">{clockTime || '--:--:-- --'}</span>
                     </div>
 
                     <button
                         onClick={() => setSoundEnabled(!soundEnabled)}
                         className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
-                            soundEnabled ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-900 border-slate-800 text-slate-500'
+                            soundEnabled ? 'bg-slate-100 border-slate-300 text-black' : 'bg-slate-50 border-slate-200 text-slate-400'
                         }`}
                         title={soundEnabled ? 'Sound Enabled' : 'Mute Sound'}
                     >
@@ -334,7 +325,7 @@ export default function StandalonePublicKioskScanPage() {
 
                     <button
                         onClick={toggleFullscreen}
-                        className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white transition-colors cursor-pointer"
+                        className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-black transition-colors cursor-pointer"
                         title="Fullscreen Terminal"
                     >
                         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
@@ -342,7 +333,7 @@ export default function StandalonePublicKioskScanPage() {
 
                     <Link
                         href="/login"
-                        className="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-300 hover:text-white transition-colors"
+                        className="px-3.5 py-2 rounded-xl bg-black hover:bg-slate-800 text-xs font-bold text-white transition-colors shadow-xs"
                     >
                         Admin Portal
                     </Link>
@@ -351,18 +342,18 @@ export default function StandalonePublicKioskScanPage() {
 
             {/* Main Interactive Scanning Area */}
             <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* Left 7 Cols: Camera Viewfinder or QR */}
+                {/* Left 7 Cols: Controls + Camera Viewfinder or QR */}
                 <div className="lg:col-span-7 space-y-4">
-                    {/* Mode & Action Selectors */}
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 backdrop-blur-md">
+                    {/* Mode & Action Selectors Bar */}
+                    <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
                         {/* Mode Tabs */}
-                        <div className="flex items-center bg-slate-900 p-1 rounded-xl w-full sm:w-auto">
+                        <div className="flex items-center bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
                             <button
                                 onClick={() => setMode('face')}
                                 className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                                     mode === 'face'
-                                        ? 'bg-blue-600 text-white shadow-md'
-                                        : 'text-slate-400 hover:text-white'
+                                        ? 'bg-white text-black shadow-xs font-black'
+                                        : 'text-slate-600 hover:text-black'
                                 }`}
                             >
                                 <Camera size={14} />
@@ -372,8 +363,8 @@ export default function StandalonePublicKioskScanPage() {
                                 onClick={() => setMode('qr_display')}
                                 className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                                     mode === 'qr_display'
-                                        ? 'bg-blue-600 text-white shadow-md'
-                                        : 'text-slate-400 hover:text-white'
+                                        ? 'bg-white text-black shadow-xs font-black'
+                                        : 'text-slate-600 hover:text-black'
                                 }`}
                             >
                                 <QrCode size={14} />
@@ -381,14 +372,14 @@ export default function StandalonePublicKioskScanPage() {
                             </button>
                         </div>
 
-                        {/* Action Toggle (Check-in vs Check-out) */}
-                        <div className="flex items-center bg-slate-900 p-1 rounded-xl w-full sm:w-auto border border-slate-800">
+                        {/* Action Toggle (Clock In vs Clock Out) */}
+                        <div className="flex items-center bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
                             <button
                                 onClick={() => setScanAction('check_in')}
                                 className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                                     scanAction === 'check_in'
-                                        ? 'bg-emerald-600 text-white shadow-md'
-                                        : 'text-slate-400 hover:text-white'
+                                        ? 'bg-emerald-600 text-white shadow-xs font-black'
+                                        : 'text-slate-600 hover:text-black'
                                 }`}
                             >
                                 <UserCheck size={14} />
@@ -398,8 +389,8 @@ export default function StandalonePublicKioskScanPage() {
                                 onClick={() => setScanAction('check_out')}
                                 className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                                     scanAction === 'check_out'
-                                        ? 'bg-amber-600 text-white shadow-md'
-                                        : 'text-slate-400 hover:text-white'
+                                        ? 'bg-amber-600 text-white shadow-xs font-black'
+                                        : 'text-slate-600 hover:text-black'
                                 }`}
                             >
                                 <Clock size={14} />
@@ -410,7 +401,7 @@ export default function StandalonePublicKioskScanPage() {
 
                     {/* Camera Viewfinder */}
                     {mode === 'face' ? (
-                        <div className="bg-black rounded-3xl overflow-hidden shadow-2xl border border-slate-800 relative aspect-4/3 sm:aspect-16/10 flex items-center justify-center">
+                        <div className="bg-black rounded-3xl overflow-hidden shadow-lg border border-slate-800 relative aspect-4/3 sm:aspect-16/10 flex items-center justify-center">
                             {cameraActive ? (
                                 <Webcam
                                     ref={webcamRef}
@@ -431,7 +422,7 @@ export default function StandalonePublicKioskScanPage() {
                                     <p className="text-sm font-semibold text-slate-400">Camera is currently paused</p>
                                     <button
                                         onClick={() => setCameraActive(true)}
-                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold text-white transition-colors"
+                                        className="px-4 py-2 bg-black hover:bg-slate-800 rounded-xl text-xs font-bold text-white transition-colors"
                                     >
                                         Activate Camera
                                     </button>
@@ -439,7 +430,7 @@ export default function StandalonePublicKioskScanPage() {
                             )}
 
                             {/* Camera HUD Overlay */}
-                            <div className="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between">
+                            <div className="absolute inset-0 pointer-events-none p-5 sm:p-6 flex flex-col justify-between">
                                 {/* Top Badges */}
                                 <div className="flex items-center justify-between">
                                     <div className="bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-white text-xs font-bold flex items-center gap-2 shadow-lg">
@@ -447,12 +438,12 @@ export default function StandalonePublicKioskScanPage() {
                                         <span>AI Biometric Face Engine Active</span>
                                     </div>
                                     <div className="bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 text-white text-xs font-mono font-bold">
-                                        FPS: 30 • Real-Time
+                                        FPS: 30 • Anti-Duplicate
                                     </div>
                                 </div>
 
                                 {/* Center Target Box */}
-                                <div className="self-center w-56 h-56 sm:w-64 sm:h-64 border-2 border-emerald-400/70 rounded-3xl relative flex items-center justify-center animate-pulse">
+                                <div className="self-center w-52 h-52 sm:w-64 sm:h-64 border-2 border-emerald-400/80 rounded-3xl relative flex items-center justify-center animate-pulse">
                                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-black px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md">
                                         Scan Zone
                                     </div>
@@ -462,9 +453,9 @@ export default function StandalonePublicKioskScanPage() {
                                 <div className="bg-black/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/15 text-white text-xs font-bold flex items-center justify-between shadow-xl">
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2.5 h-2.5 rounded-full ${scanning ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
-                                        <span>{scanning ? 'Verifying facial biometric tokens...' : autoScanMessage}</span>
+                                        <span className="truncate">{scanning ? 'Verifying facial biometric tokens...' : autoScanMessage}</span>
                                     </div>
-                                    <span className="text-[10px] font-mono text-slate-400 uppercase">
+                                    <span className="text-[10px] font-mono text-slate-300 uppercase shrink-0 ml-2">
                                         {scanAction === 'check_in' ? '→ Clock-In Mode' : '← Clock-Out Mode'}
                                     </span>
                                 </div>
@@ -472,33 +463,32 @@ export default function StandalonePublicKioskScanPage() {
                         </div>
                     ) : (
                         /* Dynamic QR Code Screen */
-                        <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[440px] space-y-6">
-                            <div className="p-6 bg-white rounded-3xl shadow-2xl border-4 border-blue-500/20 flex items-center justify-center">
+                        <div className="bg-white border border-slate-200/90 rounded-3xl p-8 text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[420px] space-y-6 shadow-xs">
+                            <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl shadow-sm flex items-center justify-center">
                                 <QrCode size={190} className="text-black" />
                             </div>
 
                             <div className="space-y-1.5 max-w-sm">
-                                <h3 className="text-lg font-black text-white">Scan with Mobile StaffFlow App</h3>
-                                <p className="text-xs text-slate-400 font-medium">
+                                <h3 className="text-lg font-black text-black">Scan with Mobile StaffFlow App</h3>
+                                <p className="text-xs text-slate-600 font-semibold">
                                     Open your mobile phone camera to verify attendance inside the office geofence radius.
                                 </p>
                             </div>
 
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
-                                <RefreshCw size={12} className="animate-spin text-blue-400" />
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-mono text-slate-800 font-bold">
+                                <RefreshCw size={12} className="animate-spin text-black" />
                                 <span>Refreshing in {qrCountdown}s</span>
                             </div>
                         </div>
                     )}
 
-                    {/* Manual Override & Profile Selector */}
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-3 backdrop-blur-md">
+                    {/* Manual Staff Selection Card */}
+                    <div className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-xs">
                         <div className="flex items-center justify-between">
-                            <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                                <Radio size={13} className="text-blue-400" />
-                                <span>Target Staff Profile (Auto or Manual Select)</span>
+                            <label className="text-xs font-bold text-black flex items-center gap-1.5">
+                                <span>Target Staff Profile (Auto-Detect or Select)</span>
                             </label>
-                            <span className="text-[10px] text-emerald-400 font-bold">● Auto-Detection: ON</span>
+                            <span className="text-[10px] text-emerald-700 font-bold">● Auto-Detection: ON</span>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -521,7 +511,7 @@ export default function StandalonePublicKioskScanPage() {
                             <button
                                 onClick={() => handlePerformScan()}
                                 disabled={scanning}
-                                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                                className="w-full py-2.5 px-4 bg-black hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                             >
                                 <Scan size={15} />
                                 <span>{scanning ? 'Verifying...' : 'Manual Verify'}</span>
@@ -530,17 +520,17 @@ export default function StandalonePublicKioskScanPage() {
                     </div>
                 </div>
 
-                {/* Right 5 Cols: Live Receipt & Recent Activity */}
+                {/* Right 5 Cols: Live Verification Receipt Card & Activity Feed */}
                 <div className="lg:col-span-5 space-y-6">
-                    {/* Live Verification Receipt Card */}
-                    <div className="bg-slate-950/80 border border-slate-800 rounded-3xl p-6 shadow-2xl backdrop-blur-md space-y-5">
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    {/* Live Verification Receipt */}
+                    <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs space-y-5">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                             <div className="flex items-center gap-2">
-                                <ShieldCheck size={18} className="text-emerald-400" />
-                                <h2 className="text-sm font-black text-white uppercase tracking-wider">Live Verification Receipt</h2>
+                                <ShieldCheck size={18} className="text-emerald-600" />
+                                <h2 className="text-sm font-black text-black uppercase tracking-wider">Live Verification Receipt</h2>
                             </div>
                             {lastVerifiedRecord && (
-                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black">
                                     Verified ({lastVerifiedRecord.confidence}%)
                                 </span>
                             )}
@@ -548,8 +538,8 @@ export default function StandalonePublicKioskScanPage() {
 
                         {lastVerifiedRecord ? (
                             <div className="space-y-4">
-                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
-                                    <div className="w-16 h-16 rounded-2xl bg-slate-800 border-2 border-emerald-500/40 overflow-hidden flex items-center justify-center shrink-0 shadow-lg">
+                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                                    <div className="w-16 h-16 rounded-2xl bg-white border-2 border-emerald-500 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
                                         {lastVerifiedRecord.capturedPhoto ? (
                                             <img
                                                 src={lastVerifiedRecord.capturedPhoto}
@@ -557,69 +547,69 @@ export default function StandalonePublicKioskScanPage() {
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
-                                            <span className="font-bold text-xl text-white">
+                                            <span className="font-bold text-xl text-black">
                                                 {lastVerifiedRecord.employee.firstName?.[0]}
                                             </span>
                                         )}
                                     </div>
                                     <div className="space-y-1">
-                                        <h3 className="text-base font-black text-white">
+                                        <h3 className="text-base font-black text-black">
                                             {lastVerifiedRecord.employee.firstName} {lastVerifiedRecord.employee.lastName}
                                         </h3>
-                                        <p className="text-xs text-slate-400 font-medium">
+                                        <p className="text-xs text-slate-600 font-semibold">
                                             {lastVerifiedRecord.employee.position || 'Staff Personnel'}
                                         </p>
-                                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-bold">
+                                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-800 text-[10px] font-bold">
                                             <Building2 size={10} />
-                                            <span>{lastVerifiedRecord.employee.department || 'Engineering'}</span>
+                                            <span>{lastVerifiedRecord.employee.department || 'Engineering & IT'}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="p-3 bg-slate-900 rounded-xl border border-slate-800/80">
-                                        <span className="text-[10px] font-bold uppercase text-slate-400 block">Timestamp</span>
-                                        <span className="text-xs font-mono font-bold text-white mt-0.5 block">
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                        <span className="text-[10px] font-bold uppercase text-slate-500 block">Timestamp</span>
+                                        <span className="text-xs font-mono font-bold text-black mt-0.5 block">
                                             {format(new Date(lastVerifiedRecord.time), 'hh:mm:ss a')}
                                         </span>
                                     </div>
 
-                                    <div className="p-3 bg-slate-900 rounded-xl border border-slate-800/80">
-                                        <span className="text-[10px] font-bold uppercase text-slate-400 block">Arrival Status</span>
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                        <span className="text-[10px] font-bold uppercase text-slate-500 block">Arrival Status</span>
                                         <span className={`text-xs font-bold mt-0.5 block ${
-                                            lastVerifiedRecord.status === 'late' ? 'text-amber-400' : 'text-emerald-400'
+                                            lastVerifiedRecord.status === 'late' ? 'text-amber-700' : 'text-emerald-700'
                                         }`}>
-                                            {lastVerifiedRecord.status === 'late' ? '⚠ Late Entry' : '✓ On Time (Present)'}
+                                            {lastVerifiedRecord.status === 'late' ? '⚠ Late' : '✓ On Time'}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/50 text-[11px] text-slate-400 flex items-center justify-between">
+                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 font-semibold flex items-center justify-between">
                                     <span>Verification Gate:</span>
-                                    <span className="font-mono text-white font-bold">{lastVerifiedRecord.location}</span>
+                                    <span className="font-mono text-black font-bold">{lastVerifiedRecord.location}</span>
                                 </div>
                             </div>
                         ) : (
                             <div className="py-12 text-center space-y-3">
-                                <div className="w-14 h-14 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-slate-500">
+                                <div className="w-14 h-14 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
                                     <UserCheck size={24} />
                                 </div>
-                                <p className="text-xs font-semibold text-slate-400">
-                                    Awaiting next staff face scan or QR badge...
+                                <p className="text-xs font-semibold text-slate-500">
+                                    Awaiting staff face scan or QR badge...
                                 </p>
                             </div>
                         )}
                     </div>
 
-                    {/* Recent Terminal Activity Ticker */}
-                    <div className="bg-slate-950/80 border border-slate-800 rounded-3xl p-6 shadow-2xl backdrop-blur-md space-y-4">
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                            <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                                <Radio size={13} className="text-emerald-400" />
-                                <span>Recent Gate Activity</span>
+                    {/* Recent Gate Activity */}
+                    <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs space-y-4">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <div className="flex items-center gap-2 text-xs font-bold text-black">
+                                <Sparkles size={13} className="text-black" />
+                                <span>Recent Gate Scans</span>
                             </div>
                             <span className="text-[10px] text-slate-500 font-mono font-bold">
-                                {recentScans.length} events today
+                                {recentScans.length} events
                             </span>
                         </div>
 
@@ -628,28 +618,28 @@ export default function StandalonePublicKioskScanPage() {
                                 recentScans.map((rec) => (
                                     <div
                                         key={rec.id}
-                                        className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs"
+                                        className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
                                     >
                                         <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-slate-300 text-[11px]">
+                                            <div className="w-7 h-7 rounded-lg bg-black text-white flex items-center justify-center font-bold text-[11px]">
                                                 {rec.employee.firstName?.[0]}{rec.employee.lastName?.[0]}
                                             </div>
                                             <div>
-                                                <div className="font-bold text-white">
+                                                <div className="font-bold text-black">
                                                     {rec.employee.firstName} {rec.employee.lastName}
                                                 </div>
-                                                <div className="text-[10px] text-slate-400">
+                                                <div className="text-[10px] text-slate-500 font-semibold">
                                                     {rec.method}
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="text-right">
-                                            <div className="font-mono text-[11px] font-bold text-slate-200">
+                                            <div className="font-mono text-[11px] font-bold text-black">
                                                 {format(new Date(rec.time), 'hh:mm:ss a')}
                                             </div>
                                             <span className={`text-[9px] font-bold uppercase ${
-                                                rec.action === 'check_in' ? 'text-emerald-400' : 'text-amber-400'
+                                                rec.action === 'check_in' ? 'text-emerald-700' : 'text-amber-700'
                                             }`}>
                                                 {rec.action === 'check_in' ? 'IN' : 'OUT'} • {rec.status}
                                             </span>
@@ -657,8 +647,8 @@ export default function StandalonePublicKioskScanPage() {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-xs text-slate-500 text-center py-6">
-                                    No scans recorded in this kiosk session yet
+                                <p className="text-xs text-slate-400 text-center py-6 font-medium">
+                                    No scans recorded in this session yet
                                 </p>
                             )}
                         </div>
@@ -667,8 +657,8 @@ export default function StandalonePublicKioskScanPage() {
             </main>
 
             {/* Bottom Footer */}
-            <footer className="px-6 py-3 bg-slate-950 border-t border-slate-800 text-center text-xs text-slate-500">
-                StaffFlow Biometric Verification Kiosk • Version 2.4.0 • Enterprise Attendance System
+            <footer className="px-6 py-3 bg-white border-t border-slate-200 text-center text-xs text-slate-500 font-medium">
+                StaffFlow Biometric Gate Terminal • Version 2.4.0 • Enterprise Attendance System
             </footer>
         </div>
     );
