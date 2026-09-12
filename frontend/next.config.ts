@@ -2,11 +2,9 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: path.join(__dirname, './'),
   images: {
     domains: ['localhost'],
-  },
-  turbopack: {
-    root: path.resolve(__dirname),
   },
 };
 
