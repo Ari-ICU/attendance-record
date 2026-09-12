@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
     BarChart3,
@@ -61,7 +61,7 @@ const DEFAULT_REPORT_ANALYTICS = {
     ]
 };
 
-export default function AnalyticsPage() {
+function AnalyticsPageContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -708,5 +708,13 @@ export default function AnalyticsPage() {
                 </motion.div>
             </AnimatePresence>
         </div>
+    );
+}
+
+export default function AnalyticsPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" /></div>}>
+            <AnalyticsPageContent />
+        </Suspense>
     );
 }

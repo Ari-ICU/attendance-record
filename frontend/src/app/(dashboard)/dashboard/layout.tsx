@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar, { MenuItem } from '@/components/ASide';
 import AHeader from '@/components/AHeader';
@@ -166,7 +166,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex min-h-screen bg-slate-50/70 text-black font-sans antialiased">
             {/* Sidebar */}
             <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-sm print:hidden`}>
-                <Sidebar menuItems={menuItems} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+                <Suspense fallback={<div className="w-64 bg-white" />}>
+                    <Sidebar menuItems={menuItems} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+                </Suspense>
             </div>
 
             {/* Mobile Overlay */}
@@ -181,11 +183,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} min-h-screen print:ml-0`}>
                 {/* Header */}
                 <div className="print:hidden">
-                    <AHeader sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
+                    <Suspense fallback={null}>
+                        <AHeader sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
+                    </Suspense>
                 </div>
 
                 <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 w-full">
-                    {children}
+                    <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" /></div>}>
+                        {children}
+                    </Suspense>
                 </main>
             </div>
         </div>
