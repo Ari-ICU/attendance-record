@@ -61,6 +61,8 @@ export default function AttendanceScanKioskPage() {
     const webcamRef = useRef<Webcam>(null);
     // Anti-duplicate cooldown tracker: Employee ID -> Timestamp of last scan
     const cooldownMapRef = useRef<Record<string, number>>({});
+    // Track if employee has already performed this action today/session
+    const scannedActionsMapRef = useRef<Record<string, boolean>>({});
     const isAutoDetectingRef = useRef<boolean>(false);
 
     // Format date as DD/Month/YYYY (e.g., 12/September/2026)
@@ -93,13 +95,31 @@ export default function AttendanceScanKioskPage() {
         return () => clearInterval(timer);
     }, []);
 
-    // Load registered staff
+    // Load registered staff and today's attendance records to prevent duplicates
     useEffect(() => {
         const fetchEmployees = async () => {
             try {
                 const res = await EmployeeService.getAllEmployees({ limit: 50 });
                 const list = res?.employees || [];
                 setEmployees(list);
+
+                // Fetch today's records to pre-populate scanned status
+                const attRes = await AttendanceService.getRecords({ limit: 50 });
+                const records = Array.isArray(attRes) ? attRes : (attRes?.data || attRes?.records || []);
+                const todayStr = new Date().toISOString().split('T')[0];
+                
+                records.forEach((r: any) => {
+                    const empId = typeof r.employeeId === 'object' ? r.employeeId?._id : r.employeeId;
+                    const rDate = r.date ? new Date(r.date).toISOString().split('T')[0] : '';
+                    if (empId && (rDate === todayStr || !r.date)) {
+                        if (r.checkIn?.time) {
+                            scannedActionsMapRef.current[`${empId}_check_in`] = true;
+                        }
+                        if (r.checkOut?.time) {
+                            scannedActionsMapRef.current[`${empId}_check_out`] = true;
+                        }
+                    }
+                });
             } catch (err) {
                 console.error('Failed to load employees for scanner', err);
             }
@@ -195,12 +215,21 @@ export default function AttendanceScanKioskPage() {
                 return;
             }
 
-            // ANTI-DUPLICATE CHECK: Prevent duplicate scans for the same employee within 30 seconds
+            // ANTI-DUPLICATE CHECK 1: If auto-scanning and already completed this action today/session, do not re-scan
+            const actionKey = `${targetEmp._id}_${scanAction}`;
+            if (isAutomatic && scannedActionsMapRef.current[actionKey]) {
+                const actionLabel = scanAction === 'check_in' ? 'Clocked In' : 'Clocked Out';
+                setAutoScanMessage(`✓ ${targetEmp.firstName} ${targetEmp.lastName} is already ${actionLabel} today`);
+                setScanning(false);
+                return;
+            }
+
+            // ANTI-DUPLICATE CHECK 2: Prevent rapid repeat scans within 60 seconds
             const lastScan = cooldownMapRef.current[targetEmp._id] || 0;
             const nowMs = Date.now();
-            if (nowMs - lastScan < 25000) {
-                const remainingSecs = Math.ceil((25000 - (nowMs - lastScan)) / 1000);
-                setAutoScanMessage(`✓ ${targetEmp.firstName} already scanned (${remainingSecs}s cooldown)`);
+            if (nowMs - lastScan < 60000 && isAutomatic) {
+                const remainingSecs = Math.ceil((60000 - (nowMs - lastScan)) / 1000);
+                setAutoScanMessage(`✓ ${targetEmp.firstName} verified (${remainingSecs}s cooldown)`);
                 setScanning(false);
                 return;
             }
@@ -243,8 +272,9 @@ export default function AttendanceScanKioskPage() {
                 });
             }
 
-            // Record cooldown timestamp
+            // Record cooldown and session completion
             cooldownMapRef.current[targetEmp._id] = Date.now();
+            scannedActionsMapRef.current[actionKey] = true;
 
             const verificationPayload = {
                 id: `rec_${Date.now()}`,
