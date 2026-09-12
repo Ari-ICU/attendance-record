@@ -9,6 +9,7 @@ export interface BankDetails {
 
 export interface Employee {
     _id: string;
+    id?: string;
     firstName: string;
     lastName: string;
     fullName: string; // Virtual field (firstName + lastName)
@@ -74,7 +75,8 @@ export interface EmployeeUpdateData {
 // Data for face verification request
 export interface VerifyFaceData {
     employeeId?: string;
-    faceDescriptor: number[]; // required for sending face embeddings
+    faceDescriptor?: number[]; // optional for sending face embeddings
+    image?: string; // optional base64 image for face recognition
 }
 
 // Result of face verification
