@@ -253,7 +253,8 @@ const seedMockData = async () => {
         const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
 
         const attendanceCount = await Attendance.countDocuments();
-        if (attendanceCount === 0 && employeeDocs.length >= 4) {
+        if (attendanceCount < 5 && employeeDocs.length >= 4) {
+            await Attendance.deleteMany({});
             const todayCheckIn1 = new Date(today);
             todayCheckIn1.setHours(7, 54, 12);
             const todayCheckOut1 = new Date(today);
@@ -348,7 +349,7 @@ const seedMockData = async () => {
             ];
 
             await Attendance.insertMany(sampleAttendances);
-            console.log('✅ Sample attendance records seeded');
+            console.log('✅ Full sample attendance records seeded');
         }
 
         // 6. Seed Vault Business Balance & Payroll
@@ -364,7 +365,8 @@ const seedMockData = async () => {
         }
 
         const payrollCount = await Payroll.countDocuments();
-        if (payrollCount === 0 && employeeDocs.length >= 6) {
+        if (payrollCount < 6 && employeeDocs.length >= 6) {
+            await Payroll.deleteMany({});
             const payslipsSeed = [
                 {
                     payrollId: 'pr_2026_09',
