@@ -23,6 +23,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { SettingsService } from '@/services/settings.service';
 import { BackupService, Backup } from '@/services/backup.service';
+import { EmployeeService } from '@/services/employee.service';
+import { DepartmentService } from '@/services/department.service';
+import { Employee } from '@/types/employee.types';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 
 type TabType = 'roles' | 'general' | 'attendance' | 'system' | 'backup';
@@ -129,6 +132,16 @@ export default function SettingsPage() {
     const [userSearchTerm, setUserSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('all');
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [departmentsList, setDepartmentsList] = useState<string[]>([
+        'Engineering & IT',
+        'Product & Design',
+        'Human Resources',
+        'Operations & Facilities',
+        'Finance & Accounting',
+        'Marketing & Sales'
+    ]);
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
     const [newUserForm, setNewUserForm] = useState({
         username: '',
         email: '',
@@ -163,9 +176,11 @@ export default function SettingsPage() {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const [settingsData, usersData] = await Promise.allSettled([
+                const [settingsData, usersData, employeesData, deptsData] = await Promise.allSettled([
                     SettingsService.getSettings(),
-                    SettingsService.getAllUsers()
+                    SettingsService.getAllUsers(),
+                    EmployeeService.getAllEmployees({ limit: 1000 }),
+                    DepartmentService.getAll()
                 ]);
 
                 if (settingsData.status === 'fulfilled') {
@@ -174,6 +189,25 @@ export default function SettingsPage() {
 
                 if (usersData.status === 'fulfilled') {
                     setUsers(usersData.value as SystemUser[]);
+                }
+
+                if (employeesData.status === 'fulfilled') {
+                    const empList = employeesData.value?.employees || (Array.isArray(employeesData.value) ? employeesData.value : []);
+                    setEmployees(empList);
+                }
+
+                if (deptsData.status === 'fulfilled') {
+                    const depts = Array.isArray(deptsData.value) ? deptsData.value : [];
+                    const deptNames = Array.from(new Set([
+                        'Engineering & IT',
+                        'Product & Design',
+                        'Human Resources',
+                        'Operations & Facilities',
+                        'Finance & Accounting',
+                        'Marketing & Sales',
+                        ...depts.map((d: any) => d.name).filter(Boolean)
+                    ]));
+                    setDepartmentsList(deptNames);
                 }
 
                 try {
@@ -224,6 +258,39 @@ export default function SettingsPage() {
         }
     };
 
+    const handleDepartmentChange = (dept: string) => {
+        setNewUserForm(prev => ({ ...prev, department: dept }));
+        if (selectedEmployeeId) {
+            const currentEmp = employees.find(e => (e._id || e.id) === selectedEmployeeId);
+            if (currentEmp && currentEmp.department !== dept) {
+                setSelectedEmployeeId('');
+            }
+        }
+    };
+
+    const handleEmployeeSelect = (empId: string) => {
+        setSelectedEmployeeId(empId);
+        if (!empId) return;
+
+        const emp = employees.find(e => (e._id || e.id) === empId);
+        if (emp) {
+            const cleanFirst = (emp.firstName || '').trim();
+            const cleanLast = (emp.lastName || '').trim();
+            const generatedUsername = emp.email
+                ? emp.email.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '')
+                : `${cleanFirst.toLowerCase()}.${cleanLast.toLowerCase()}`.replace(/[^a-z0-9._-]/g, '');
+
+            setNewUserForm(prev => ({
+                ...prev,
+                firstName: cleanFirst,
+                lastName: cleanLast,
+                email: emp.email || prev.email,
+                username: generatedUsername || prev.username,
+                department: emp.department || prev.department,
+            }));
+        }
+    };
+
     const handleCreateUser = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newUserForm.username || !newUserForm.email) {
@@ -245,6 +312,7 @@ export default function SettingsPage() {
         setUsers(prev => [newUser, ...prev]);
         toast.success('System user added successfully');
         setIsAddUserModalOpen(false);
+        setSelectedEmployeeId('');
         setNewUserForm({
             username: '',
             email: '',
@@ -948,10 +1016,13 @@ export default function SettingsPage() {
                         <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-2xl">
                             <div>
                                 <h3 className="text-base font-black text-black">Add New System Operator</h3>
-                                <p className="text-xs font-semibold text-slate-700">Create an operator login with specific role clearance</p>
+                                <p className="text-xs font-semibold text-slate-700">Select department & staff to auto-fill or enter manually</p>
                             </div>
                             <button
-                                onClick={() => setIsAddUserModalOpen(false)}
+                                onClick={() => {
+                                    setIsAddUserModalOpen(false);
+                                    setSelectedEmployeeId('');
+                                }}
                                 className="p-2 rounded-xl text-black hover:bg-slate-200 transition-colors cursor-pointer"
                             >
                                 <X size={18} />
@@ -959,6 +1030,45 @@ export default function SettingsPage() {
                         </div>
 
                         <form onSubmit={handleCreateUser} className="p-6 space-y-4">
+                            {/* Department Selection */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-black flex items-center justify-between">
+                                    <span>Department *</span>
+                                    <span className="text-[10px] text-slate-500 font-semibold">Filter staff by dept</span>
+                                </label>
+                                <CustomDropdown
+                                    value={newUserForm.department}
+                                    onChange={handleDepartmentChange}
+                                    options={departmentsList.map(dept => ({ value: dept, label: dept }))}
+                                />
+                            </div>
+
+                            {/* Staff / Employee Selection Dropdown for Auto-Fill */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-black flex items-center justify-between">
+                                    <span>Select Staff Member (Auto-fill)</span>
+                                    {selectedEmployeeId && (
+                                        <span className="text-[10px] text-emerald-600 font-bold">✓ Details loaded</span>
+                                    )}
+                                </label>
+                                <CustomDropdown
+                                    value={selectedEmployeeId}
+                                    onChange={handleEmployeeSelect}
+                                    placeholder="Choose staff to auto-fill credentials..."
+                                    searchable
+                                    options={[
+                                        { value: '', label: '✨ Custom / Manual Entry' },
+                                        ...employees
+                                            .filter(e => !newUserForm.department || e.department === newUserForm.department)
+                                            .map(emp => ({
+                                                value: emp._id || emp.id || '',
+                                                label: `${emp.firstName} ${emp.lastName} — ${emp.email || 'No email'} (${emp.position || 'Staff'})`
+                                            }))
+                                    ]}
+                                />
+                            </div>
+
+                            {/* First Name & Last Name */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-black">First Name *</label>
@@ -983,6 +1093,7 @@ export default function SettingsPage() {
                                 </div>
                             </div>
 
+                            {/* Username */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-black">Username *</label>
                                 <input
@@ -995,6 +1106,7 @@ export default function SettingsPage() {
                                 />
                             </div>
 
+                            {/* Email Address */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-black">Email Address *</label>
                                 <input
@@ -1007,39 +1119,27 @@ export default function SettingsPage() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-black">Department</label>
-                                    <CustomDropdown
-                                        value={newUserForm.department}
-                                        onChange={(val) => setNewUserForm({ ...newUserForm, department: val })}
-                                        options={[
-                                            { value: 'Engineering & IT', label: 'Engineering & IT' },
-                                            { value: 'Product & Design', label: 'Product & Design' },
-                                            { value: 'Human Resources', label: 'Human Resources' },
-                                            { value: 'Operations & Facilities', label: 'Operations & Facilities' },
-                                        ]}
-                                    />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-black">Role Clearance</label>
-                                    <CustomDropdown
-                                        value={newUserForm.role}
-                                        onChange={(val) => setNewUserForm({ ...newUserForm, role: val })}
-                                        options={[
-                                            { value: 'admin', label: 'Administrator' },
-                                            { value: 'manager', label: 'Manager' },
-                                            { value: 'employee', label: 'Employee' },
-                                        ]}
-                                    />
-                                </div>
+                            {/* Role Clearance */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-black">Role Clearance</label>
+                                <CustomDropdown
+                                    value={newUserForm.role}
+                                    onChange={(val) => setNewUserForm({ ...newUserForm, role: val })}
+                                    options={[
+                                        { value: 'admin', label: 'Administrator' },
+                                        { value: 'manager', label: 'Manager' },
+                                        { value: 'employee', label: 'Employee' },
+                                    ]}
+                                />
                             </div>
 
                             <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
                                 <button
                                     type="button"
-                                    onClick={() => setIsAddUserModalOpen(false)}
+                                    onClick={() => {
+                                        setIsAddUserModalOpen(false);
+                                        setSelectedEmployeeId('');
+                                    }}
                                     className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-black font-bold text-xs rounded-xl transition-colors cursor-pointer"
                                 >
                                     Cancel
