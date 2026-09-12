@@ -171,6 +171,7 @@ app.use('/api/attendance', attendanceRoutes);
 
 // System settings routes
 app.use('/api/settings', systemSettingRoutes);
+app.use('/api/system-settings', systemSettingRoutes);
 
 // Leave & Overtime Workforce Routes
 app.use('/api/leaves', leaveRoutes);

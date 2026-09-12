@@ -7,6 +7,7 @@ router.use(authMiddleware);
 
 router.get('/', (req, res) => systemSettingController.getSettings(req, res));
 router.post('/', adminOnly, (req, res) => systemSettingController.updateSettings(req, res));
+router.put('/', adminOnly, (req, res) => systemSettingController.updateSettings(req, res));
 router.post('/rotate-key', adminOnly, (req, res) => systemSettingController.rotateApiKey(req, res));
 router.get('/stats', (req, res) => systemSettingController.getSystemStats(req, res));
 
