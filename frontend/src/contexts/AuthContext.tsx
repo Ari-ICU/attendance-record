@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { AuthService } from '@/services/auth.service';
 import { setAccessToken } from '@/api/axiosInstance';
 import { AuthResponse, AuthState, LoginPayload, UpdateProfilePayload, User } from '@/types/Auth';
@@ -14,31 +14,23 @@ interface AuthContextProps extends AuthState {
     initializing: boolean;
 }
 
-const DEFAULT_ADMIN_USER: User = {
-    _id: 'usr_admin_001',
-    email: 'admin@system.com',
-    username: 'admin',
-    firstName: 'Thoeurn',
-    lastName: 'Ratha',
-    role: 'admin',
-};
-
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const router = useRouter();
-    const [user, setUser] = useState<User | null>(DEFAULT_ADMIN_USER);
-    const [token, setToken] = useState<string | null>('demo_token');
+    const pathname = usePathname();
+    const [user, setUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const [initializing, setInitializing] = useState(false);
+    const [initializing, setInitializing] = useState<boolean>(true);
 
     // Sync token with axios instance
     useEffect(() => {
         setAccessToken(token);
     }, [token]);
 
-    // Initialize auth on app start
+    // Initialize auth on app start from localStorage
     useEffect(() => {
         const initializeAuth = async () => {
             try {
@@ -50,60 +42,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         const profile = await AuthService.getProfile();
                         if (profile) {
                             setUser(profile);
-                            return;
+                        } else {
+                            throw new Error('No profile data returned');
                         }
-                    } catch (profileErr) {
-                        console.warn('[Auth] Stored token expired or profile fetch failed, re-authenticating...');
+                    } catch (err) {
+                        console.warn('[Auth] Stored session invalid or expired');
+                        localStorage.removeItem('token');
+                        setAccessToken(null);
+                        setToken(null);
+                        setUser(null);
                     }
+                } else {
+                    setAccessToken(null);
+                    setToken(null);
+                    setUser(null);
                 }
-
-                // Initialize session with live backend admin credentials
-                try {
-                    const data = await AuthService.login({
-                        identifier: 'admin@system.com',
-                        password: 'SecurePassword123!'
-                    });
-                    setUser(data.user);
-                    setToken(data.token);
-                    if (typeof window !== 'undefined' && data.token) {
-                        localStorage.setItem('token', data.token);
-                    }
-                } catch {
-                    setUser(DEFAULT_ADMIN_USER);
-                    setToken('demo_token');
-                }
-            } catch (err: unknown) {
-                setUser(DEFAULT_ADMIN_USER);
-                setToken('demo_token');
+            } catch {
+                setUser(null);
+                setToken(null);
             } finally {
                 setInitializing(false);
             }
         };
+
         initializeAuth();
     }, []);
+
+    // Redirect to login if unauthenticated on protected dashboard routes
+    useEffect(() => {
+        if (!initializing && !user && pathname?.startsWith('/dashboard')) {
+            router.push('/login');
+        }
+    }, [user, initializing, pathname, router]);
 
     const login = async (payload: LoginPayload) => {
         setLoading(true);
         setError(null);
         try {
             const data: AuthResponse = await AuthService.login(payload);
+            if (!data?.token || !data?.user) {
+                throw new Error('Authentication failed: Missing token or user profile');
+            }
             setUser(data.user);
             setToken(data.token);
-            if (data.token) localStorage.setItem('token', data.token);
+            setAccessToken(data.token);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('token', data.token);
+            }
             router.push('/dashboard');
-        } catch (err: unknown) {
-            // In dev mode when backend is renewed/empty, allow instant demo sign in
-            const fallbackUser: User = {
-                _id: 'usr_admin_001',
-                email: payload.identifier.includes('@') ? payload.identifier : `${payload.identifier}@system.com`,
-                username: payload.identifier.split('@')[0],
-                firstName: 'Thoeurn',
-                lastName: 'Ratha',
-                role: 'admin',
-            };
-            setUser(fallbackUser);
-            setToken('demo_token');
-            router.push('/dashboard');
+        } catch (err: any) {
+            const message = err.response?.data?.error || err.response?.data?.message || err.message || 'Invalid credentials provided';
+            setError(message);
+            throw new Error(message);
         } finally {
             setLoading(false);
         }
@@ -114,10 +104,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setError(null);
         try {
             await AuthService.logout();
-        } catch (err: unknown) {
-            // Ignore logout errors if backend is clean
+        } catch {
+            // Ignore backend logout errors if connection dropped
         } finally {
-            localStorage.removeItem('token');
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('token');
+            }
+            setAccessToken(null);
             setUser(null);
             setToken(null);
             setLoading(false);
@@ -131,17 +124,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             const updatedUser = await AuthService.updateProfile(payload);
             setUser(updatedUser);
-        } catch (err: unknown) {
-            if (user) {
-                setUser({
-                    ...user,
-                    firstName: payload.firstName || user.firstName,
-                    lastName: payload.lastName || user.lastName,
-                    email: payload.email || user.email,
-                    position: payload.position || user.position,
-                    department: payload.department || user.department,
-                });
-            }
+        } catch (err: any) {
+            const message = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to update profile';
+            setError(message);
+            throw new Error(message);
         } finally {
             setLoading(false);
         }
@@ -151,8 +137,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             const newToken = await AuthService.refreshToken();
             setToken(newToken);
-        } catch (err: unknown) {
-            // Keep current session
+            setAccessToken(newToken);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('token', newToken);
+            }
+        } catch (err: any) {
+            console.error('[Auth] Refresh token failed:', err.message);
+            await logout();
         }
     };
 
@@ -182,3 +173,4 @@ export const useAuth = () => {
     }
     return context;
 };
+

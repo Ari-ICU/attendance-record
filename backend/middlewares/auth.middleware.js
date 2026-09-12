@@ -41,16 +41,6 @@ const authMiddleware = async (req, res, next) => {
 
         const token = authHeader.split(' ')[1];
 
-        // Support demo_token / local dev session
-        if (token === 'demo_token') {
-            const adminUser = await User.findOne({ role: 'admin' }).select('-password');
-            if (adminUser) {
-                req.user = adminUser;
-                req.token = token;
-                return next();
-            }
-        }
-
         let decoded;
         try {
             decoded = jwt.verify(token, process.env.JWT_SECRET);
