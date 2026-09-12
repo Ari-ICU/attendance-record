@@ -7,6 +7,10 @@ const departmentSchema = new mongoose.Schema({
         unique: true,
         trim: true,
     },
+    code: {
+        type: String,
+        trim: true,
+    },
     description: {
         type: String,
         trim: true,
@@ -14,6 +18,11 @@ const departmentSchema = new mongoose.Schema({
     head: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Employee',
+    },
+    headOfDepartment: {
+        _id: { type: String },
+        firstName: { type: String },
+        lastName: { type: String }
     },
     isActive: {
         type: Boolean,

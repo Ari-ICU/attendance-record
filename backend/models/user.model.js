@@ -9,10 +9,9 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true,
         lowercase: true,
-        match: [/^\S+@\S+\.\S+$/, 'Invalid email'],
-        index: true
+        match: [/^\S+@\S+\.\S+$/, 'Invalid email']
     },
-    password: { type: String, required: true, minlength: 8 },
+    password: { type: String, required: true, minlength: 6 },
     loginAttempts: { type: Number, default: 0 },
     isLocked: { type: Boolean, default: false },
     firstName: { type: String, trim: true },
@@ -23,7 +22,7 @@ const userSchema = new mongoose.Schema({
     department: { type: String, trim: true },
     phoneNumber: { type: String, trim: true },
     location: { type: String, trim: true },
-    role: { type: String, enum: ['admin', 'employee', 'student'], default: 'employee' },
+    role: { type: String, enum: ['admin', 'manager', 'employee', 'student', 'superadmin'], default: 'employee' },
     lastLogin: { type: Date },
 }, {
     timestamps: true

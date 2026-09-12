@@ -49,6 +49,4 @@ employeeSchema.virtual('fullName').get(function () {
     return `${this.firstName} ${this.lastName}`;
 });
 
-employeeSchema.index({ email: 1 });
-
 module.exports = mongoose.model('Employee', employeeSchema);

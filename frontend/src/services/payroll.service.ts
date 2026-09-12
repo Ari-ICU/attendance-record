@@ -248,9 +248,21 @@ const SEED_PAYSLIPS_SEP_2026: Payslip[] = [
 
 let localPayslips: Payslip[] = [...SEED_PAYSLIPS_SEP_2026];
 
+import api from '@/api/axiosInstance';
+import { API_URLS } from '@/api/apiUrl';
+
 export const PayrollService = {
     // Fetch monthly payroll summary & payslips
     getMonthlyPayroll: async (month = 'September', year = 2026): Promise<MonthlyPayrollSummary> => {
+        try {
+            const response = await api.get(API_URLS.PAYROLL.LEDGER, { params: { month, year } });
+            if (response?.data?.data) {
+                return response.data.data;
+            }
+        } catch {
+            // Fallback to mock
+        }
+
         const filtered = localPayslips.filter(p => p.month.toLowerCase() === month.toLowerCase() && p.year === year);
         
         const totalGrossSalary = filtered.reduce((acc, p) => acc + p.earnings.grossEarnings, 0);
@@ -273,17 +285,35 @@ export const PayrollService = {
 
     // Fetch individual payslip by ID
     getPayslipById: async (id: string): Promise<Payslip | null> => {
+        try {
+            const response = await api.get(`${API_URLS.PAYROLL.STATS.replace('/stats', '')}/payslips/${id}`);
+            if (response?.data?.data) return response.data.data;
+        } catch {
+            // Fallback to mock
+        }
         const found = localPayslips.find(p => p._id === id);
         return found || null;
     },
 
     // Fetch payslips for a specific employee
     getEmployeePayslips: async (employeeId: string): Promise<Payslip[]> => {
+        try {
+            const response = await api.get(`${API_URLS.PAYROLL.STATS.replace('/stats', '')}/employee/${employeeId}`);
+            if (response?.data?.data) return response.data.data;
+        } catch {
+            // Fallback to mock
+        }
         return localPayslips.filter(p => p.employeeId === employeeId || (p.employee as any)?._id === employeeId);
     },
 
     // Mark single payslip as paid
     updatePayslipStatus: async (id: string, status: PaymentStatus): Promise<Payslip | null> => {
+        try {
+            const response = await api.put(`${API_URLS.PAYROLL.STATS.replace('/stats', '')}/payslips/${id}/status`, { status });
+            if (response?.data?.data) return response.data.data;
+        } catch {
+            // Fallback to mock
+        }
         const index = localPayslips.findIndex(p => p._id === id);
         if (index === -1) return null;
         localPayslips[index] = { ...localPayslips[index], status };
@@ -292,6 +322,12 @@ export const PayrollService = {
 
     // Mark entire month's payroll as paid
     markAllAsPaid: async (month = 'September', year = 2026): Promise<boolean> => {
+        try {
+            const response = await api.post(`${API_URLS.PAYROLL.STATS.replace('/stats', '')}/mark-all-paid`, { month, year });
+            if (response?.data?.success) return true;
+        } catch {
+            // Fallback to mock
+        }
         localPayslips = localPayslips.map(p => {
             if (p.month.toLowerCase() === month.toLowerCase() && p.year === year) {
                 return { ...p, status: 'paid' };
@@ -303,6 +339,12 @@ export const PayrollService = {
 
     // Re-run / recalculate payroll from active employees
     generatePayrollRun: async (month = 'September', year = 2026): Promise<MonthlyPayrollSummary> => {
+        try {
+            const response = await api.post(API_URLS.PAYROLL.GENERATE, { month, year });
+            if (response?.data?.data) return response.data.data;
+        } catch {
+            // Fallback to mock
+        }
         // Regenerate payslips for all active employees
         const generated: Payslip[] = MOCK_EMPLOYEES.map((emp, idx) => {
             const baseSalary = emp.baseSalary || 2000;

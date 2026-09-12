@@ -40,7 +40,7 @@ const redisConfig = {
 let redisClient = null;
 let isConnected = false;
 let connectionAttempts = 0;
-const maxConnectionAttempts = 5;
+const maxConnectionAttempts = 2;
 
 // Connection event handlers
 const connectionHandlers = {
@@ -55,22 +55,19 @@ const connectionHandlers = {
     },
 
     error: (error) => {
-        console.error('❌ Redis connection error:', error.message);
-        isConnected = false;
         connectionAttempts++;
-
-        if (connectionAttempts >= maxConnectionAttempts) {
-            console.error('🚨 Maximum Redis connection attempts reached. Please check your Redis configuration.');
+        if (connectionAttempts <= maxConnectionAttempts) {
+            console.warn(`⚠️ Redis connection unavailable (${error.message}). Running in fallback mode.`);
         }
+        isConnected = false;
     },
 
     end: () => {
-        console.log('⚠️ Redis connection ended');
         isConnected = false;
     },
 
     reconnecting: () => {
-        console.log('🔄 Redis reconnecting...');
+        // Suppress reconnection logs when max attempts reached
     }
 };
 
@@ -81,18 +78,16 @@ const createRedisClient = () => {
             socket: {
                 host: redisConfig.host,
                 port: redisConfig.port,
-                connectTimeout: redisConfig.connectTimeout,
-                commandTimeout: redisConfig.commandTimeout,
-                keepAlive: redisConfig.keepAlive,
-                keepAliveInitialDelay: redisConfig.keepAliveInitialDelay,
-                family: redisConfig.family
+                connectTimeout: 3000,
+                reconnectStrategy: (retries) => {
+                    if (retries > maxConnectionAttempts) {
+                        return false; // Stop reconnecting
+                    }
+                    return 2000;
+                }
             },
-            password: redisConfig.password,
-            database: redisConfig.db,
-            retryDelayOnFailover: redisConfig.retryDelayOnFailover,
-            enableReadyCheck: redisConfig.enableReadyCheck,
-            maxRetriesPerRequest: redisConfig.maxRetriesPerRequest,
-            lazyConnect: redisConfig.lazyConnect
+            password: redisConfig.password || undefined,
+            database: redisConfig.db
         });
 
         // Set up event listeners
@@ -100,12 +95,11 @@ const createRedisClient = () => {
         client.on('ready', connectionHandlers.ready);
         client.on('error', connectionHandlers.error);
         client.on('end', connectionHandlers.end);
-        client.on('reconnecting', connectionHandlers.reconnecting);
 
         return client;
     } catch (error) {
-        console.error('❌ Failed to create Redis client:', error.message);
-        throw error;
+        console.warn('⚠️ Failed to create Redis client, proceeding without cache:', error.message);
+        return null;
     }
 };
 
@@ -116,15 +110,14 @@ const connectToRedis = async () => {
             redisClient = createRedisClient();
         }
 
-        if (!redisClient.isOpen) {
-            console.log('🔄 Connecting to Redis...');
+        if (redisClient && !redisClient.isOpen) {
             await redisClient.connect();
         }
 
         return redisClient;
     } catch (error) {
-        console.error('❌ Failed to connect to Redis:', error.message);
-        throw error;
+        console.warn('⚠️ Redis not available, using in-memory fallback:', error.message);
+        return null;
     }
 };
 

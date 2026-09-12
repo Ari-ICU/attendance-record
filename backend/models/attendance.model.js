@@ -49,7 +49,7 @@ const attendanceSchema = new mongoose.Schema({
     overtime: { hours: { type: Number, min: 0, default: 0 }, approved: { type: Boolean, default: false }, approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, approvedAt: Date },
     notes: { type: String, trim: true },
     isActive: { type: Boolean, default: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     lastModifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 

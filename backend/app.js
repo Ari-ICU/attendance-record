@@ -42,12 +42,10 @@ const securityRoutes = require('./routes/security.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const leaveRoutes = require('./routes/leave.routes');
 const overtimeRoutes = require('./routes/overtime.routes');
-
-
-
-
+const positionRoutes = require('./routes/position.routes');
 
 const { initializeAdminAndPermissions } = require('./utils/initAdminUser');
+const { seedMockData } = require('./utils/seedMockData');
 const systemSettingService = require('./services/systemSetting.service');
 
 
@@ -177,6 +175,8 @@ app.use('/api/settings', systemSettingRoutes);
 // Leave & Overtime Workforce Routes
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/overtime', overtimeRoutes);
+app.use('/api/overtimes', overtimeRoutes);
+app.use('/api/positions', positionRoutes);
 
 // Payroll routes
 app.use('/api/payroll', payrollRoutes);
@@ -230,18 +230,15 @@ async function startServer() {
             await connectToMongoDB();
             console.log('✅ MongoDB connected successfully');
 
-            // Initialize admin user AFTER MongoDB connection
+            // Initialize admin user & mock data AFTER MongoDB connection
             try {
-                console.log('🔄 Initializing admin user...');
+                console.log('🔄 Initializing admin user & mock data...');
                 await initializeAdminAndPermissions();
-                console.log('✅ Admin user initialized successfully');
-
-                // Initialize system settings
                 await systemSettingService.initializeDefaults();
-                console.log('✅ System settings initialized');
-            } catch (adminError) {
-
-                console.warn('⚠️ Admin user initialization failed:', adminError.message);
+                await seedMockData();
+                console.log('✅ Mock data and permissions initialized');
+            } catch (seedError) {
+                console.warn('⚠️ Mock data initialization failed:', seedError.message);
             }
         } catch (mongoError) {
             console.warn('⚠️ MongoDB connection failed:', mongoError.message);

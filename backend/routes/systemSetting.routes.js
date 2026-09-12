@@ -3,10 +3,11 @@ const router = express.Router();
 const systemSettingController = require('../controllers/systemSetting.controller');
 const { authMiddleware, adminOnly } = require('../middlewares/auth.middleware');
 
-// Apply authentication middleware
 router.use(authMiddleware);
 
-router.get('/', systemSettingController.getSettings);
-router.post('/', adminOnly, systemSettingController.updateSettings);
+router.get('/', (req, res) => systemSettingController.getSettings(req, res));
+router.post('/', adminOnly, (req, res) => systemSettingController.updateSettings(req, res));
+router.post('/rotate-key', adminOnly, (req, res) => systemSettingController.rotateApiKey(req, res));
+router.get('/stats', (req, res) => systemSettingController.getSystemStats(req, res));
 
 module.exports = router;
