@@ -195,11 +195,11 @@ export default function CreatePositionPage() {
                     <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
                         <label className="text-xs font-bold text-black">Role Overview & Executive Summary</label>
                         <textarea
-                            rows={3}
+                            rows={4}
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             placeholder="Detail key objectives, team collaboration, and overall mission..."
-                            className="w-full p-4 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-black outline-none focus:bg-white focus:border-black transition-colors resize-none"
+                            className="w-full p-4 min-h-[110px] bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-black outline-none focus:bg-white focus:border-black transition-colors resize-y leading-relaxed"
                         />
                     </div>
 
@@ -208,11 +208,11 @@ export default function CreatePositionPage() {
                             Core Responsibilities & Deliverables (One duty per line)
                         </label>
                         <textarea
-                            rows={5}
+                            rows={8}
                             value={formData.responsibilitiesText}
                             onChange={(e) => setFormData({ ...formData, responsibilitiesText: e.target.value })}
                             placeholder="Design and implement responsive web features&#10;Optimize frontend load speeds and bundle sizes&#10;Conduct team code reviews and technical mentoring"
-                            className="w-full p-4 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-black outline-none focus:bg-white focus:border-black transition-colors font-mono text-xs leading-relaxed resize-none"
+                            className="w-full p-4 min-h-[190px] bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-mono font-medium text-black outline-none focus:bg-white focus:border-black transition-colors leading-relaxed resize-y"
                         />
                     </div>
 

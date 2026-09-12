@@ -248,11 +248,11 @@ export default function EditPositionPage() {
                     <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
                         <label className="text-xs font-bold text-black">Role Overview & Executive Summary</label>
                         <textarea
-                            rows={3}
+                            rows={4}
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             placeholder="Detailed overview of what this role entails..."
-                            className="w-full p-4 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-black outline-none focus:bg-white focus:border-black transition-colors resize-none"
+                            className="w-full p-4 min-h-[110px] bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-black outline-none focus:bg-white focus:border-black transition-colors resize-y leading-relaxed"
                         />
                     </div>
 
@@ -261,11 +261,11 @@ export default function EditPositionPage() {
                             Core Responsibilities & Deliverables (One duty per line)
                         </label>
                         <textarea
-                            rows={5}
+                            rows={8}
                             value={formData.responsibilitiesText}
                             onChange={(e) => setFormData({ ...formData, responsibilitiesText: e.target.value })}
                             placeholder="Develop responsive web UI components&#10;Collaborate on REST API integrations&#10;Maintain code quality and automated testing"
-                            className="w-full p-4 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-black outline-none focus:bg-white focus:border-black transition-colors font-mono text-xs leading-relaxed resize-none"
+                            className="w-full p-4 min-h-[190px] bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-mono font-medium text-black outline-none focus:bg-white focus:border-black transition-colors leading-relaxed resize-y"
                         />
                     </div>
 
