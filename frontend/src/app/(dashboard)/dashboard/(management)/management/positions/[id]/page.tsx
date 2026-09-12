@@ -29,128 +29,32 @@ import { EmployeeService } from '@/services/employee.service';
 import { Employee } from '@/types/employee.types';
 import toast from 'react-hot-toast';
 
-// Dynamic role blueprint enhancer for rich job descriptions
-const ROLE_BLUEPRINTS: Record<string, {
-    summary: string;
-    responsibilities: string[];
-    skills: string[];
-    salaryRange: string;
-    employmentType: string;
-    experienceReq: string;
-    workPolicy: string;
-}> = {
-    'frontend engineer': {
-        summary: 'Responsible for architecting, building, and maintaining high-performance, responsive web applications and dashboard user interfaces. Collaborates with product designers and backend engineers to translate complex workflows into seamless, pixel-perfect user experiences.',
-        responsibilities: [
-            'Develop modern, reactive user interfaces using Next.js, React, and TypeScript.',
-            'Collaborate with backend teams to integrate RESTful endpoints, WebSockets, and real-time data feeds.',
-            'Build and maintain accessible, reusable design system components and UI design tokens.',
-            'Optimize frontend bundle sizes, Core Web Vitals, and runtime rendering performance.',
-            'Implement rigorous test coverage with automated unit, integration, and E2E browser tests.',
-            'Participate in code reviews, technical architectural planning, and developer experience enhancements.'
-        ],
-        skills: ['React / Next.js', 'TypeScript', 'Tailwind CSS', 'State Management', 'REST / GraphQL', 'Git & CI/CD', 'Figma / UI Design', 'Web Performance'],
-        salaryRange: '$1,200 – $2,800 / mo',
-        employmentType: 'Full-time / Permanent',
-        experienceReq: '2 – 5 Years',
-        workPolicy: 'Hybrid (3 days on-site)'
-    },
-    'system administrator': {
-        summary: 'Oversees the configuration, maintenance, and reliable operation of enterprise computer systems, servers, network infrastructure, and biometric gate hardware across all company facilities.',
-        responsibilities: [
-            'Maintain and administer computer networks, Linux/Windows servers, and cloud computing environments.',
-            'Manage user accounts, IAM permissions, single sign-on (SSO), and biometric attendance terminals.',
-            'Perform daily system monitoring, verifying the integrity and availability of all server resources and log files.',
-            'Execute regular data backup operations and disaster recovery failover validation.',
-            'Apply OS patches and upgrades on a regular basis, and upgrade administrative tools and utilities.',
-            'Maintain network security policies, VPNs, firewalls, and endpoint protection compliance.'
-        ],
-        skills: ['Linux / UNIX', 'Network Security', 'Docker / Kubernetes', 'Active Directory / LDAP', 'Biometric Gate Protocols', 'Bash / Python Scripting', 'Disaster Recovery', 'Firewalls & VPN'],
-        salaryRange: '$1,400 – $3,200 / mo',
-        employmentType: 'Full-time / Permanent',
-        experienceReq: '3 – 6 Years',
-        workPolicy: 'On-site (Main Campus)'
-    },
-    'hr director': {
-        summary: 'Leads the Human Resources department in developing and executing human resource strategy in support of the overall business plan and strategic direction of the organization.',
-        responsibilities: [
-            'Develop comprehensive strategic recruiting, onboarding, and retention plans to meet human capital needs.',
-            'Establish and implement HR policies, employee performance evaluation systems, and compensation structures.',
-            'Oversee monthly payroll approval, employee benefits administration, and overtime compliance.',
-            'Manage workplace relations, conflict resolution, and employee satisfaction initiatives.',
-            'Ensure legal compliance with national labor laws and employment regulations.',
-            'Provide proactive executive leadership and counseling on human resource organizational topics.'
-        ],
-        skills: ['HR Strategy', 'Talent Acquisition', 'Labor Law Compliance', 'Payroll Administration', 'Performance Management', 'Conflict Mediation', 'Organizational Leadership', 'Executive Reporting'],
-        salaryRange: '$2,000 – $4,500 / mo',
-        employmentType: 'Full-time / Executive',
-        experienceReq: '6+ Years',
-        workPolicy: 'On-site / Flexible'
-    },
-    'lead ux architect': {
-        summary: 'Champions the design vision, product usability, and user journey mapping across all enterprise products, ensuring intuitive interfaces and delightful user experiences.',
-        responsibilities: [
-            'Lead user research, field usability testing, persona development, and journey mapping.',
-            'Design comprehensive design systems, high-fidelity interactive prototypes, and UX specifications.',
-            'Partner closely with Product Managers and Frontend Engineers to guide iterative design implementation.',
-            'Audit existing user workflows and formulate data-driven recommendations for UX simplification.',
-            'Facilitate design workshops and establish consistent design standards across all software suites.',
-            'Mentor junior and mid-level designers in UX best practices and user-centered design methodologies.'
-        ],
-        skills: ['Figma Mastery', 'Design Systems', 'Interactive Prototyping', 'User Research & Testing', 'Information Architecture', 'Design Tokens', 'HTML/CSS Awareness', 'Micro-interactions'],
-        salaryRange: '$1,800 – $3,800 / mo',
-        employmentType: 'Full-time / Permanent',
-        experienceReq: '5+ Years',
-        workPolicy: 'Hybrid (2 days on-site)'
-    }
-};
-
+// Helper to resolve role specifications directly from backend position data
 function getBlueprint(pos: PositionItem) {
-    const title = pos.title || '';
     const level = pos.level || 'Mid-Level';
-    const description = pos.description || '';
-    const key = title.toLowerCase().trim();
+    const dept = pos.department || 'the designated department';
 
-    let base = {
-        summary: description && description.length > 20
-            ? description
-            : `Core organizational role responsible for operational directives, daily project delivery, and cross-functional team collaboration within the designated department.`,
-        responsibilities: [
-            `Execute core duties and daily operational milestones in accordance with department standards.`,
-            `Collaborate with cross-functional team members to maintain high quality and timely deliverable output.`,
-            `Ensure compliance with company attendance, security, and data protection policies.`,
-            `Participate in team planning sessions, sprint reviews, and continuous improvement retrospectives.`,
-            `Maintain clear documentation and technical/operational status updates for management reporting.`
-        ],
-        skills: ['Communication', 'Project Execution', 'Problem Solving', 'Team Collaboration', 'Quality Assurance', 'Time Management'],
-        salaryRange: level === 'Executive' ? '$3,000 – $6,000 / mo' : level === 'Senior' || level === 'Lead' ? '$1,800 – $3,500 / mo' : level === 'Junior' ? '$600 – $1,200 / mo' : '$1,000 – $2,200 / mo',
-        employmentType: 'Full-time / Permanent',
-        experienceReq: level === 'Executive' ? '7+ Years' : level === 'Senior' ? '4 – 7 Years' : level === 'Junior' ? '0 – 2 Years' : '2 – 4 Years',
-        workPolicy: 'Hybrid / On-site',
-        workingHours: '08:00 – 17:00 (Mon–Fri)'
-    };
-
-    for (const [k, blueprint] of Object.entries(ROLE_BLUEPRINTS)) {
-        if (key.includes(k) || k.includes(key)) {
-            base = {
-                ...blueprint,
-                summary: description && description.length > 20 ? description : blueprint.summary,
-                workingHours: '08:00 – 17:00 (Mon–Fri)'
-            };
-            break;
-        }
-    }
-
-    // Explicit Backend Overrides (whenever backend has stored values)
     return {
-        summary: pos.description && pos.description.trim().length > 0 ? pos.description : base.summary,
-        responsibilities: pos.responsibilities && pos.responsibilities.length > 0 ? pos.responsibilities : base.responsibilities,
-        skills: pos.skills && pos.skills.length > 0 ? pos.skills : base.skills,
-        salaryRange: pos.salaryRange || base.salaryRange,
-        employmentType: pos.employmentType || base.employmentType,
-        experienceReq: pos.experienceReq || base.experienceReq,
-        workPolicy: pos.workPolicy || base.workPolicy,
-        workingHours: pos.workingHours || base.workingHours,
+        summary: pos.description && pos.description.trim().length > 0
+            ? pos.description.trim()
+            : `Core organizational role responsible for operational directives, daily project delivery, and cross-functional team collaboration within ${dept}.`,
+        responsibilities: pos.responsibilities && pos.responsibilities.length > 0
+            ? pos.responsibilities
+            : [
+                `Execute core duties and daily operational milestones in accordance with department standards.`,
+                `Collaborate with cross-functional team members to maintain high quality and timely deliverable output.`,
+                `Ensure compliance with company attendance, security, and data protection policies.`,
+                `Participate in team planning sessions, sprint reviews, and continuous improvement retrospectives.`,
+                `Maintain clear documentation and technical/operational status updates for management reporting.`
+            ],
+        skills: pos.skills && pos.skills.length > 0
+            ? pos.skills
+            : ['Team Collaboration', 'Problem Solving', 'Communication', 'Project Execution', 'Quality Assurance'],
+        salaryRange: pos.salaryRange || (level === 'Executive' ? '$3,000 – $6,000 / mo' : level === 'Senior' || level === 'Lead' ? '$1,800 – $3,500 / mo' : level === 'Junior' ? '$600 – $1,200 / mo' : '$1,000 – $2,200 / mo'),
+        employmentType: pos.employmentType || 'Full-time / Permanent',
+        experienceReq: pos.experienceReq || (level === 'Executive' ? '7+ Years' : level === 'Senior' ? '4 – 7 Years' : level === 'Junior' ? '0 – 2 Years' : '2 – 4 Years'),
+        workPolicy: pos.workPolicy || 'Hybrid (3 days on-site)',
+        workingHours: pos.workingHours || '08:00 – 17:00 (Mon–Fri)',
     };
 }
 

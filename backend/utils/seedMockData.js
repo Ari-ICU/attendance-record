@@ -231,18 +231,135 @@ const seedMockData = async () => {
 
         // 4. Seed Positions
         const positionsData = [
-            { title: 'System Administrator', department: 'Engineering & IT', employeeCount: 2, description: 'Manages server infrastructure, cloud networks, and biometric IoT endpoints.', level: 'Senior' },
-            { title: 'Lead UX Architect', department: 'Product & Design', employeeCount: 6, description: 'Design system governance, UX flow architecture, and user research coordination.', level: 'Executive' },
-            { title: 'HR Director', department: 'Human Resources', employeeCount: 1, description: 'Workforce governance, hiring pipeline, payroll coordination, and staff wellness.', level: 'Executive' },
-            { title: 'Operations Manager', department: 'Operations & Facilities', employeeCount: 3, description: 'Campus logistics, security operations, gate check-in monitors, and facilities.', level: 'Mid-Level' },
-            { title: 'Senior Backend Engineer', department: 'Engineering & IT', employeeCount: 8, description: 'Microservices architecture, API integrations, and database scalability.', level: 'Senior' },
-            { title: 'Frontend Engineer', department: 'Engineering & IT', employeeCount: 5, description: 'Web application development, dashboard UI design, and portal maintenance.', level: 'Mid-Level' },
+            {
+                title: 'System Administrator',
+                department: 'Engineering & IT',
+                employeeCount: 2,
+                level: 'Senior',
+                description: 'Oversees the configuration, maintenance, and reliable operation of enterprise computer systems, servers, network infrastructure, and biometric gate hardware across all company facilities.',
+                responsibilities: [
+                    'Maintain and administer computer networks, Linux/Windows servers, and cloud computing environments.',
+                    'Manage user accounts, IAM permissions, single sign-on (SSO), and biometric attendance terminals.',
+                    'Perform daily system monitoring, verifying the integrity and availability of all server resources and log files.',
+                    'Execute regular data backup operations and disaster recovery failover validation.',
+                    'Apply OS patches and upgrades on a regular basis, and upgrade administrative tools and utilities.',
+                    'Maintain network security policies, VPNs, firewalls, and endpoint protection compliance.'
+                ],
+                skills: ['Linux / UNIX', 'Network Security', 'Docker / Kubernetes', 'Active Directory / LDAP', 'Biometric Gate Protocols', 'Bash / Python Scripting', 'Disaster Recovery', 'Firewalls & VPN'],
+                salaryRange: '$1,400 – $3,200 / mo',
+                employmentType: 'Full-time / Permanent',
+                experienceReq: '3 – 6 Years',
+                workPolicy: 'On-site (Main Campus)',
+                workingHours: '08:00 – 17:00 (Mon–Fri)'
+            },
+            {
+                title: 'Lead UX Architect',
+                department: 'Product & Design',
+                employeeCount: 6,
+                level: 'Executive',
+                description: 'Champions the design vision, product usability, and user journey mapping across all enterprise products, ensuring intuitive interfaces and delightful user experiences.',
+                responsibilities: [
+                    'Lead user research, field usability testing, persona development, and journey mapping.',
+                    'Design comprehensive design systems, high-fidelity interactive prototypes, and UX specifications.',
+                    'Partner closely with Product Managers and Frontend Engineers to guide iterative design implementation.',
+                    'Audit existing user workflows and formulate data-driven recommendations for UX simplification.',
+                    'Facilitate design workshops and establish consistent design standards across all software suites.',
+                    'Mentor junior and mid-level designers in UX best practices and user-centered design methodologies.'
+                ],
+                skills: ['Figma Mastery', 'Design Systems', 'Interactive Prototyping', 'User Research & Testing', 'Information Architecture', 'Design Tokens', 'HTML/CSS Awareness', 'Micro-interactions'],
+                salaryRange: '$1,800 – $3,800 / mo',
+                employmentType: 'Full-time / Permanent',
+                experienceReq: '5+ Years',
+                workPolicy: 'Hybrid (2 days on-site)',
+                workingHours: '08:00 – 17:00 (Mon–Fri)'
+            },
+            {
+                title: 'HR Director',
+                department: 'Human Resources',
+                employeeCount: 1,
+                level: 'Executive',
+                description: 'Leads the Human Resources department in developing and executing human resource strategy in support of the overall business plan and strategic direction of the organization.',
+                responsibilities: [
+                    'Develop comprehensive strategic recruiting, onboarding, and retention plans to meet human capital needs.',
+                    'Establish and implement HR policies, employee performance evaluation systems, and compensation structures.',
+                    'Oversee monthly payroll approval, employee benefits administration, and overtime compliance.',
+                    'Manage workplace relations, conflict resolution, and employee satisfaction initiatives.',
+                    'Ensure legal compliance with national labor laws and employment regulations.',
+                    'Provide proactive executive leadership and counseling on human resource organizational topics.'
+                ],
+                skills: ['HR Strategy', 'Talent Acquisition', 'Labor Law Compliance', 'Payroll Administration', 'Performance Management', 'Conflict Mediation', 'Organizational Leadership', 'Executive Reporting'],
+                salaryRange: '$2,000 – $4,500 / mo',
+                employmentType: 'Full-time / Executive',
+                experienceReq: '6+ Years',
+                workPolicy: 'On-site / Flexible',
+                workingHours: '08:00 – 17:00 (Mon–Fri)'
+            },
+            {
+                title: 'Operations Manager',
+                department: 'Operations & Facilities',
+                employeeCount: 3,
+                level: 'Mid-Level',
+                description: 'Campus logistics, security operations, gate check-in monitors, and facilities management.',
+                responsibilities: [
+                    'Supervise physical attendance scanning kiosks, gate biometric hardware, and entrance checkpoints.',
+                    'Oversee operational facilities management, security protocols, and shift scheduling.',
+                    'Liaise with department leads to ensure optimal resource allocation and prompt incident resolution.'
+                ],
+                skills: ['Facility Management', 'Logistics Operations', 'Hardware Monitoring', 'Process Optimization', 'Incident Response', 'Team Leadership'],
+                salaryRange: '$1,100 – $2,300 / mo',
+                employmentType: 'Full-time / Permanent',
+                experienceReq: '3 – 5 Years',
+                workPolicy: 'On-site (Main Campus)',
+                workingHours: '07:30 – 16:30 (Mon–Fri)'
+            },
+            {
+                title: 'Senior Backend Engineer',
+                department: 'Engineering & IT',
+                employeeCount: 8,
+                level: 'Senior',
+                description: 'Microservices architecture, API integrations, real-time telemetry, and database scalability.',
+                responsibilities: [
+                    'Design and implement high-throughput Node.js microservices and database models.',
+                    'Optimize MongoDB indexes, aggregation pipelines, and high-frequency scan queries.',
+                    'Implement secure biometric face verification endpoints and token authentication pipelines.',
+                    'Maintain CI/CD pipelines, containerized Docker deployments, and server health monitoring.'
+                ],
+                skills: ['Node.js / Express', 'MongoDB / Mongoose', 'REST & WebSocket APIs', 'Docker', 'JWT / Auth Security', 'System Architecture', 'Redis Caching'],
+                salaryRange: '$1,600 – $3,400 / mo',
+                employmentType: 'Full-time / Permanent',
+                experienceReq: '4 – 7 Years',
+                workPolicy: 'Hybrid (3 days on-site)',
+                workingHours: '08:00 – 17:00 (Mon–Fri)'
+            },
+            {
+                title: 'Frontend Engineer',
+                department: 'Engineering & IT',
+                employeeCount: 5,
+                level: 'Mid-Level',
+                description: 'Responsible for architecting, building, and maintaining high-performance, responsive web applications and dashboard user interfaces. Collaborates with product designers and backend engineers to translate complex workflows into seamless, pixel-perfect user experiences.',
+                responsibilities: [
+                    'Develop modern, reactive user interfaces using Next.js, React, and TypeScript.',
+                    'Collaborate with backend teams to integrate RESTful endpoints, WebSockets, and real-time data feeds.',
+                    'Build and maintain accessible, reusable design system components and UI design tokens.',
+                    'Optimize frontend bundle sizes, Core Web Vitals, and runtime rendering performance.',
+                    'Implement rigorous test coverage with automated unit, integration, and E2E browser tests.',
+                    'Participate in code reviews, technical architectural planning, and developer experience enhancements.'
+                ],
+                skills: ['React / Next.js', 'TypeScript', 'Tailwind CSS', 'State Management', 'REST / GraphQL', 'Git & CI/CD', 'Figma / UI Design', 'Web Performance'],
+                salaryRange: '$1,200 – $2,800 / mo',
+                employmentType: 'Full-time / Permanent',
+                experienceReq: '2 – 5 Years',
+                workPolicy: 'Hybrid (3 days on-site)',
+                workingHours: '08:00 – 17:00 (Mon–Fri)'
+            },
         ];
 
         for (const pos of positionsData) {
             const existing = await Position.findOne({ title: pos.title, department: pos.department });
             if (!existing) {
                 await Position.create(pos);
+            } else {
+                await Position.updateOne({ _id: existing._id }, { $set: pos });
             }
         }
         console.log('✅ Positions synchronized');
