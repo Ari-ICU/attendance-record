@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
     Timer,
@@ -14,29 +14,62 @@ import {
     Search,
     Filter
 } from 'lucide-react';
-import { MOCK_OVERTIME, OvertimeItem } from '@/mocks/mockData';
+import { OvertimeService } from '@/services/overtime.service';
+import { OvertimeItem } from '@/types/overtime.types';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function OvertimePage() {
-    const [overtimes, setOvertimes] = useState<OvertimeItem[]>(MOCK_OVERTIME);
+    const [overtimes, setOvertimes] = useState<OvertimeItem[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 
-    const handleDelete = (id: string) => {
+    const fetchOvertimes = async () => {
+        try {
+            setLoading(true);
+            const data = await OvertimeService.getAll();
+            setOvertimes(data);
+        } catch {
+            toast.error('Failed to load overtime records');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchOvertimes();
+    }, []);
+
+    const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this overtime submission?')) return;
-        setOvertimes(prev => prev.filter(o => o.id !== id));
-        toast.success('Overtime record deleted');
+        try {
+            await OvertimeService.delete(id);
+            setOvertimes(prev => prev.filter(o => o.id !== id && o._id !== id));
+            toast.success('Overtime record deleted');
+        } catch {
+            toast.error('Failed to delete overtime record');
+        }
     };
 
-    const handleApprove = (id: string) => {
-        setOvertimes(prev => prev.map(o => o.id === id ? { ...o, status: 'approved' } : o));
-        toast.success('Overtime approved!');
+    const handleApprove = async (id: string) => {
+        try {
+            await OvertimeService.updateStatus(id, 'approved');
+            setOvertimes(prev => prev.map(o => (o.id === id || o._id === id) ? { ...o, status: 'approved' } : o));
+            toast.success('Overtime approved!');
+        } catch {
+            toast.error('Failed to approve overtime');
+        }
     };
 
-    const handleReject = (id: string) => {
-        setOvertimes(prev => prev.map(o => o.id === id ? { ...o, status: 'rejected' } : o));
-        toast.error('Overtime marked as rejected');
+    const handleReject = async (id: string) => {
+        try {
+            await OvertimeService.updateStatus(id, 'rejected');
+            setOvertimes(prev => prev.map(o => (o.id === id || o._id === id) ? { ...o, status: 'rejected' } : o));
+            toast.error('Overtime marked as rejected');
+        } catch {
+            toast.error('Failed to reject overtime');
+        }
     };
 
     const filtered = overtimes.filter(o => {

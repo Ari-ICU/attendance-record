@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -14,7 +14,8 @@ import {
     UserCheck,
     FileText
 } from 'lucide-react';
-import { MOCK_LEAVE_REQUESTS, LeaveRequestItem } from '@/mocks/mockData';
+import { LeaveRequestItem } from '@/types/leave.types';
+import { LeaveService } from '@/services/leave.service';
 import toast from 'react-hot-toast';
 
 export default function LeaveDetailPage() {
@@ -22,25 +23,65 @@ export default function LeaveDetailPage() {
     const router = useRouter();
     const id = params.id as string;
 
-    const [req, setReq] = useState<LeaveRequestItem>(
-        MOCK_LEAVE_REQUESTS.find(l => l.id === id) || MOCK_LEAVE_REQUESTS[0]
-    );
+    const [req, setReq] = useState<LeaveRequestItem | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const handleApprove = () => {
-        setReq(prev => ({ ...prev, status: 'approved' }));
-        toast.success('Leave approved!');
+    useEffect(() => {
+        const load = async () => {
+            try {
+                setLoading(true);
+                const list = await LeaveService.getAll();
+                const found = list.find(l => l.id === id || l._id === id) || list[0];
+                if (found) setReq(found);
+            } catch {
+                toast.error('Failed to load leave details');
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, [id]);
+
+    const handleApprove = async () => {
+        if (!req) return;
+        try {
+            await LeaveService.updateStatus(id, 'approved');
+            setReq(prev => prev ? { ...prev, status: 'approved' } : null);
+            toast.success('Leave approved!');
+        } catch {
+            toast.error('Failed to approve request');
+        }
     };
 
-    const handleReject = () => {
-        setReq(prev => ({ ...prev, status: 'rejected' }));
-        toast.error('Leave rejected');
+    const handleReject = async () => {
+        if (!req) return;
+        try {
+            await LeaveService.updateStatus(id, 'rejected');
+            setReq(prev => prev ? { ...prev, status: 'rejected' } : null);
+            toast.error('Leave rejected');
+        } catch {
+            toast.error('Failed to reject request');
+        }
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this request?')) return;
-        toast.success('Leave deleted');
-        router.push('/dashboard/leave');
+        try {
+            await LeaveService.delete(id);
+            toast.success('Leave deleted');
+            router.push('/dashboard/leave');
+        } catch {
+            toast.error('Failed to delete request');
+        }
     };
+
+    if (loading || !req) {
+        return (
+            <div className="w-full p-12 text-center text-slate-500 font-medium">
+                Loading leave details...
+            </div>
+        );
+    }
 
     return (
         <div className="w-full space-y-6 pb-12 font-sans">

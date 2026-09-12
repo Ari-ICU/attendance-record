@@ -32,13 +32,8 @@ export default function AttendanceRecordDetailPage() {
             try {
                 setLoading(true);
                 const res = await AttendanceService.getRecords({ limit: 100 });
-                const found = res.data?.docs?.find((r: AttendanceRecord) => r._id === id);
-                if (found) {
-                    setRecord(found);
-                } else {
-                    // Fallback to first mock record
-                    setRecord(res.data?.docs?.[0] || null);
-                }
+                const found = res.data?.docs?.find((r: AttendanceRecord) => r._id === id || (r as any).id === id);
+                setRecord(found || null);
             } catch {
                 toast.error('Failed to load attendance record');
             } finally {

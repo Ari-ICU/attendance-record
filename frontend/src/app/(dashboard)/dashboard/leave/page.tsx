@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
     FileText,
@@ -15,29 +15,62 @@ import {
     Search,
     Filter
 } from 'lucide-react';
-import { MOCK_LEAVE_REQUESTS, LeaveRequestItem } from '@/mocks/mockData';
+import { LeaveRequestItem } from '@/types/leave.types';
+import { LeaveService } from '@/services/leave.service';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function LeavePage() {
-    const [leaves, setLeaves] = useState<LeaveRequestItem[]>(MOCK_LEAVE_REQUESTS);
+    const [leaves, setLeaves] = useState<LeaveRequestItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [loading, setLoading] = useState(true);
 
-    const handleDelete = (id: string) => {
+    const loadLeaves = async () => {
+        try {
+            setLoading(true);
+            const data = await LeaveService.getAll();
+            setLeaves(data);
+        } catch (error) {
+            toast.error('Failed to load leave requests');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadLeaves();
+    }, []);
+
+    const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to cancel / delete this leave request?')) return;
-        setLeaves(prev => prev.filter(l => l.id !== id));
-        toast.success('Leave request deleted');
+        try {
+            await LeaveService.delete(id);
+            setLeaves(prev => prev.filter(l => l.id !== id && l._id !== id));
+            toast.success('Leave request deleted');
+        } catch {
+            toast.error('Failed to delete leave request');
+        }
     };
 
-    const handleApprove = (id: string) => {
-        setLeaves(prev => prev.map(l => l.id === id ? { ...l, status: 'approved' } : l));
-        toast.success('Leave request approved!');
+    const handleApprove = async (id: string) => {
+        try {
+            await LeaveService.updateStatus(id, 'approved');
+            setLeaves(prev => prev.map(l => (l.id === id || l._id === id) ? { ...l, status: 'approved' } : l));
+            toast.success('Leave request approved!');
+        } catch {
+            toast.error('Failed to approve request');
+        }
     };
 
-    const handleReject = (id: string) => {
-        setLeaves(prev => prev.map(l => l.id === id ? { ...l, status: 'rejected' } : l));
-        toast.error('Leave request marked as rejected');
+    const handleReject = async (id: string) => {
+        try {
+            await LeaveService.updateStatus(id, 'rejected');
+            setLeaves(prev => prev.map(l => (l.id === id || l._id === id) ? { ...l, status: 'rejected' } : l));
+            toast.error('Leave request marked as rejected');
+        } catch {
+            toast.error('Failed to reject request');
+        }
     };
 
     const filtered = leaves.filter(l => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -11,7 +12,8 @@ import {
     Edit2,
     Trash2
 } from 'lucide-react';
-import { MOCK_POSITIONS, PositionItem } from '@/mocks/mockData';
+import { PositionItem } from '@/types/position.types';
+import { PositionService } from '@/services/position.service';
 import toast from 'react-hot-toast';
 
 export default function PositionDetailPage() {
@@ -19,20 +21,59 @@ export default function PositionDetailPage() {
     const router = useRouter();
     const id = params.id as string;
 
-    const pos = MOCK_POSITIONS.find(p => p.id === id) || {
-        id,
-        title: 'System Administrator',
-        department: 'Engineering & IT',
-        employeeCount: 2,
-        description: 'Manages server infrastructure, cloud networks, and biometric IoT endpoints.',
-        level: 'Senior'
+    const [pos, setPos] = useState<PositionItem | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                setLoading(true);
+                const data = await PositionService.getById(id);
+                if (data) {
+                    setPos(data);
+                } else {
+                    const all = await PositionService.getAll();
+                    const found = all.find(p => p.id === id || p._id === id);
+                    if (found) setPos(found);
+                }
+            } catch {
+                toast.error('Failed to load position');
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (id) load();
+    }, [id]);
+
+    const handleDelete = async () => {
+        if (!confirm('Are you sure you want to delete this position?')) return;
+        try {
+            await PositionService.delete(id);
+            toast.success('Position deleted');
+            router.push('/dashboard/management/positions');
+        } catch {
+            toast.error('Failed to delete position');
+        }
     };
 
-    const handleDelete = () => {
-        if (!confirm('Are you sure you want to delete this position?')) return;
-        toast.success('Position deleted');
-        router.push('/dashboard/management/positions');
-    };
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    if (!pos) {
+        return (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl shadow-xs">
+                <p className="text-sm font-bold text-black">Position not found.</p>
+                <Link href="/dashboard/management/positions" className="mt-4 inline-block px-4 py-2 bg-black text-white rounded-xl text-xs font-bold">
+                    Back to Positions
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full space-y-6 pb-12 font-sans">
@@ -96,7 +137,7 @@ export default function PositionDetailPage() {
                         <span className="text-xs font-bold text-black uppercase">Current Headcount</span>
                         <div className="flex items-center gap-2 mt-2 font-black text-black text-base">
                             <Users size={18} />
-                            <span>{pos.employeeCount} Staff Members</span>
+                            <span>{pos.employeeCount || 0} Staff Members</span>
                         </div>
                     </div>
                 </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -14,7 +14,8 @@ import {
     Timer,
     Briefcase
 } from 'lucide-react';
-import { MOCK_OVERTIME, OvertimeItem } from '@/mocks/mockData';
+import { OvertimeItem } from '@/types/overtime.types';
+import { OvertimeService } from '@/services/overtime.service';
 import toast from 'react-hot-toast';
 
 export default function OvertimeDetailPage() {
@@ -22,25 +23,76 @@ export default function OvertimeDetailPage() {
     const router = useRouter();
     const id = params.id as string;
 
-    const [req, setReq] = useState<OvertimeItem>(
-        MOCK_OVERTIME.find(o => o.id === id) || MOCK_OVERTIME[0]
-    );
+    const [req, setReq] = useState<OvertimeItem | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const handleApprove = () => {
-        setReq(prev => ({ ...prev, status: 'approved' }));
-        toast.success('Overtime approved!');
+    useEffect(() => {
+        const load = async () => {
+            try {
+                setLoading(true);
+                const list = await OvertimeService.getAll();
+                const found = list.find(o => o.id === id || o._id === id) || list[0];
+                if (found) setReq(found);
+            } catch {
+                toast.error('Failed to load overtime detail');
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (id) load();
+    }, [id]);
+
+    const handleApprove = async () => {
+        if (!req) return;
+        try {
+            await OvertimeService.updateStatus(id, 'approved');
+            setReq(prev => prev ? { ...prev, status: 'approved' } : null);
+            toast.success('Overtime approved!');
+        } catch {
+            toast.error('Failed to approve overtime');
+        }
     };
 
-    const handleReject = () => {
-        setReq(prev => ({ ...prev, status: 'rejected' }));
-        toast.error('Overtime marked as rejected');
+    const handleReject = async () => {
+        if (!req) return;
+        try {
+            await OvertimeService.updateStatus(id, 'rejected');
+            setReq(prev => prev ? { ...prev, status: 'rejected' } : null);
+            toast.error('Overtime marked as rejected');
+        } catch {
+            toast.error('Failed to reject overtime');
+        }
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this overtime submission?')) return;
-        toast.success('Overtime submission deleted');
-        router.push('/dashboard/overtime');
+        try {
+            await OvertimeService.delete(id);
+            toast.success('Overtime submission deleted');
+            router.push('/dashboard/overtime');
+        } catch {
+            toast.error('Failed to delete overtime record');
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    if (!req) {
+        return (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl shadow-xs">
+                <p className="text-sm font-bold text-black">Overtime submission not found.</p>
+                <Link href="/dashboard/overtime" className="mt-4 inline-block px-4 py-2 bg-black text-white rounded-xl text-xs font-bold">
+                    Back to Overtime Logs
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full space-y-6 pb-12 font-sans">
@@ -118,7 +170,7 @@ export default function OvertimeDetailPage() {
 
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                         <span className="text-xs font-bold text-black uppercase">Date & Window</span>
-                        <h3 className="text-base font-black text-black mt-1">{req.date} ({req.startTime} - {req.endTime})</h3>
+                        <h3 className="text-base font-black text-black mt-1">{req.date} ({req.startTime || '17:30'} - {req.endTime || '20:30'})</h3>
                     </div>
 
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">

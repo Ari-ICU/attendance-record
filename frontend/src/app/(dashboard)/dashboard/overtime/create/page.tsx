@@ -1,25 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Timer, Users, Clock, Calculator } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
-import { MOCK_EMPLOYEES, MOCK_DEPARTMENTS } from '@/mocks/mockData';
+import { EmployeeService } from '@/services/employee.service';
+import { DepartmentService } from '@/services/department.service';
+import { OvertimeService } from '@/services/overtime.service';
 
 export default function CreateOvertimePage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-
-    const employeeOptions = MOCK_EMPLOYEES.map(emp => ({
-        value: emp.fullName || `${emp.firstName} ${emp.lastName}`,
-        label: `${emp.fullName || `${emp.firstName} ${emp.lastName}`} — ${emp.position} (${emp.department})`
-    }));
+    const [employees, setEmployees] = useState<any[]>([]);
+    const [departments, setDepartments] = useState<any[]>([]);
 
     const [formData, setFormData] = useState({
-        employeeName: MOCK_EMPLOYEES[0]?.fullName || 'Thoeurn Ratha',
-        department: MOCK_EMPLOYEES[0]?.department || 'Engineering & IT',
+        employeeId: '',
+        department: '',
         date: new Date().toISOString().split('T')[0],
         startTime: '17:30',
         endTime: '20:30',
@@ -28,18 +27,49 @@ export default function CreateOvertimePage() {
         reason: 'Performing database indexing and API endpoint stress-tests during scheduled maintenance window.'
     });
 
-    const handleEmployeeChange = (employeeName: string) => {
-        const matched = MOCK_EMPLOYEES.find(e => (e.fullName || `${e.firstName} ${e.lastName}`) === employeeName);
+    useEffect(() => {
+        const loadInitialData = async () => {
+            try {
+                const [empRes, deptRes] = await Promise.all([
+                    EmployeeService.getAllEmployees(),
+                    DepartmentService.getAll()
+                ]);
+                const empList = empRes?.data || [];
+                setEmployees(empList);
+                const deptList = deptRes?.data || [];
+                setDepartments(deptList);
+
+                if (empList.length > 0) {
+                    const first = empList[0];
+                    setFormData(prev => ({
+                        ...prev,
+                        employeeId: first._id || first.id,
+                        department: first.department || (deptList[0]?.name || 'General')
+                    }));
+                }
+            } catch (err) {
+                console.error('Failed to load employee list:', err);
+            }
+        };
+        loadInitialData();
+    }, []);
+
+    const employeeOptions = employees.map(emp => ({
+        value: emp._id || emp.id,
+        label: `${emp.fullName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim()} — ${emp.position || 'Staff'} (${emp.department || 'General'})`
+    }));
+
+    const handleEmployeeChange = (employeeId: string) => {
+        const matched = employees.find(e => (e._id || e.id) === employeeId);
         setFormData(prev => ({
             ...prev,
-            employeeName,
+            employeeId,
             department: matched ? matched.department : prev.department
         }));
     };
 
     const handleTimeChange = (type: 'startTime' | 'endTime', value: string) => {
         const newForm = { ...formData, [type]: value };
-        // Attempt to calculate hours if valid
         try {
             const [startH, startM] = (type === 'startTime' ? value : formData.startTime).split(':').map(Number);
             const [endH, endM] = (type === 'endTime' ? value : formData.endTime).split(':').map(Number);
@@ -55,18 +85,32 @@ export default function CreateOvertimePage() {
         setFormData(newForm);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!formData.employeeId) {
+            toast.error('Please select an employee');
+            return;
+        }
         if (!formData.project.trim()) {
             toast.error('Project / task scope is required');
             return;
         }
 
         setLoading(true);
-        setTimeout(() => {
+        try {
+            await OvertimeService.create({
+                employeeId: formData.employeeId,
+                hours: formData.hours,
+                date: formData.date,
+                reason: `${formData.project}: ${formData.reason}`
+            });
             toast.success('Overtime submission recorded successfully!');
             router.push('/dashboard/overtime');
-        }, 300);
+        } catch {
+            toast.error('Failed to submit overtime record');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -98,9 +142,9 @@ export default function CreateOvertimePage() {
                     <div className="space-y-1.5 sm:col-span-2">
                         <label className="text-xs font-bold text-black">Staff Member / Employee *</label>
                         <CustomDropdown
-                            value={formData.employeeName}
+                            value={formData.employeeId}
                             onChange={handleEmployeeChange}
-                            options={employeeOptions}
+                            options={employeeOptions.length > 0 ? employeeOptions : [{ value: '', label: 'Loading staff members...' }]}
                             placeholder="Select employee..."
                         />
                     </div>
@@ -110,7 +154,7 @@ export default function CreateOvertimePage() {
                         <CustomDropdown
                             value={formData.department}
                             onChange={(val) => setFormData({ ...formData, department: val })}
-                            options={[
+                            options={departments.length > 0 ? departments.map(d => ({ value: d.name, label: d.name })) : [
                                 { value: 'Engineering & IT', label: 'Engineering & IT' },
                                 { value: 'Product & Design', label: 'Product & Design' },
                                 { value: 'Human Resources', label: 'Human Resources' },

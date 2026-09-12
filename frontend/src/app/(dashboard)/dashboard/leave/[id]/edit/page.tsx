@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
-import { MOCK_LEAVE_REQUESTS, LeaveRequestItem } from '@/mocks/mockData';
+import { LeaveService } from '@/services/leave.service';
+import { LeaveRequestItem } from '@/types/leave.types';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 
@@ -13,26 +14,65 @@ export default function EditLeavePage() {
     const router = useRouter();
     const id = params.id as string;
 
-    const current = MOCK_LEAVE_REQUESTS.find(l => l.id === id) || MOCK_LEAVE_REQUESTS[0];
-
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(true);
     const [formData, setFormData] = useState({
-        employeeName: current.employeeName,
-        type: current.type,
-        startDate: current.startDate,
-        endDate: current.endDate,
-        reason: current.reason,
-        status: current.status
+        employeeName: '',
+        type: 'Annual Leave',
+        startDate: '',
+        endDate: '',
+        reason: '',
+        status: 'pending'
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    useEffect(() => {
+        const load = async () => {
+            try {
+                setFetching(true);
+                const list = await LeaveService.getAll();
+                const current = list.find(l => l.id === id || l._id === id) || list[0];
+                if (current) {
+                    setFormData({
+                        employeeName: current.employeeName || '',
+                        type: current.type || 'Annual Leave',
+                        startDate: current.startDate ? current.startDate.substring(0, 10) : '',
+                        endDate: current.endDate ? current.endDate.substring(0, 10) : '',
+                        reason: current.reason || '',
+                        status: current.status || 'pending'
+                    });
+                }
+            } catch {
+                toast.error('Failed to load leave details');
+            } finally {
+                setFetching(false);
+            }
+        };
+        load();
+    }, [id]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setTimeout(() => {
+        try {
+            if (formData.status) {
+                await LeaveService.updateStatus(id, formData.status);
+            }
             toast.success('Leave application updated');
             router.push(`/dashboard/leave/${id}`);
-        }, 300);
+        } catch {
+            toast.error('Failed to update leave');
+        } finally {
+            setLoading(false);
+        }
     };
+
+    if (fetching) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="w-full space-y-6 pb-12 font-sans">
@@ -64,8 +104,8 @@ export default function EditLeavePage() {
                         <input
                             type="text"
                             value={formData.employeeName}
-                            onChange={(e) => setFormData({ ...formData, employeeName: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-black outline-none focus:bg-white focus:border-black transition-colors"
+                            disabled
+                            className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 outline-none cursor-not-allowed"
                         />
                     </div>
 

@@ -1,43 +1,81 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
-import { MOCK_POSITIONS, PositionItem } from '@/mocks/mockData';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
+import { PositionService } from '@/services/position.service';
 
 export default function EditPositionPage() {
     const params = useParams();
     const router = useRouter();
     const id = params.id as string;
 
-    const current = MOCK_POSITIONS.find(p => p.id === id) || {
-        id,
-        title: 'System Administrator',
-        department: 'Engineering & IT',
-        employeeCount: 2,
-        description: 'Manages server infrastructure, cloud networks, and biometric IoT endpoints.',
-        level: 'Senior'
-    };
-
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(true);
     const [formData, setFormData] = useState({
-        title: current.title,
-        department: current.department,
-        level: current.level,
-        description: current.description
+        title: '',
+        department: 'Engineering & IT',
+        level: 'Mid-Level',
+        description: ''
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    useEffect(() => {
+        const load = async () => {
+            try {
+                setFetching(true);
+                const data = await PositionService.getById(id);
+                if (data) {
+                    setFormData({
+                        title: data.title || '',
+                        department: data.department || 'Engineering & IT',
+                        level: data.level || 'Mid-Level',
+                        description: data.description || ''
+                    });
+                } else {
+                    const all = await PositionService.getAll();
+                    const current = all.find(p => p.id === id || p._id === id);
+                    if (current) {
+                        setFormData({
+                            title: current.title || '',
+                            department: current.department || 'Engineering & IT',
+                            level: current.level || 'Mid-Level',
+                            description: current.description || ''
+                        });
+                    }
+                }
+            } catch {
+                toast.error('Failed to load position');
+            } finally {
+                setFetching(false);
+            }
+        };
+        if (id) load();
+    }, [id]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setTimeout(() => {
+        try {
+            await PositionService.update(id, formData);
             toast.success('Position updated successfully');
             router.push(`/dashboard/management/positions/${id}`);
-        }, 300);
+        } catch {
+            toast.error('Failed to update position');
+        } finally {
+            setLoading(false);
+        }
     };
+
+    if (fetching) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="w-full space-y-6 pb-12 font-sans">

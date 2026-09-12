@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
     Briefcase,
@@ -12,17 +12,40 @@ import {
     Trash2,
     Building2
 } from 'lucide-react';
-import { MOCK_POSITIONS, PositionItem } from '@/mocks/mockData';
+import { PositionService } from '@/services/position.service';
+import { PositionItem } from '@/types/position.types';
 import toast from 'react-hot-toast';
 
 export default function PositionsPage() {
-    const [positions, setPositions] = useState<PositionItem[]>(MOCK_POSITIONS);
+    const [positions, setPositions] = useState<PositionItem[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const handleDelete = (id: string) => {
+    const fetchPositions = async () => {
+        try {
+            setLoading(true);
+            const data = await PositionService.getAll();
+            setPositions(data);
+        } catch {
+            toast.error('Failed to load positions');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPositions();
+    }, []);
+
+    const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this position?')) return;
-        setPositions(prev => prev.filter(p => p.id !== id));
-        toast.success('Position deleted successfully');
+        try {
+            await PositionService.delete(id);
+            setPositions(prev => prev.filter(p => p.id !== id && p._id !== id));
+            toast.success('Position deleted successfully');
+        } catch {
+            toast.error('Failed to delete position');
+        }
     };
 
     const filtered = positions.filter(p =>
