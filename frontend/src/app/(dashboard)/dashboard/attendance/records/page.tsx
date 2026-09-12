@@ -25,6 +25,7 @@ import { AttendanceService } from '@/services/attendance.service';
 import { AttendanceRecord } from '@/types/attendance.types';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
+import { formatDateToCustom } from '@/utils/date.utils';
 
 function AttendanceRecordsContent() {
     const searchParams = useSearchParams();
@@ -255,7 +256,7 @@ function AttendanceRecordsContent() {
                                                 </div>
                                             </td>
                                             <td className="py-3.5 px-5 font-black text-black">
-                                                {record.date}
+                                                {formatDateToCustom(record.date || record.createdAt)}
                                             </td>
                                             <td className="py-3.5 px-5 font-mono font-black text-black">
                                                 {record.checkIn?.time ? new Date(record.checkIn.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
