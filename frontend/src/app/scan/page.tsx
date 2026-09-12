@@ -36,6 +36,7 @@ export default function StandalonePublicKioskScanPage() {
     const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
     const [scanning, setScanning] = useState<boolean>(false);
     const [autoScanEnabled, setAutoScanEnabled] = useState<boolean>(true);
+    const [language, setLanguage] = useState<'km' | 'en'>('km');
     const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
     const [recentScans, setRecentScans] = useState<any[]>([]);
@@ -112,13 +113,29 @@ export default function StandalonePublicKioskScanPage() {
         }
     };
 
-    // Best natural AI Voice selector
-    const getBestAIVoice = useCallback((): SpeechSynthesisVoice | null => {
+    // Best natural AI Voice selector (supports Khmer km-KH and English en-US)
+    const getBestAIVoice = useCallback((targetLang: 'km' | 'en' = 'km'): SpeechSynthesisVoice | null => {
         if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
         const voices = window.speechSynthesis.getVoices();
         if (!voices || voices.length === 0) return null;
 
-        // Preferred neural & enhanced AI voices
+        if (targetLang === 'km') {
+            // 1. Search for dedicated Khmer voices
+            const khmerMatch = voices.find(v =>
+                v.lang.toLowerCase().includes('km') ||
+                v.lang.toLowerCase().includes('kh') ||
+                v.name.toLowerCase().includes('khmer') ||
+                v.name.toLowerCase().includes('cambodia') ||
+                v.name.includes('ភាសាខ្មែរ')
+            );
+            if (khmerMatch) return khmerMatch;
+
+            // Fallback for Khmer: Google or default high quality multi-lingual voice
+            const googleVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Natural'));
+            if (googleVoice) return googleVoice;
+        }
+
+        // Preferred English neural AI voices
         const preferredVoiceNames = [
             'Siri',
             'Samantha (Enhanced)',
@@ -130,9 +147,7 @@ export default function StandalonePublicKioskScanPage() {
             'Microsoft Guy Online (Natural)',
             'Karen',
             'Daniel',
-            'Victoria',
-            'Moira',
-            'Fiona'
+            'Victoria'
         ];
 
         for (const name of preferredVoiceNames) {
@@ -190,9 +205,11 @@ export default function StandalonePublicKioskScanPage() {
         };
     }, [getAudioContext]);
 
-    // High-tech Futuristic Cyber Biometric Sound FX + Neural AI Voice
-    const playSuccessChime = useCallback(async (isOut: boolean = false, staffFirstName?: string) => {
+    // High-tech Futuristic Cyber Biometric Sound FX + Khmer / English AI Voice
+    const playSuccessChime = useCallback(async (isOut: boolean = false, staffFirstName?: string, forcedLang?: 'km' | 'en') => {
         if (!soundEnabled) return;
+        const currentLang = forcedLang || language;
+
         try {
             const ctx = await getAudioContext();
             if (ctx) {
@@ -231,21 +248,30 @@ export default function StandalonePublicKioskScanPage() {
                 });
             }
 
-            // 3. Natural AI Voice Greeting (Speaks clearly right after chime)
+            // 3. Natural AI Voice Greeting (Speaks clearly in Khmer or English)
             if (typeof window !== 'undefined' && 'speechSynthesis' in window && staffFirstName) {
                 setTimeout(() => {
                     try {
-                        const phrase = isOut
-                            ? `Identity verified. Goodbye, ${staffFirstName}.`
-                            : `Identity verified. Welcome, ${staffFirstName}.`;
+                        let phrase = '';
+                        if (currentLang === 'km') {
+                            phrase = isOut
+                                ? `ការផ្ទៀងផ្ទាត់ជោគជ័យ។ អរគុណ ${staffFirstName}!`
+                                : `ការផ្ទៀងផ្ទាត់ជោគជ័យ។ សូមស្វាគមន៍ ${staffFirstName}!`;
+                        } else {
+                            phrase = isOut
+                                ? `Identity verified. Goodbye, ${staffFirstName}.`
+                                : `Identity verified. Welcome, ${staffFirstName}.`;
+                        }
 
                         const utterance = new SpeechSynthesisUtterance(phrase);
-                        const aiVoice = getBestAIVoice();
+                        utterance.lang = currentLang === 'km' ? 'km-KH' : 'en-US';
+
+                        const aiVoice = getBestAIVoice(currentLang);
                         if (aiVoice) {
                             utterance.voice = aiVoice;
                         }
-                        utterance.rate = 1.0;
-                        utterance.pitch = 1.06;
+                        utterance.rate = currentLang === 'km' ? 0.95 : 1.0;
+                        utterance.pitch = currentLang === 'km' ? 1.02 : 1.06;
                         utterance.volume = 1.0;
 
                         window.speechSynthesis.cancel();
@@ -258,7 +284,29 @@ export default function StandalonePublicKioskScanPage() {
         } catch (e) {
             console.warn('[Audio] play error:', e);
         }
-    }, [soundEnabled, getAudioContext, getBestAIVoice]);
+    }, [soundEnabled, language, getAudioContext, getBestAIVoice]);
+
+    // Switch Language handler with live greeting preview
+    const handleSwitchLanguage = (lang: 'km' | 'en') => {
+        setLanguage(lang);
+        if (soundEnabled && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            setTimeout(() => {
+                const phrase = lang === 'km'
+                    ? 'ប្រព័ន្ធសំឡេងឆ្លាតវៃ AI ភាសាខ្មែរ បានដំណើរការ'
+                    : 'AI English voice engine activated.';
+                const utterance = new SpeechSynthesisUtterance(phrase);
+                utterance.lang = lang === 'km' ? 'km-KH' : 'en-US';
+                const aiVoice = getBestAIVoice(lang);
+                if (aiVoice) utterance.voice = aiVoice;
+                utterance.rate = lang === 'km' ? 0.95 : 1.0;
+                utterance.pitch = 1.05;
+                utterance.volume = 1.0;
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            }, 100);
+        }
+        toast.success(lang === 'km' ? 'បានប្តូរទៅសំឡេងភាសាខ្មែរ 🇰🇭' : 'Switched to English Voice 🇬🇧');
+    };
 
     // Sound toggle handler with futuristic test chime and AI voice intro
     const toggleSound = async () => {
@@ -283,18 +331,22 @@ export default function StandalonePublicKioskScanPage() {
 
             if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
                 setTimeout(() => {
-                    const utterance = new SpeechSynthesisUtterance('AI Voice active.');
-                    const aiVoice = getBestAIVoice();
+                    const phrase = language === 'km'
+                        ? 'ប្រព័ន្ធសំឡេង AI ភាសាខ្មែរ បានដំណើរការ'
+                        : 'AI Biometric voice active.';
+                    const utterance = new SpeechSynthesisUtterance(phrase);
+                    utterance.lang = language === 'km' ? 'km-KH' : 'en-US';
+                    const aiVoice = getBestAIVoice(language);
                     if (aiVoice) utterance.voice = aiVoice;
-                    utterance.rate = 1.0;
-                    utterance.pitch = 1.08;
+                    utterance.rate = language === 'km' ? 0.95 : 1.0;
+                    utterance.pitch = 1.05;
                     utterance.volume = 1.0;
                     window.speechSynthesis.cancel();
                     window.speechSynthesis.speak(utterance);
                 }, 150);
             }
 
-            toast.success('AI Biometric Voice Enabled', { icon: '🎙️' });
+            toast.success(language === 'km' ? 'សំឡេង AI ភាសាខ្មែរ បើកដំណើរការ' : 'AI Biometric Voice Enabled', { icon: '🎙️' });
         } else {
             if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -479,9 +531,37 @@ export default function StandalonePublicKioskScanPage() {
                 </div>
 
                 {/* Right Utilities */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                    {/* Voice Language Selector */}
+                    <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                        <button
+                            onClick={() => handleSwitchLanguage('km')}
+                            className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                                language === 'km'
+                                    ? 'bg-white text-black shadow-xs font-black'
+                                    : 'text-slate-500 hover:text-black'
+                            }`}
+                            title="ភាសាខ្មែរ (Khmer Voice)"
+                        >
+                            <span>🇰🇭</span>
+                            <span>ខ្មែរ</span>
+                        </button>
+                        <button
+                            onClick={() => handleSwitchLanguage('en')}
+                            className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                                language === 'en'
+                                    ? 'bg-white text-black shadow-xs font-black'
+                                    : 'text-slate-500 hover:text-black'
+                            }`}
+                            title="English Voice"
+                        >
+                            <span>🇬🇧</span>
+                            <span>EN</span>
+                        </button>
+                    </div>
+
                     {/* Live Clock */}
-                    <div className="hidden sm:flex flex-col items-end px-3.5 py-1.5 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="hidden md:flex flex-col items-end px-3.5 py-1.5 bg-slate-50 rounded-xl border border-slate-200">
                         <span className="text-[10px] font-mono text-slate-500 font-bold uppercase">{clockDate}</span>
                         <span className="text-sm font-mono font-black text-black">{clockTime || '--:--:-- --'}</span>
                     </div>
