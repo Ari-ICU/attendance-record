@@ -165,7 +165,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
         <div className="flex min-h-screen bg-slate-50/70 text-black font-sans antialiased">
             {/* Sidebar */}
-            <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-sm print:hidden`}>
+            <div className={`fixed inset-y-0 left-0 z-40 transition-all duration-300 transform ${sidebarCollapsed ? 'translate-x-[-100%] lg:translate-x-0 lg:w-20' : 'translate-x-[0] w-64'} shadow-sm print:hidden`}>
                 <Suspense fallback={<div className="w-64 bg-white" />}>
                     <Sidebar menuItems={menuItems} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
                 </Suspense>
@@ -188,7 +188,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </Suspense>
                 </div>
 
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 relative z-10 w-full">
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full">
                     <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" /></div>}>
                         {children}
                     </Suspense>

@@ -27,7 +27,7 @@ export default function AHeader({ sidebarCollapsed, setSidebarCollapsed }: AHead
         : user?.username || 'Administrator';
 
     return (
-        <header className="sticky top-0 z-30 w-full bg-white border-b border-slate-200 select-none">
+        <header className="sticky top-0 z-20 w-full bg-white border-b border-slate-200 select-none">
             <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
                 {/* Left: Mobile Sidebar Toggle */}
                 <div className="flex items-center gap-3">

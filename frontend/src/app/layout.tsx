@@ -18,9 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <AuthProvider>
           <SocketProvider>
-            <main className="relative z-10 w-full min-h-screen">
+            <div className="w-full min-h-screen">
               {children}
-            </main>
+            </div>
           </SocketProvider>
         </AuthProvider>
       </body>
