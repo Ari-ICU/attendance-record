@@ -72,6 +72,24 @@ class AttendanceService {
             // Update latest verification record
             attendance.checkIn = checkInData;
             attendance.lastModifiedBy = employee._id;
+
+            // Recalculate late status based on check-in time and system settings
+            try {
+                const [workStartTimeStr, gracePeriod] = await Promise.all([
+                    systemSettingService.getSetting('work_start_time'),
+                    systemSettingService.getSetting('grace_period_minutes')
+                ]);
+
+                const [hours, minutes] = (workStartTimeStr || '08:00').split(':').map(Number);
+                const workStart = new Date(checkInData.time);
+                workStart.setHours(hours, minutes, 0, 0);
+
+                const threshold = new Date(workStart.getTime() + (parseInt(gracePeriod) || 0) * 60000);
+                attendance.status = checkInData.time > threshold ? 'late' : 'present';
+            } catch (settingsErr) {
+                console.error('Error fetching settings for late check:', settingsErr);
+            }
+
             await attendance.save();
             return {
                 checkInTime: checkInData.time,
@@ -183,12 +201,23 @@ class AttendanceService {
         }
 
         // Employee Filtering
-        if (user.role === 'admin') {
+        if (user.role === 'admin' || user.role === 'manager') {
             if (query.employeeId) {
                 filter.employeeId = query.employeeId;
             }
         } else {
-            filter.employeeId = user._id;
+            // Find corresponding employee document for logged-in user
+            const EmployeeModel = require('../models/employee.model');
+            const emp = await EmployeeModel.findOne({
+                email: { $regex: new RegExp(`^${user.email}$`, 'i') }
+            });
+            if (emp) {
+                filter.employeeId = emp._id;
+            } else if (query.employeeId) {
+                filter.employeeId = query.employeeId;
+            } else {
+                filter.employeeId = user._id;
+            }
         }
 
         // Status Filtering

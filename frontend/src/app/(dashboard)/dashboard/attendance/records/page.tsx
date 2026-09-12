@@ -104,7 +104,7 @@ function AttendanceRecordsContent() {
             dept.toLowerCase().includes(searchTerm.toLowerCase()) ||
             dateStr.includes(searchTerm);
 
-        const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+        const matchesStatus = statusFilter === 'all' || (r.status || '').toLowerCase() === (statusFilter || '').toLowerCase();
         return matchesSearch && matchesStatus;
     });
 
