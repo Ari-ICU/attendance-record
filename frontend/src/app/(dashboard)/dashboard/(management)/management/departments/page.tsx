@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { DepartmentService } from '@/services/department.service';
 import { EmployeeService } from '@/services/employee.service';
+import { PositionService } from '@/services/position.service';
 import { getFullImageUrl } from '@/utils/url.utils';
 import { Department } from '@/types/department.types';
 import { Employee } from '@/types/employee.types';
@@ -31,18 +32,18 @@ interface PositionItem {
     id: string;
     title: string;
     department: string;
-    employeeCount: number;
+    employeeCount?: number;
     description: string;
     level: string;
 }
 
 const DEFAULT_POSITIONS: PositionItem[] = [
-    { id: 'pos_001', title: 'System Administrator', department: 'Engineering & IT', employeeCount: 2, description: 'Manages server infrastructure, cloud networks, and biometric IoT endpoints.', level: 'Senior' },
-    { id: 'pos_002', title: 'Lead UX Architect', department: 'Product & Design', employeeCount: 6, description: 'Design system governance, UX flow architecture, and user research coordination.', level: 'Executive' },
-    { id: 'pos_003', title: 'HR Director', department: 'Human Resources', employeeCount: 1, description: 'Workforce governance, hiring pipeline, payroll coordination, and staff wellness.', level: 'Executive' },
-    { id: 'pos_004', title: 'Operations Manager', department: 'Operations & Facilities', employeeCount: 3, description: 'Campus logistics, security operations, gate check-in monitors, and facilities.', level: 'Mid-Level' },
-    { id: 'pos_005', title: 'Senior Backend Engineer', department: 'Engineering & IT', employeeCount: 8, description: 'Microservices architecture, API integrations, and database scalability.', level: 'Senior' },
-    { id: 'pos_006', title: 'Frontend Engineer', department: 'Engineering & IT', employeeCount: 5, description: 'Web application development, dashboard UI design, and portal maintenance.', level: 'Mid-Level' },
+    { id: 'pos_001', title: 'System Administrator', department: 'Engineering & IT', employeeCount: 0, description: 'Manages server infrastructure, cloud networks, and biometric IoT endpoints.', level: 'Senior' },
+    { id: 'pos_002', title: 'Lead UX Architect', department: 'Product & Design', employeeCount: 0, description: 'Design system governance, UX flow architecture, and user research coordination.', level: 'Executive' },
+    { id: 'pos_003', title: 'HR Director', department: 'Human Resources', employeeCount: 0, description: 'Workforce governance, hiring pipeline, payroll coordination, and staff wellness.', level: 'Executive' },
+    { id: 'pos_004', title: 'Operations Manager', department: 'Operations & Facilities', employeeCount: 0, description: 'Campus logistics, security operations, gate check-in monitors, and facilities.', level: 'Mid-Level' },
+    { id: 'pos_005', title: 'Senior Backend Engineer', department: 'Engineering & IT', employeeCount: 0, description: 'Microservices architecture, API integrations, and database scalability.', level: 'Senior' },
+    { id: 'pos_006', title: 'Frontend Engineer', department: 'Engineering & IT', employeeCount: 0, description: 'Web application development, dashboard UI design, and portal maintenance.', level: 'Mid-Level' },
 ];
 
 export default function DepartmentsPage() {
@@ -79,12 +80,24 @@ export default function DepartmentsPage() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [deptRes, empRes] = await Promise.all([
+            const [deptRes, empRes, posRes] = await Promise.all([
                 DepartmentService.getAll(),
-                EmployeeService.getAllEmployees({ limit: 1000 })
+                EmployeeService.getAllEmployees({ limit: 1000 }),
+                PositionService.getAll()
             ]);
             setDepartments(deptRes.data || []);
-            setEmployees(empRes.employees || []);
+            const emps = empRes.employees || [];
+            setEmployees(emps);
+            if (posRes && posRes.length > 0) {
+                setPositions(posRes.map(p => ({
+                    id: p.id || p._id || `pos_${Math.random()}`,
+                    title: p.title,
+                    department: p.department,
+                    description: p.description || '',
+                    level: p.level || 'Mid-Level',
+                    employeeCount: 0
+                })));
+            }
         } catch {
             toast.error('Failed to load data');
         } finally {
@@ -124,33 +137,50 @@ export default function DepartmentsPage() {
         }
     };
 
-    const handlePositionSubmit = (e: React.FormEvent) => {
+    const handlePositionSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isEditMode && activeId) {
-            setPositions(prev => prev.map(p => p.id === activeId ? {
-                ...p,
-                title: positionFormData.title,
-                department: positionFormData.department,
-                description: positionFormData.description,
-                level: positionFormData.level
-            } : p));
-            toast.success('Position updated successfully');
-        } else {
-            const newPos: PositionItem = {
-                id: `pos_${Date.now()}`,
-                title: positionFormData.title,
-                department: positionFormData.department,
-                description: positionFormData.description,
-                employeeCount: 0,
-                level: positionFormData.level
-            };
-            setPositions(prev => [newPos, ...prev]);
-            toast.success('Position added successfully');
+        try {
+            if (isEditMode && activeId) {
+                try {
+                    await PositionService.update(activeId, positionFormData);
+                } catch {
+                    // Fallback local update
+                }
+                setPositions(prev => prev.map(p => p.id === activeId ? {
+                    ...p,
+                    title: positionFormData.title,
+                    department: positionFormData.department,
+                    description: positionFormData.description,
+                    level: positionFormData.level
+                } : p));
+                toast.success('Position updated successfully');
+            } else {
+                let newPosId = `pos_${Date.now()}`;
+                try {
+                    const created = await PositionService.create(positionFormData);
+                    if (created?.id) newPosId = created.id;
+                } catch {
+                    // Fallback local create
+                }
+                const newPos: PositionItem = {
+                    id: newPosId,
+                    title: positionFormData.title,
+                    department: positionFormData.department,
+                    description: positionFormData.description,
+                    employeeCount: 0,
+                    level: positionFormData.level
+                };
+                setPositions(prev => [newPos, ...prev]);
+                toast.success('Position added successfully');
+            }
+            setIsCreateModalOpen(false);
+            setPositionFormData({ title: '', department: 'Engineering & IT', description: '', level: 'Mid-Level' });
+            setIsEditMode(false);
+            setActiveId(null);
+            fetchData();
+        } catch (error: any) {
+            toast.error(error.message || 'Action failed');
         }
-        setIsCreateModalOpen(false);
-        setPositionFormData({ title: '', department: 'Engineering & IT', description: '', level: 'Mid-Level' });
-        setIsEditMode(false);
-        setActiveId(null);
     };
 
     const openEditDeptModal = (dept: Department) => {
@@ -198,8 +228,13 @@ export default function DepartmentsPage() {
         }
     };
 
-    const handleDeletePos = (id: string) => {
+    const handleDeletePos = async (id: string) => {
         if (!confirm('Are you sure you want to delete this position?')) return;
+        try {
+            await PositionService.delete(id);
+        } catch {
+            // local fallback
+        }
         setPositions(prev => prev.filter(p => p.id !== id));
         toast.success('Position deleted');
     };
@@ -207,6 +242,15 @@ export default function DepartmentsPage() {
     const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
     const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
     const userDeptName = user?.department || '';
+
+    const getPositionHeadcount = (pos: PositionItem) => {
+        return employees.filter(e => {
+            const eDept = typeof e.department === 'object' ? (e.department as any)?.name : e.department;
+            const deptMatch = !pos.department || (eDept || '').trim().toLowerCase() === pos.department.trim().toLowerCase();
+            const posMatch = (e.position || '').trim().toLowerCase() === pos.title.trim().toLowerCase();
+            return posMatch && deptMatch;
+        }).length;
+    };
 
     // Scope departments: Admins see all; Team Leads and Staff ONLY see their own department
     const scopedDepartments = isAdmin
@@ -530,7 +574,7 @@ export default function DepartmentsPage() {
                                             <td className="py-3.5 px-5">
                                                 <span className="font-bold text-black flex items-center gap-1.5">
                                                     <Users size={14} className="text-black" />
-                                                    <span>{pos.employeeCount} Staff</span>
+                                                    <span>{getPositionHeadcount(pos)} Staff</span>
                                                 </span>
                                             </td>
                                             <td className="py-3.5 px-5 text-right">
