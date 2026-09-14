@@ -1,10 +1,23 @@
 const Leave = require('../models/leave.model');
+const Employee = require('../models/employee.model');
 
 exports.createLeave = async (req, res) => {
     try {
+        let employeeId = req.body.employeeId;
+
+        // If regular employee/student, enforce that they only submit for themselves
+        if (req.user && !['admin', 'manager', 'superadmin'].includes(req.user.role)) {
+            const selfEmp = await Employee.findOne({ email: { $regex: new RegExp(`^${req.user.email}$`, 'i') } });
+            if (!selfEmp) {
+                return res.status(403).json({ success: false, message: 'No linked employee profile found for your account' });
+            }
+            employeeId = selfEmp._id;
+        }
+
         const leave = await Leave.create({
             ...req.body,
-            approvedBy: req.user?._id
+            employeeId,
+            approvedBy: req.user?.role === 'admin' ? req.user?._id : undefined
         });
         const populated = await Leave.findById(leave._id).populate('employeeId', 'firstName lastName photoUrl position department');
         res.status(201).json({
@@ -25,8 +38,19 @@ exports.getAllLeaves = async (req, res) => {
         const { status, employeeId, leaveType } = req.query;
         const filter = {};
         if (status) filter.status = status;
-        if (employeeId) filter.employeeId = employeeId;
         if (leaveType) filter.leaveType = leaveType;
+
+        // If regular employee, only allow viewing their own leaves
+        if (req.user && !['admin', 'manager', 'superadmin'].includes(req.user.role)) {
+            const selfEmp = await Employee.findOne({ email: { $regex: new RegExp(`^${req.user.email}$`, 'i') } });
+            if (selfEmp) {
+                filter.employeeId = selfEmp._id;
+            } else {
+                return res.status(200).json({ success: true, data: [] });
+            }
+        } else if (employeeId) {
+            filter.employeeId = employeeId;
+        }
 
         const leaves = await Leave.find(filter)
             .populate('employeeId', 'firstName lastName photoUrl position department')

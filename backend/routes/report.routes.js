@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const ReportController = require('../controllers/report.controller');
-const { authMiddleware, adminOnly } = require('../middlewares/auth.middleware');
+const { authMiddleware, managerOrAdminOnly } = require('../middlewares/auth.middleware');
 
-router.get('/analytics', authMiddleware, ReportController.getAnalytics);
+router.get('/analytics', authMiddleware, managerOrAdminOnly, ReportController.getAnalytics);
 
 module.exports = router;

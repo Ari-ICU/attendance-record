@@ -201,7 +201,7 @@ class AttendanceService {
         }
 
         // Employee Filtering
-        if (user.role === 'admin' || user.role === 'manager') {
+        if (['admin', 'manager', 'superadmin'].includes(user.role)) {
             if (query.employeeId) {
                 filter.employeeId = query.employeeId;
             }
@@ -213,10 +213,8 @@ class AttendanceService {
             });
             if (emp) {
                 filter.employeeId = emp._id;
-            } else if (query.employeeId) {
-                filter.employeeId = query.employeeId;
             } else {
-                filter.employeeId = user._id;
+                return [];
             }
         }
 

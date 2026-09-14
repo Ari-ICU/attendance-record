@@ -5,6 +5,7 @@ import { Edit2, Trash2, Eye, Search, User } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { getFullImageUrl } from '@/utils/url.utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EmployeeListProps {
     employees: Employee[];
@@ -13,6 +14,8 @@ interface EmployeeListProps {
 }
 
 export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeListProps) {
+    const { user } = useAuth();
+    const isAdminOrManager = user && ['admin', 'manager', 'superadmin'].includes(user.role || '');
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredEmployees = employees.filter(emp => {
@@ -116,20 +119,24 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                                         <Eye size={13} />
                                         <span>View Profile</span>
                                     </Link>
-                                    <button
-                                        onClick={() => onEdit(employee)}
-                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                                        title="Edit Record"
-                                    >
-                                        <Edit2 size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(employee._id, employee.fullName || `${employee.firstName} ${employee.lastName}`)}
-                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                                        title="Delete Record"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
+                                    {isAdminOrManager && (
+                                        <>
+                                            <button
+                                                onClick={() => onEdit(employee)}
+                                                className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                                                title="Edit Record"
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(employee._id, employee.fullName || `${employee.firstName} ${employee.lastName}`)}
+                                                className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                                title="Delete Record"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -222,20 +229,24 @@ export default function EmployeeList({ employees, onEdit, onDelete }: EmployeeLi
                                                     >
                                                         <Eye size={14} />
                                                     </Link>
-                                                    <button
-                                                        onClick={() => onEdit(employee)}
-                                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors cursor-pointer"
-                                                        title="Edit Record"
-                                                    >
-                                                        <Edit2 size={14} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(employee._id, employee.fullName || `${employee.firstName} ${employee.lastName}`)}
-                                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer"
-                                                        title="Delete Record"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
+                                                    {isAdminOrManager && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => onEdit(employee)}
+                                                                className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors cursor-pointer"
+                                                                title="Edit Record"
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(employee._id, employee.fullName || `${employee.firstName} ${employee.lastName}`)}
+                                                                className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer"
+                                                                title="Delete Record"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

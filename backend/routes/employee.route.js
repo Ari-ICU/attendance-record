@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const EmployeeController = require('../controllers/employee.controller');
-const { authMiddleware, adminOnly } = require('../middlewares/auth.middleware');
+const { authMiddleware, optionalAuth, adminOnly } = require('../middlewares/auth.middleware');
 
-// Public routes (for face recognition kiosk)
-router.get('/', EmployeeController.getAllEmployees);
+// Public/Kiosk routes (supports optional auth if logged in)
+router.get('/', optionalAuth, EmployeeController.getAllEmployees);
 router.post('/verify-face', EmployeeController.verifyFace);
 
-// Protected routes (admin only)
+// Protected routes
 router.use(authMiddleware);
 router.post('/', adminOnly, EmployeeController.createEmployee);
 router.get('/:id', EmployeeController.getEmployee);

@@ -3,7 +3,17 @@ const Employee = require('../models/employee.model');
 
 exports.createOvertime = async (req, res) => {
     try {
-        const { employeeId, hours, date, reason } = req.body;
+        let { employeeId, hours, date, reason } = req.body;
+
+        // If regular employee, enforce self-submission
+        if (req.user && !['admin', 'manager', 'superadmin'].includes(req.user.role)) {
+            const selfEmp = await Employee.findOne({ email: { $regex: new RegExp(`^${req.user.email}$`, 'i') } });
+            if (!selfEmp) {
+                return res.status(403).json({ success: false, message: 'No linked employee profile found for your account' });
+            }
+            employeeId = selfEmp._id;
+        }
+
         const employee = await Employee.findById(employeeId);
         const hourlyRate = employee?.hourlyRate || 0;
         const totalAmount = hourlyRate * (hours || 0);
@@ -15,7 +25,7 @@ exports.createOvertime = async (req, res) => {
             reason,
             hourlyRate,
             totalAmount,
-            approvedBy: req.user?._id
+            approvedBy: req.user?.role === 'admin' ? req.user?._id : undefined
         });
 
         const populated = await Overtime.findById(overtime._id).populate('employeeId', 'firstName lastName photoUrl position department');
@@ -37,11 +47,22 @@ exports.getAllOvertime = async (req, res) => {
         const { status, employeeId, startDate, endDate } = req.query;
         const filter = {};
         if (status) filter.status = status;
-        if (employeeId) filter.employeeId = employeeId;
         if (startDate || endDate) {
             filter.date = {};
             if (startDate) filter.date.$gte = new Date(startDate);
             if (endDate) filter.date.$lte = new Date(endDate);
+        }
+
+        // If regular employee, only allow viewing their own overtime records
+        if (req.user && !['admin', 'manager', 'superadmin'].includes(req.user.role)) {
+            const selfEmp = await Employee.findOne({ email: { $regex: new RegExp(`^${req.user.email}$`, 'i') } });
+            if (selfEmp) {
+                filter.employeeId = selfEmp._id;
+            } else {
+                return res.status(200).json({ success: true, data: [] });
+            }
+        } else if (employeeId) {
+            filter.employeeId = employeeId;
         }
 
         const overtimes = await Overtime.find(filter)

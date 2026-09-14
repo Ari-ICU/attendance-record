@@ -50,6 +50,16 @@ class EmployeeController {
             }
 
             const employee = await EmployeeService.getEmployeeById(id);
+
+            // Permission check: Non-admin/non-manager can ONLY view their own profile/salary
+            if (req.user && !['admin', 'manager', 'superadmin'].includes(req.user.role)) {
+                const userEmail = (req.user.email || '').toLowerCase().trim();
+                const empEmail = (employee.email || '').toLowerCase().trim();
+                if (userEmail !== empEmail) {
+                    return res.status(403).json(ApiResponse.error('Forbidden: You are only permitted to view your own profile, department, position, and compensation details', 403));
+                }
+            }
+
             return res.status(200).json(ApiResponse.success(employee, 'Employee retrieved successfully', 200));
         } catch (err) {
             const status = err.message.includes('not found') ? 404 : 500;
@@ -60,7 +70,26 @@ class EmployeeController {
     // Get all employees
     static async getAllEmployees(req, res) {
         try {
-            const result = await EmployeeService.getAllEmployees(req.query);
+            const query = { ...req.query };
+
+            // Permission check: Non-admin/non-manager can only see their own employee record
+            if (req.user && !['admin', 'manager', 'superadmin'].includes(req.user.role)) {
+                query.email = req.user.email;
+            }
+
+            const result = await EmployeeService.getAllEmployees(query);
+
+            // If public/unauthenticated (kiosk scan), sanitize sensitive compensation fields
+            if (!req.user && result?.employees) {
+                result.employees = result.employees.map(emp => {
+                    const doc = emp.toObject ? emp.toObject() : { ...emp };
+                    delete doc.baseSalary;
+                    delete doc.hourlyRate;
+                    delete doc.bankDetails;
+                    return doc;
+                });
+            }
+
             return res.status(200).json(ApiResponse.success(result, 'Employees retrieved successfully', 200));
         } catch (err) {
             const status = err.message.includes('Validation failed') ? 400 : 500;

@@ -48,8 +48,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const router = useRouter();
     const pathname = usePathname();
 
-    const menuItems: MenuItem[] = [
-        // MAIN
+    const isAdminOrManager = user && ['admin', 'manager', 'superadmin'].includes(user.role || '');
+
+    const menuItems: MenuItem[] = isAdminOrManager ? [
+        // MAIN (Admin / Manager)
         {
             section: 'MAIN',
             name: 'Dashboard',
@@ -129,6 +131,56 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 { name: 'Users & Roles', href: '/dashboard/settings?tab=roles', icon: <Shield size={15} /> },
                 { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={15} /> },
             ],
+        },
+    ] : [
+        // MAIN (Standard Employee View)
+        {
+            section: 'MAIN',
+            name: 'Dashboard',
+            href: '/dashboard',
+            icon: <Home size={17} />,
+        },
+
+        // MY PROFILE & SALARY
+        {
+            section: 'MY WORKSPACE',
+            name: 'My Profile & Salary',
+            href: '/dashboard/profile',
+            icon: <User size={17} />,
+        },
+
+        // ATTENDANCE
+        {
+            section: 'ATTENDANCE',
+            name: 'My Attendance Logs',
+            href: '/dashboard/attendance/records',
+            icon: <CheckSquare size={17} />,
+        },
+        {
+            name: 'Kiosk Check-In',
+            href: '/scan',
+            icon: <Scan size={17} />,
+        },
+
+        // SCHEDULE & CALENDAR
+        {
+            section: 'SCHEDULE & TIME',
+            name: 'Calendar & Shifts',
+            href: '/dashboard/calendar',
+            icon: <CalendarDays size={17} />,
+        },
+
+        // TIME OFF & EXTRA
+        {
+            section: 'TIME OFF & REQUESTS',
+            name: 'My Leave Requests',
+            href: '/dashboard/leave',
+            icon: <FileText size={17} />,
+        },
+        {
+            name: 'My Overtime',
+            href: '/dashboard/overtime',
+            icon: <Timer size={17} />,
         },
     ];
 

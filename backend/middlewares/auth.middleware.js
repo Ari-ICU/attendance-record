@@ -70,9 +70,44 @@ const adminOnly = (req, res, next) => {
     }
 };
 
+const optionalAuth = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (authHeader?.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const user = await User.findById(decoded.userId).select('-password');
+                if (user) {
+                    req.user = user;
+                    req.token = token;
+                }
+            } catch (e) {
+                // Ignore token error for optional auth
+            }
+        }
+        next();
+    } catch (err) {
+        next();
+    }
+};
+
+const managerOrAdminOnly = (req, res, next) => {
+    if (req.user && (req.user.role === 'admin' || req.user.role === 'manager' || req.user.role === 'superadmin')) {
+        next();
+    } else {
+        res.status(403).json({
+            success: false,
+            message: 'Forbidden: Manager or Admin access required'
+        });
+    }
+};
+
 module.exports = {
     authMiddleware,
+    optionalAuth,
     adminOnly,
+    managerOrAdminOnly,
     generateToken,
     generateRefreshToken,
     TOKEN_EXPIRES_IN,
