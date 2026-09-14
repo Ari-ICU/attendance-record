@@ -400,21 +400,21 @@ export default function StandalonePublicKioskScanPage() {
         if (scanning) return;
         setScanning(true);
 
+        let targetEmp: Employee | undefined = forcedEmp;
+
         try {
             const imageSrc = webcamRef.current?.getScreenshot() || null;
             const cleanImage = imageSrc ? imageSrc.replace(/^data:image\/\w+;base64,/, '') : undefined;
 
             // Check if webcam image is captured
             if (mode === 'face' && (!cleanImage || cleanImage.length < 100)) {
-                const noFaceMsg = 'No face detected. Please position your face clearly in the camera scan zone.';
+                const noFaceMsg = 'No face detected in camera viewfinder. Please position your face clearly in the camera zone.';
                 setScanError(noFaceMsg);
-                setAutoScanMessage('⚠️ Align face inside the scan zone to verify');
+                setAutoScanMessage('⚠️ No face detected. Please input/show face in camera zone');
                 if (!isAutomatic) toast.error(noFaceMsg, { id: 'scan-error' });
                 setScanning(false);
                 return;
             }
-
-            let targetEmp: Employee | undefined = forcedEmp;
 
             if (!targetEmp) {
                 if (selectedEmployeeId !== 'auto') {
@@ -544,8 +544,8 @@ export default function StandalonePublicKioskScanPage() {
             console.error('Scan error:', err);
             let msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Verification error.';
 
-            if (msg.toLowerCase().includes('no face') || msg.toLowerCase().includes('not detected')) {
-                msg = 'No face detected in camera viewfinder. Please position your face clearly inside the scan zone.';
+            if (msg.toLowerCase().includes('no face') || msg.toLowerCase().includes('not detected') || msg.toLowerCase().includes('could not extract')) {
+                msg = 'No face detected in camera viewfinder. Please position and input your face clearly in the camera scan zone.';
             } else if (msg.toLowerCase().includes('mismatch') || msg.toLowerCase().includes('does not match')) {
                 msg = `Facial mismatch: Detected face does not match ${targetEmp?.firstName || 'registered staff'} profile. Please look directly into the camera.`;
             }
@@ -556,7 +556,7 @@ export default function StandalonePublicKioskScanPage() {
         } finally {
             setScanning(false);
         }
-    }, [scanning, selectedEmployeeId, employees, scanAction, mode, soundEnabled, playSuccessChime]);
+    }, [scanning, selectedEmployeeId, employees, scanAction, mode, soundEnabled, playSuccessChime, user]);
 
     // Continuous AI Face scanning loop
     useEffect(() => {
