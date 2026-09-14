@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AttendanceService } from '@/services/attendance.service';
+import { DepartmentService } from '@/services/department.service';
 import {
     CheckCircle2,
     Clock,
@@ -15,13 +16,18 @@ import {
     Camera,
     Sparkles,
     TrendingUp,
-    ShieldCheck
+    ShieldCheck,
+    Briefcase,
+    Building2,
+    Crown,
+    Users
 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function PortalPage() {
     const { user } = useAuth();
     const [records, setRecords] = useState<any[]>([]);
+    const [departments, setDepartments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         totalDays: 45,
@@ -35,10 +41,15 @@ export default function PortalPage() {
         const fetchPersonalRecords = async () => {
             try {
                 setLoading(true);
-                // Fetch attendance records for this user/employee
-                const res = await AttendanceService.getRecords({ limit: 10 });
-                if (res?.data) {
-                    setRecords(res.data);
+                const [attRes, deptRes] = await Promise.all([
+                    AttendanceService.getRecords({ limit: 10 }),
+                    DepartmentService.getAll()
+                ]);
+                if (attRes?.data) {
+                    setRecords(attRes.data);
+                }
+                if (deptRes?.data) {
+                    setDepartments(deptRes.data);
                 }
             } catch (err) {
                 console.error(err);
@@ -50,8 +61,14 @@ export default function PortalPage() {
         fetchPersonalRecords();
     }, []);
 
+    const userDept = user?.department || 'Engineering & IT';
+    const currentDept = departments.find(d => d.name?.toLowerCase() === userDept?.toLowerCase());
+    const teamLeader = currentDept?.head && typeof currentDept.head === 'object'
+        ? currentDept.head
+        : (currentDept?.headOfDepartment || { firstName: 'Department', lastName: 'Team Lead', position: 'Lead Manager' });
+
     const todaySchedule = [
-        { name: 'Engineering Daily Standup & Sprint Sync', code: 'ENG-SYNC', time: '09:00 AM - 09:45 AM', room: 'Conference Room 4A', status: 'Completed', lead: 'Tech Lead / Architect' },
+        { name: 'Engineering Daily Standup & Sprint Sync', code: 'ENG-SYNC', time: '09:00 AM - 09:45 AM', room: 'Conference Room 4A', status: 'Completed', lead: teamLeader ? `${teamLeader.firstName} ${teamLeader.lastName}` : 'Tech Lead / Architect' },
         { name: 'Product Design & Architecture Review', code: 'PROD-REV', time: '02:00 PM - 03:30 PM', room: 'Design Studio B', status: 'Upcoming', lead: 'Sarah Jenkins' },
     ];
 
@@ -64,7 +81,7 @@ export default function PortalPage() {
                         {user?.firstName?.[0] || 'E'}{user?.lastName?.[0] || 'M'}
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                                 Hello, {user?.firstName || 'Employee'} 👋
                             </h1>
@@ -73,16 +90,29 @@ export default function PortalPage() {
                                 <span>Active Staff Member</span>
                             </span>
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                            ID: <span className="font-mono text-slate-700 font-medium">{user?._id?.substring(0, 10).toUpperCase() || 'EMP-2026-081'}</span> • Fiscal Year 2026
-                        </p>
+                        <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 mt-1 flex-wrap">
+                            <span className="flex items-center gap-1">
+                                <Briefcase size={13} className="text-black" />
+                                <span>{user?.position || 'Staff Member'}</span>
+                            </span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                                <Building2 size={13} className="text-black" />
+                                <span>{userDept}</span>
+                            </span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1 text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 font-bold">
+                                <Crown size={12} className="text-amber-600" />
+                                <span>Lead: {teamLeader.firstName} {teamLeader.lastName}</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 {/* Quick Staff Clock-In Actions */}
                 <div className="flex items-center gap-2.5 flex-wrap">
                     <Link
-                        href="/dashboard/attendance/scan"
+                        href="/scan"
                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
                     >
                         <Camera size={15} className="text-emerald-400" />
@@ -90,7 +120,7 @@ export default function PortalPage() {
                     </Link>
 
                     <Link
-                        href="/dashboard/attendance/scan"
+                        href="/scan"
                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-black border border-slate-300 rounded-xl text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer"
                     >
                         <QrCode size={15} />

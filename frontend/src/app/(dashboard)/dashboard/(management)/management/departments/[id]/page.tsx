@@ -16,6 +16,7 @@ import {
     Mail,
     Phone
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { DepartmentService } from '@/services/department.service';
 import { EmployeeService } from '@/services/employee.service';
 import { Department } from '@/types/department.types';
@@ -23,6 +24,8 @@ import { Employee } from '@/types/employee.types';
 import toast from 'react-hot-toast';
 
 export default function DepartmentDetailPage() {
+    const { user } = useAuth();
+    const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
     const params = useParams();
     const router = useRouter();
     const id = params.id as string;
@@ -43,7 +46,10 @@ export default function DepartmentDetailPage() {
                 // Filter members belonging to this department
                 const deptName = deptRes.data?.name || '';
                 const deptMembers = (empRes.employees || []).filter(
-                    e => e.department?.toLowerCase() === deptName.toLowerCase()
+                    e => {
+                        const eDept = typeof e.department === 'object' ? (e.department as any)?.name : e.department;
+                        return eDept?.toLowerCase() === deptName.toLowerCase();
+                    }
                 );
                 setMembers(deptMembers);
             } catch {
@@ -56,6 +62,7 @@ export default function DepartmentDetailPage() {
     }, [id]);
 
     const handleDelete = async () => {
+        if (!isAdmin) return;
         if (!confirm('Are you sure you want to delete this department?')) return;
         try {
             await DepartmentService.delete(id);
@@ -111,22 +118,24 @@ export default function DepartmentDetailPage() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
-                    <Link
-                        href={`/dashboard/management/departments/${id}/edit`}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold cursor-pointer"
-                    >
-                        <Edit2 size={15} />
-                        <span>Edit Unit</span>
-                    </Link>
-                    <button
-                        onClick={handleDelete}
-                        className="p-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-colors shadow-2xs cursor-pointer"
-                        title="Delete Unit"
-                    >
-                        <Trash2 size={15} />
-                    </button>
-                </div>
+                {isAdmin && (
+                    <div className="flex items-center gap-2.5">
+                        <Link
+                            href={`/dashboard/management/departments/${id}/edit`}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold cursor-pointer"
+                        >
+                            <Edit2 size={15} />
+                            <span>Edit Unit</span>
+                        </Link>
+                        <button
+                            onClick={handleDelete}
+                            className="p-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-colors shadow-2xs cursor-pointer"
+                            title="Delete Unit"
+                        >
+                            <Trash2 size={15} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Quick Metrics */}

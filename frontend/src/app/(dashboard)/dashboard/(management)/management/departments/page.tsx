@@ -14,11 +14,14 @@ import {
     RotateCcw,
     Edit2,
     ShieldCheck,
-    CheckCircle2
+    CheckCircle2,
+    Crown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 import { DepartmentService } from '@/services/department.service';
 import { EmployeeService } from '@/services/employee.service';
+import { getFullImageUrl } from '@/utils/url.utils';
 import { Department } from '@/types/department.types';
 import { Employee } from '@/types/employee.types';
 import toast from 'react-hot-toast';
@@ -43,6 +46,7 @@ const DEFAULT_POSITIONS: PositionItem[] = [
 ];
 
 export default function DepartmentsPage() {
+    const { user } = useAuth();
     const searchParams = useSearchParams();
     const router = useRouter();
     const activeView = searchParams.get('view') === 'positions' ? 'positions' : 'departments';
@@ -200,12 +204,26 @@ export default function DepartmentsPage() {
         toast.success('Position deleted');
     };
 
-    const filteredDepartments = departments.filter(d =>
+    const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
+    const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
+    const userDeptName = user?.department || '';
+
+    // Scope departments: Admins see all; Team Leads and Staff ONLY see their own department
+    const scopedDepartments = isAdmin
+        ? departments
+        : departments.filter(d => d.name.toLowerCase() === userDeptName.toLowerCase());
+
+    // Scope positions: Admins see all; Team Leads and Staff ONLY see their department positions
+    const scopedPositions = isAdmin
+        ? positions
+        : positions.filter(p => p.department.toLowerCase() === userDeptName.toLowerCase());
+
+    const filteredDepartments = scopedDepartments.filter(d =>
         d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         d.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const filteredPositions = positions.filter(p =>
+    const filteredPositions = scopedPositions.filter(p =>
         p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -218,27 +236,35 @@ export default function DepartmentsPage() {
                 <div>
                     <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
                         <h1 className="text-lg sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
-                            <span>{activeView === 'departments' ? 'Classes & Departments' : 'Staff Positions & Designations'}</span>
+                            <span>
+                                {isAdmin
+                                    ? (activeView === 'departments' ? 'Classes & Departments' : 'Staff Positions & Designations')
+                                    : (activeView === 'departments' ? `${userDeptName || 'My'} Department & Team` : `${userDeptName || 'Department'} Roles & Positions`)}
+                            </span>
                         </h1>
                         <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[11px] sm:text-xs font-bold shadow-2xs shrink-0">
-                            {activeView === 'departments' ? `${departments.length} Units` : `${positions.length} Roles`}
+                            {activeView === 'departments' ? `${filteredDepartments.length} Unit` : `${filteredPositions.length} Roles`}
                         </span>
                     </div>
                     <p className="text-xs sm:text-sm font-medium text-black mt-1">
-                        {activeView === 'departments'
-                            ? 'Configure academic classes, course units, instructors, and workforce headcounts.'
-                            : 'Define campus organizational titles, responsibility scopes, and seniority tiers.'}
+                        {isAdmin
+                            ? (activeView === 'departments'
+                                ? 'Configure academic classes, course units, instructors, and workforce headcounts across all organization.'
+                                : 'Define campus organizational titles, responsibility scopes, and seniority tiers.')
+                            : `View your assigned department structure, team lead, colleagues, and role scope in ${userDeptName}.`}
                     </p>
                 </div>
 
                 <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                    <Link
-                        href={activeView === 'departments' ? "/dashboard/management/departments/create" : "/dashboard/management/positions/create"}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
-                    >
-                        <Plus size={16} />
-                        <span>{activeView === 'departments' ? 'Add Class / Dept' : 'Add Position'}</span>
-                    </Link>
+                    {isAdmin && (
+                        <Link
+                            href={activeView === 'departments' ? "/dashboard/management/departments/create" : "/dashboard/management/positions/create"}
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
+                        >
+                            <Plus size={16} />
+                            <span>{activeView === 'departments' ? 'Add Class / Dept' : 'Add Position'}</span>
+                        </Link>
+                    )}
                     <button
                         onClick={fetchData}
                         className="p-2.5 rounded-xl bg-white border border-slate-300 text-black hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer shrink-0"
@@ -299,70 +325,151 @@ export default function DepartmentsPage() {
                             <div key={i} className="h-48 bg-white border border-slate-200/80 rounded-2xl animate-pulse shadow-xs" />
                         ))
                     ) : filteredDepartments.length > 0 ? (
-                        filteredDepartments.map((dept) => (
-                            <div
-                                key={dept._id}
-                                className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-black transition-all flex flex-col justify-between"
-                            >
-                                <div className="space-y-3">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="p-2.5 bg-black text-white rounded-xl shadow-2xs">
-                                            <Building2 size={20} />
+                        filteredDepartments.map((dept) => {
+                            const deptEmployees = employees.filter(
+                                e => {
+                                    const eDept = typeof e.department === 'object' ? (e.department as any)?.name : e.department;
+                                    return eDept?.toLowerCase() === dept.name?.toLowerCase();
+                                }
+                            );
+
+                            const deptHead = dept.head && typeof dept.head === 'object'
+                                ? dept.head as any
+                                : (dept.headOfDepartment ? {
+                                    firstName: dept.headOfDepartment.firstName,
+                                    lastName: dept.headOfDepartment.lastName,
+                                    position: 'Team Leader'
+                                } : null);
+
+                            const isMyDept = user?.department && dept.name?.toLowerCase() === user.department?.toLowerCase();
+
+                            return (
+                                <div
+                                    key={dept._id}
+                                    className={`bg-white border rounded-2xl p-5 shadow-xs hover:border-black transition-all flex flex-col justify-between ${
+                                        isMyDept ? 'border-blue-400 ring-1 ring-blue-400/30' : 'border-slate-200/80'
+                                    }`}
+                                >
+                                    <div className="space-y-3">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-2.5 bg-black text-white rounded-xl shadow-2xs">
+                                                    <Building2 size={20} />
+                                                </div>
+                                                {isMyDept && (
+                                                    <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
+                                                        My Department
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Link
+                                                    href={`/dashboard/management/departments/${dept._id}`}
+                                                    className="px-2.5 py-1 bg-slate-100 hover:bg-black hover:text-white text-black font-bold rounded-lg text-xs transition-colors inline-block"
+                                                >
+                                                    View Team
+                                                </Link>
+                                                {isAdmin && (
+                                                    <>
+                                                        <Link
+                                                            href={`/dashboard/management/departments/${dept._id}/edit`}
+                                                            className="p-1.5 rounded-lg text-black hover:bg-slate-100 transition-colors inline-block"
+                                                            title="Edit Unit"
+                                                        >
+                                                            <Edit2 size={15} />
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => handleDeleteDept(dept._id)}
+                                                            className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                            title="Delete Unit"
+                                                        >
+                                                            <Trash2 size={15} />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                            <Link
-                                                href={`/dashboard/management/departments/${dept._id}`}
-                                                className="px-2.5 py-1 bg-slate-100 hover:bg-black hover:text-white text-black font-bold rounded-lg text-xs transition-colors inline-block"
-                                            >
-                                                View
-                                            </Link>
-                                            <Link
-                                                href={`/dashboard/management/departments/${dept._id}/edit`}
-                                                className="p-1.5 rounded-lg text-black hover:bg-slate-100 transition-colors inline-block"
-                                                title="Edit Unit"
-                                            >
-                                                <Edit2 size={15} />
-                                            </Link>
-                                            <button
-                                                onClick={() => handleDeleteDept(dept._id)}
-                                                className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                                title="Delete Unit"
-                                            >
-                                                <Trash2 size={15} />
-                                            </button>
+
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <Link href={`/dashboard/management/departments/${dept._id}`} className="text-base font-black text-black leading-snug hover:underline">
+                                                    {dept.name}
+                                                </Link>
+                                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-black font-mono text-[10px] font-bold border border-slate-200">
+                                                    {dept.code}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs font-medium text-black line-clamp-2 mt-1.5 leading-relaxed">
+                                                {dept.description || 'General classroom track with automated biometric attendance.'}
+                                            </p>
+                                        </div>
+
+                                        {/* Department Team Leader Pill */}
+                                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/90 flex items-center justify-between">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <Crown size={14} className="text-amber-500 shrink-0" />
+                                                <div className="min-w-0">
+                                                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Team Lead / Manager</span>
+                                                    <span className="text-xs font-bold text-black truncate block">
+                                                        {deptHead ? `${deptHead.firstName} ${deptHead.lastName}` : 'Assigned by Admin'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {deptHead?.position && (
+                                                <span className="text-[10px] bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded font-bold shrink-0">
+                                                    {deptHead.position}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Child Team Members Avatars */}
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
+                                                <span>Child Team Roster</span>
+                                                <span>{deptEmployees.length || dept.memberCount || 0} Staff</span>
+                                            </div>
+                                            <div className="flex items-center -space-x-1.5 overflow-hidden py-0.5">
+                                                {deptEmployees.slice(0, 5).map((m, idx) => (
+                                                    <div
+                                                        key={m._id || idx}
+                                                        title={`${m.firstName} ${m.lastName} (${m.position || 'Staff'})`}
+                                                        className="w-7 h-7 rounded-full bg-black text-white font-bold text-[10px] border-2 border-white flex items-center justify-center overflow-hidden shrink-0 shadow-2xs"
+                                                    >
+                                                        {m.photoUrl ? (
+                                                            <img src={getFullImageUrl(m.photoUrl)} alt={m.firstName} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <span>{m.firstName?.[0]}{m.lastName?.[0]}</span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                {deptEmployees.length > 5 && (
+                                                    <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-800 font-bold text-[10px] border-2 border-white flex items-center justify-center shrink-0">
+                                                        +{deptEmployees.length - 5}
+                                                    </div>
+                                                )}
+                                                {deptEmployees.length === 0 && (
+                                                    <span className="text-[11px] text-slate-400 font-medium">No team members assigned</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div>
+                                    <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                                         <div className="flex items-center gap-2">
-                                            <Link href={`/dashboard/management/departments/${dept._id}`} className="text-base font-black text-black leading-snug hover:underline">
-                                                {dept.name}
-                                            </Link>
-                                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-black font-mono text-[10px] font-bold border border-slate-200">
-                                                {dept.code}
-                                            </span>
+                                            <Users size={14} className="text-black" />
+                                            <span className="font-bold text-black">{deptEmployees.length || dept.memberCount || 0} Members</span>
                                         </div>
-                                        <p className="text-xs font-medium text-black line-clamp-2 mt-1.5 leading-relaxed">
-                                            {dept.description || 'General classroom track with automated biometric attendance.'}
-                                        </p>
+                                        <Link
+                                            href={`/dashboard/management/departments/${dept._id}`}
+                                            className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[11px] flex items-center gap-1 hover:bg-emerald-100 transition-colors"
+                                        >
+                                            <CheckCircle2 size={12} />
+                                            <span>Active Unit</span>
+                                        </Link>
                                     </div>
                                 </div>
-
-                                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                                    <div className="flex items-center gap-2">
-                                        <Users size={15} className="text-black" />
-                                        <span className="font-bold text-black">{dept.memberCount || 12} Members</span>
-                                    </div>
-                                    <Link
-                                        href={`/dashboard/management/departments/${dept._id}`}
-                                        className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[11px] flex items-center gap-1 hover:bg-emerald-100 transition-colors"
-                                    >
-                                        <CheckCircle2 size={12} />
-                                        <span>Active Unit</span>
-                                    </Link>
-                                </div>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="col-span-full py-16 bg-white border border-slate-200/80 rounded-2xl text-center text-black shadow-xs">
                             <Building2 size={36} className="mx-auto mb-2 text-slate-400" />
@@ -427,22 +534,28 @@ export default function DepartmentsPage() {
                                                 </span>
                                             </td>
                                             <td className="py-3.5 px-5 text-right">
-                                                <div className="flex items-center justify-end gap-1.5">
-                                                    <button
-                                                        onClick={() => openEditPosModal(pos)}
-                                                        className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
-                                                        title="Edit Position"
-                                                    >
-                                                        <Edit2 size={14} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeletePos(pos.id)}
-                                                        className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                                        title="Delete Position"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
+                                                {isAdmin ? (
+                                                    <div className="flex items-center justify-end gap-1.5">
+                                                        <button
+                                                            onClick={() => openEditPosModal(pos)}
+                                                            className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
+                                                            title="Edit Position"
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeletePos(pos.id)}
+                                                            className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                            title="Delete Position"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+                                                        Active Scope
+                                                    </span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))

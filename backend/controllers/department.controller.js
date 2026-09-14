@@ -20,7 +20,7 @@ exports.createDepartment = async (req, res) => {
 exports.getAllDepartments = async (req, res) => {
     try {
         const departments = await Department.find()
-            .populate('head', 'firstName lastName photoUrl')
+            .populate('head', 'firstName lastName photoUrl email position phone')
             .populate('memberCount');
 
         res.status(200).json({
@@ -38,7 +38,7 @@ exports.getAllDepartments = async (req, res) => {
 exports.getDepartmentById = async (req, res) => {
     try {
         const department = await Department.findById(req.params.id)
-            .populate('head', 'firstName lastName photoUrl')
+            .populate('head', 'firstName lastName photoUrl email position phone')
             .populate('memberCount');
 
         if (!department) {

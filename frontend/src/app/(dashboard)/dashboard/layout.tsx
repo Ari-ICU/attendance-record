@@ -48,10 +48,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const router = useRouter();
     const pathname = usePathname();
 
-    const isAdminOrManager = user && ['admin', 'manager', 'superadmin'].includes(user.role || '');
+    const isTeamLeadOrManager = user && (
+        ['admin', 'manager', 'superadmin'].includes(user.role || '') ||
+        (user.position && /lead|manager|head|director|supervisor/i.test(user.position))
+    );
 
-    const menuItems: MenuItem[] = isAdminOrManager ? [
-        // MAIN (Admin / Manager)
+    const menuItems: MenuItem[] = isTeamLeadOrManager ? [
+        // MAIN (Admin / Manager / Team Lead)
         {
             section: 'MAIN',
             name: 'Dashboard',
@@ -59,15 +62,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             icon: <Home size={17} />,
         },
 
-        // STAFF
+        // MY PROFILE
         {
-            section: 'STAFF',
-            name: 'Staff',
+            section: 'MY WORKSPACE',
+            name: 'My Profile & Team',
+            href: '/dashboard/profile',
+            icon: <User size={17} />,
+        },
+
+        // STAFF & TEAMS
+        {
+            section: 'TEAMS & WORKFORCE',
+            name: 'Staff & Teams',
             icon: <Users size={17} />,
             group: true,
             items: [
                 { name: 'Employees', href: '/dashboard/management/employee', icon: <Users size={15} /> },
-                { name: 'Departments', href: '/dashboard/management/departments', icon: <Building2 size={15} /> },
+                { name: 'Departments & Teams', href: '/dashboard/management/departments', icon: <Building2 size={15} /> },
                 { name: 'Positions', href: '/dashboard/management/positions', icon: <Briefcase size={15} /> },
             ],
         },
@@ -121,17 +132,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             ],
         },
 
-        // SYSTEM
-        {
-            section: 'SYSTEM',
-            name: 'System',
-            icon: <Settings size={17} />,
-            group: true,
-            items: [
-                { name: 'Users & Roles', href: '/dashboard/settings?tab=roles', icon: <Shield size={15} /> },
-                { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={15} /> },
-            ],
-        },
+        // SYSTEM (Admins only)
+        ...(user?.role === 'admin' || user?.role === 'superadmin' ? [
+            {
+                section: 'SYSTEM',
+                name: 'System',
+                icon: <Settings size={17} />,
+                group: true,
+                items: [
+                    { name: 'Users & Roles', href: '/dashboard/settings?tab=roles', icon: <Shield size={15} /> },
+                    { name: 'Settings', href: '/dashboard/settings', icon: <Settings size={15} /> },
+                ],
+            },
+        ] : []),
     ] : [
         // MAIN (Standard Employee View)
         {
@@ -144,9 +157,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         // MY PROFILE & SALARY
         {
             section: 'MY WORKSPACE',
-            name: 'My Profile & Salary',
+            name: 'My Profile & Team Lead',
             href: '/dashboard/profile',
             icon: <User size={17} />,
+        },
+        {
+            name: 'My Department & Team',
+            href: '/dashboard/management/departments',
+            icon: <Building2 size={17} />,
         },
 
         // ATTENDANCE
