@@ -52,8 +52,9 @@ export default function CreateAttendanceRecordPage() {
             });
             toast.success('Attendance record logged successfully!');
             router.push('/dashboard/attendance/records');
-        } catch {
-            toast.error('Failed to log attendance record');
+        } catch (err: any) {
+            const msg = err?.response?.data?.error || err?.response?.data?.message || 'Failed to log attendance record';
+            toast.error(msg);
         } finally {
             setLoading(false);
         }

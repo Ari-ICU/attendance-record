@@ -47,7 +47,7 @@ const checkInSchema = Joi.object({
     browser: Joi.string().optional().allow(''),
     faceDescriptor: Joi.array().items(Joi.number()).optional().allow(null),
     faceImage: Joi.string().optional().allow('', null)
-});
+}).unknown(true);
 
 const checkOutSchema = Joi.object({
     employeeId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
@@ -60,7 +60,7 @@ const checkOutSchema = Joi.object({
     browser: Joi.string().optional().allow(''),
     faceDescriptor: Joi.array().items(Joi.number()).optional().allow(null),
     faceImage: Joi.string().optional().allow('', null)
-});
+}).unknown(true);
 
 const breakSchema = Joi.object({
     startTime: Joi.date().required().messages({

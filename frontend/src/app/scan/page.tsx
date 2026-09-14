@@ -18,16 +18,19 @@ import {
     ShieldCheck,
     RefreshCw,
     ArrowLeft,
-    Shield
+    Shield,
+    AlertCircle
 } from 'lucide-react';
 import { AttendanceService } from '@/services/attendance.service';
 import { EmployeeService } from '@/services/employee.service';
 import { Employee } from '@/types/employee.types';
 import CustomDropdown from '@/components/ui/CustomDropdown';
+import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 export default function StandalonePublicKioskScanPage() {
+    const { user } = useAuth();
     const [mode, setMode] = useState<'face' | 'qr_display'>('face');
     const [scanAction, setScanAction] = useState<'check_in' | 'check_out'>('check_in');
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -45,6 +48,7 @@ export default function StandalonePublicKioskScanPage() {
     const [clockDate, setClockDate] = useState<string>('');
     const [qrCountdown, setQrCountdown] = useState<number>(30);
     const [autoScanMessage, setAutoScanMessage] = useState<string>('Align face in frame for auto check-in');
+    const [scanError, setScanError] = useState<string | null>(null);
 
     const webcamRef = useRef<Webcam>(null);
     const cooldownMapRef = useRef<Record<string, number>>({});
@@ -383,15 +387,22 @@ export default function StandalonePublicKioskScanPage() {
                         }
                     }
 
-                    // 2. Fallback to first available employee
-                    if (!targetEmp && employees.length > 0) {
-                        targetEmp = employees.find(e => e.email === 'ratha@staffflow.io' || e.firstName?.toLowerCase() === 'thoeurn') || employees[0];
+                    // 2. If staff is logged in, fallback to self
+                    if (!targetEmp && user?.email) {
+                        targetEmp = employees.find(e => e.email?.toLowerCase() === user.email?.toLowerCase());
+                    }
+
+                    // 3. Public kiosk fallback if no logged-in user or admin
+                    if (!targetEmp && employees.length > 0 && (!user || user.role === 'admin')) {
+                        targetEmp = employees[0];
                     }
                 }
             }
 
             if (!targetEmp) {
-                if (!isAutomatic) toast.error('No employee profile registered for verification');
+                const noProfileMsg = 'No matching staff profile found for verification';
+                setScanError(noProfileMsg);
+                if (!isAutomatic) toast.error(noProfileMsg, { id: 'scan-error' });
                 setScanning(false);
                 return;
             }
@@ -471,6 +482,7 @@ export default function StandalonePublicKioskScanPage() {
             setLastVerifiedRecord(verificationPayload);
             setRecentScans(prev => [verificationPayload, ...prev.slice(0, 7)]);
             setAutoScanMessage(`✓ Recognized: ${targetEmp.firstName} ${targetEmp.lastName}`);
+            setScanError(null);
 
             toast.success(
                 `✓ ${scanAction === 'check_in' ? 'Check-in' : 'Check-out'} verified for ${targetEmp.firstName} ${targetEmp.lastName}`,
@@ -479,7 +491,9 @@ export default function StandalonePublicKioskScanPage() {
         } catch (err: any) {
             console.error('Scan error:', err);
             const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Verification error.';
-            if (!isAutomatic) toast.error(msg);
+            setScanError(msg);
+            setAutoScanMessage(`⚠️ ${msg}`);
+            toast.error(msg, { id: 'scan-error' });
         } finally {
             setScanning(false);
         }
@@ -732,6 +746,24 @@ export default function StandalonePublicKioskScanPage() {
                                 <RefreshCw size={12} className="animate-spin text-black" />
                                 <span>Refreshing in {qrCountdown}s</span>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Visual Error / Feedback Alert Banner */}
+                    {scanError && (
+                        <div className="p-3.5 bg-rose-50 border border-rose-200/90 rounded-2xl flex items-start gap-3 text-rose-900 text-xs font-semibold shadow-xs transition-all animate-fadeIn">
+                            <AlertCircle size={18} className="text-rose-600 shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                                <span className="font-bold block text-rose-950 text-xs">Verification Message:</span>
+                                <span className="text-rose-800 text-xs break-words">{scanError}</span>
+                            </div>
+                            <button
+                                onClick={() => setScanError(null)}
+                                className="text-rose-500 hover:text-rose-800 text-xs font-bold shrink-0 ml-1 px-1.5 py-0.5 rounded-lg hover:bg-rose-100 transition-colors"
+                                title="Dismiss"
+                            >
+                                ✕
+                            </button>
                         </div>
                     )}
 
