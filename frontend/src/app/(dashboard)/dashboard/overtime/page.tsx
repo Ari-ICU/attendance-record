@@ -18,8 +18,11 @@ import { OvertimeService } from '@/services/overtime.service';
 import { OvertimeItem } from '@/types/overtime.types';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function OvertimePage() {
+    const { user } = useAuth();
+    const isAdminOrManager = user && ['admin', 'manager', 'superadmin'].includes(user.role || '');
     const [overtimes, setOvertimes] = useState<OvertimeItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -42,6 +45,7 @@ export default function OvertimePage() {
     }, []);
 
     const handleDelete = async (id: string) => {
+        if (!isAdminOrManager) return;
         if (!confirm('Are you sure you want to delete this overtime submission?')) return;
         try {
             await OvertimeService.delete(id);
@@ -53,6 +57,7 @@ export default function OvertimePage() {
     };
 
     const handleApprove = async (id: string) => {
+        if (!isAdminOrManager) return;
         try {
             await OvertimeService.updateStatus(id, 'approved');
             setOvertimes(prev => prev.map(o => (o.id === id || o._id === id) ? { ...o, status: 'approved' } : o));
@@ -210,7 +215,7 @@ export default function OvertimePage() {
                             </div>
 
                             <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                                {req.status === 'pending' && (
+                                {isAdminOrManager && req.status === 'pending' && (
                                     <>
                                         <button
                                             onClick={() => handleApprove(req.id || req._id || '')}
@@ -232,20 +237,24 @@ export default function OvertimePage() {
                                 >
                                     View
                                 </Link>
-                                <Link
-                                    href={`/dashboard/overtime/${req.id || req._id}/edit`}
-                                    className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
-                                    title="Edit Overtime"
-                                >
-                                    <Edit2 size={14} />
-                                </Link>
-                                <button
-                                    onClick={() => handleDelete(req.id || req._id || '')}
-                                    className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                    title="Delete Submission"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
+                                {isAdminOrManager && (
+                                    <>
+                                        <Link
+                                            href={`/dashboard/overtime/${req.id || req._id}/edit`}
+                                            className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
+                                            title="Edit Overtime"
+                                        >
+                                            <Edit2 size={14} />
+                                        </Link>
+                                        <button
+                                            onClick={() => handleDelete(req.id || req._id || '')}
+                                            className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                            title="Delete Submission"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     ))
@@ -310,7 +319,7 @@ export default function OvertimePage() {
                                         </td>
                                         <td className="py-3.5 px-5 text-right">
                                             <div className="flex items-center justify-end gap-1.5">
-                                                {req.status === 'pending' && (
+                                                {isAdminOrManager && req.status === 'pending' && (
                                                     <>
                                                         <button
                                                             onClick={() => handleApprove(req.id || req._id || '')}
@@ -332,20 +341,24 @@ export default function OvertimePage() {
                                                 >
                                                     View
                                                 </Link>
-                                                <Link
-                                                    href={`/dashboard/overtime/${req.id || req._id}/edit`}
-                                                    className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
-                                                    title="Edit Overtime"
-                                                >
-                                                    <Edit2 size={14} />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDelete(req.id || req._id || '')}
-                                                    className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                                    title="Delete Submission"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                                {isAdminOrManager && (
+                                                    <>
+                                                        <Link
+                                                            href={`/dashboard/overtime/${req.id || req._id}/edit`}
+                                                            className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
+                                                            title="Edit Overtime"
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => handleDelete(req.id || req._id || '')}
+                                                            className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                            title="Delete Submission"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

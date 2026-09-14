@@ -19,8 +19,11 @@ import { LeaveRequestItem } from '@/types/leave.types';
 import { LeaveService } from '@/services/leave.service';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LeavePage() {
+    const { user } = useAuth();
+    const isAdminOrManager = user && ['admin', 'manager', 'superadmin'].includes(user.role || '');
     const [leaves, setLeaves] = useState<LeaveRequestItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -43,6 +46,7 @@ export default function LeavePage() {
     }, []);
 
     const handleDelete = async (id: string) => {
+        if (!isAdminOrManager) return;
         if (!confirm('Are you sure you want to cancel / delete this leave request?')) return;
         try {
             await LeaveService.delete(id);
@@ -54,6 +58,7 @@ export default function LeavePage() {
     };
 
     const handleApprove = async (id: string) => {
+        if (!isAdminOrManager) return;
         try {
             await LeaveService.updateStatus(id, 'approved');
             setLeaves(prev => prev.map(l => (l.id === id || l._id === id) ? { ...l, status: 'approved' } : l));
@@ -64,10 +69,13 @@ export default function LeavePage() {
     };
 
     const handleReject = async (id: string) => {
+        if (!isAdminOrManager) return;
+        const reason = prompt('Please specify rejection reason:');
+        if (reason === null) return;
         try {
-            await LeaveService.updateStatus(id, 'rejected');
+            await LeaveService.updateStatus(id, 'rejected', reason || 'Request declined by management');
             setLeaves(prev => prev.map(l => (l.id === id || l._id === id) ? { ...l, status: 'rejected' } : l));
-            toast.error('Leave request marked as rejected');
+            toast.success('Leave request rejected');
         } catch {
             toast.error('Failed to reject request');
         }
@@ -278,7 +286,7 @@ export default function LeavePage() {
                                         </td>
                                         <td className="py-3.5 px-5 text-right">
                                             <div className="flex items-center justify-end gap-1.5">
-                                                {req.status === 'pending' && (
+                                                {isAdminOrManager && req.status === 'pending' && (
                                                     <>
                                                         <button
                                                             onClick={() => handleApprove(req.id || req._id || '')}
@@ -300,20 +308,24 @@ export default function LeavePage() {
                                                 >
                                                     View
                                                 </Link>
-                                                <Link
-                                                    href={`/dashboard/leave/${req.id || req._id}/edit`}
-                                                    className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
-                                                    title="Edit Request"
-                                                >
-                                                    <Edit2 size={14} />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDelete(req.id || req._id || '')}
-                                                    className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                                    title="Delete Request"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                                {isAdminOrManager && (
+                                                    <>
+                                                        <Link
+                                                            href={`/dashboard/leave/${req.id || req._id}/edit`}
+                                                            className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
+                                                            title="Edit Request"
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => handleDelete(req.id || req._id || '')}
+                                                            className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                            title="Delete Request"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

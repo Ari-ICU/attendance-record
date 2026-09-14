@@ -75,15 +75,20 @@ class EmployeeService {
         const { error, value } = employeeQuerySchema.validate(query);
         if (error) throw new Error(`Validation failed: ${error.details[0].message}`);
 
-        const { page, limit, sortBy, sortOrder, ...filters } = value;
+        const { page, limit, sortBy, sortOrder, search, ...filters } = value;
         const skip = (page - 1) * limit;
 
+        const mongoQuery = { ...filters };
+        if (mongoQuery.email) {
+            mongoQuery.email = { $regex: new RegExp(`^${mongoQuery.email}$`, 'i') };
+        }
+
         const [employees, total] = await Promise.all([
-            Employee.find(filters)
+            Employee.find(mongoQuery)
                 .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
                 .skip(skip)
                 .limit(limit),
-            Employee.countDocuments(filters)
+            Employee.countDocuments(mongoQuery)
         ]);
 
         return {

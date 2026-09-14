@@ -17,10 +17,13 @@ import {
 import { LeaveRequestItem } from '@/types/leave.types';
 import { LeaveService } from '@/services/leave.service';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LeaveDetailPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuth();
+    const isAdminOrManager = user && ['admin', 'manager', 'superadmin'].includes(user.role || '');
     const id = params.id as string;
 
     const [req, setReq] = useState<LeaveRequestItem | null>(null);
@@ -43,7 +46,7 @@ export default function LeaveDetailPage() {
     }, [id]);
 
     const handleApprove = async () => {
-        if (!req) return;
+        if (!isAdminOrManager) return;
         try {
             await LeaveService.updateStatus(id, 'approved');
             setReq(prev => prev ? { ...prev, status: 'approved' } : null);
@@ -54,17 +57,20 @@ export default function LeaveDetailPage() {
     };
 
     const handleReject = async () => {
-        if (!req) return;
+        if (!isAdminOrManager) return;
+        const reason = prompt('Specify rejection reason:');
+        if (reason === null) return;
         try {
-            await LeaveService.updateStatus(id, 'rejected');
+            await LeaveService.updateStatus(id, 'rejected', reason || 'Rejected by management');
             setReq(prev => prev ? { ...prev, status: 'rejected' } : null);
-            toast.error('Leave rejected');
+            toast.success('Leave rejected');
         } catch {
             toast.error('Failed to reject request');
         }
     };
 
     const handleDelete = async () => {
+        if (!isAdminOrManager) return;
         if (!confirm('Are you sure you want to delete this request?')) return;
         try {
             await LeaveService.delete(id);
@@ -115,38 +121,40 @@ export default function LeaveDetailPage() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
-                    {req.status === 'pending' && (
-                        <>
-                            <button
-                                onClick={handleApprove}
-                                className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
-                            >
-                                Approve Request
-                            </button>
-                            <button
-                                onClick={handleReject}
-                                className="px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
-                            >
-                                Reject
-                            </button>
-                        </>
-                    )}
-                    <Link
-                        href={`/dashboard/leave/${id}/edit`}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold cursor-pointer"
-                    >
-                        <Edit2 size={15} />
-                        <span>Edit</span>
-                    </Link>
-                    <button
-                        onClick={handleDelete}
-                        className="p-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-colors shadow-2xs cursor-pointer"
-                        title="Delete Request"
-                    >
-                        <Trash2 size={15} />
-                    </button>
-                </div>
+                {isAdminOrManager && (
+                    <div className="flex items-center gap-2.5">
+                        {req.status === 'pending' && (
+                            <>
+                                <button
+                                    onClick={handleApprove}
+                                    className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
+                                >
+                                    Approve Request
+                                </button>
+                                <button
+                                    onClick={handleReject}
+                                    className="px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
+                                >
+                                    Reject
+                                </button>
+                            </>
+                        )}
+                        <Link
+                            href={`/dashboard/leave/${id}/edit`}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold cursor-pointer"
+                        >
+                            <Edit2 size={15} />
+                            <span>Edit</span>
+                        </Link>
+                        <button
+                            onClick={handleDelete}
+                            className="p-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-colors shadow-2xs cursor-pointer"
+                            title="Delete Request"
+                        >
+                            <Trash2 size={15} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Leave Details Card */}

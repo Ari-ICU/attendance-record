@@ -26,10 +26,13 @@ import { AttendanceRecord } from '@/types/attendance.types';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 import { formatDateToCustom } from '@/utils/date.utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 function AttendanceRecordsContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { user } = useAuth();
+    const isAdminOrManager = user && ['admin', 'manager', 'superadmin'].includes(user.role || '');
 
     const initialStatus = searchParams.get('status') || 'all';
     const viewParam = searchParams.get('view') || '';
@@ -173,15 +176,17 @@ function AttendanceRecordsContent() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                    <Link
-                        href="/dashboard/attendance/records/create"
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
-                    >
-                        <Plus size={16} />
-                        <span>Log Attendance Entry</span>
-                    </Link>
-                </div>
+                {isAdminOrManager && (
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                        <Link
+                            href="/dashboard/attendance/records/create"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
+                        >
+                            <Plus size={16} />
+                            <span>Log Attendance Entry</span>
+                        </Link>
+                    </div>
+                )}
             </div>
 
             {/* Filter Toolbar */}
@@ -273,20 +278,24 @@ function AttendanceRecordsContent() {
                                     >
                                         View Details
                                     </Link>
-                                    <Link
-                                        href={`/dashboard/attendance/records/${record._id}/edit`}
-                                        className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
-                                        title="Edit Record"
-                                    >
-                                        <Edit2 size={14} />
-                                    </Link>
-                                    <button
-                                        onClick={() => handleDelete(record._id)}
-                                        className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                                        title="Delete Record"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
+                                    {isAdminOrManager && (
+                                        <>
+                                            <Link
+                                                href={`/dashboard/attendance/records/${record._id}/edit`}
+                                                className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
+                                                title="Edit Record"
+                                            >
+                                                <Edit2 size={14} />
+                                            </Link>
+                                            <button
+                                                onClick={() => handleDelete(record._id)}
+                                                className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                                title="Delete Record"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -367,20 +376,24 @@ function AttendanceRecordsContent() {
                                                     >
                                                         View
                                                     </Link>
-                                                    <Link
-                                                        href={`/dashboard/attendance/records/${record._id}/edit`}
-                                                        className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
-                                                        title="Edit Record"
-                                                    >
-                                                        <Edit2 size={14} />
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => handleDelete(record._id)}
-                                                        className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                                                        title="Delete Record"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
+                                                    {isAdminOrManager && (
+                                                        <>
+                                                            <Link
+                                                                href={`/dashboard/attendance/records/${record._id}/edit`}
+                                                                className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
+                                                                title="Edit Record"
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </Link>
+                                                            <button
+                                                                onClick={() => handleDelete(record._id)}
+                                                                className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                                                title="Delete Record"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

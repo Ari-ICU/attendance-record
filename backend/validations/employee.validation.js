@@ -53,13 +53,15 @@ const employeeUpdateSchema = Joi.object({
 const employeeQuerySchema = Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(1000).default(10),
-    department: Joi.string().optional(),
-    position: Joi.string().optional(),
+    department: Joi.string().optional().allow('', null),
+    position: Joi.string().optional().allow('', null),
+    email: Joi.string().optional().allow('', null),
+    search: Joi.string().optional().allow('', null),
     isActive: Joi.boolean().optional(),
     type: Joi.string().valid('employee', 'student').optional(),
     sortBy: Joi.string().valid('firstName', 'lastName', 'email', 'createdAt').default('createdAt'),
     sortOrder: Joi.string().valid('asc', 'desc').default('desc')
-});
+}).unknown(true);
 
 module.exports = {
     employeeCreateSchema,
