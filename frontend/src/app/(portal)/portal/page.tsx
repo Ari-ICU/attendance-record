@@ -15,10 +15,7 @@ import {
     Camera,
     Sparkles,
     TrendingUp,
-    ShieldCheck,
-    Receipt,
-    DollarSign,
-    ArrowUpRight
+    ShieldCheck
 } from 'lucide-react';
 import { format } from 'date-fns';
 

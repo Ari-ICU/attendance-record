@@ -244,7 +244,7 @@ export default function EmployeeForm({
                             </span>
                         </div>
                         <p className="text-xs sm:text-sm font-semibold text-slate-800">
-                            Configure employee identity, departmental role, payroll compensation, and biometric attendance credentials.
+                            Configure employee identity, departmental role, compensation, and biometric attendance credentials.
                         </p>
                     </div>
                 </div>
@@ -262,7 +262,7 @@ export default function EmployeeForm({
                 {[
                     { id: 'profile', label: '1. Personal Profile', icon: <User size={15} /> },
                     { id: 'organization', label: '2. Department & Role', icon: <Building2 size={15} /> },
-                    { id: 'payroll', label: '3. Payroll & Compensation', icon: <DollarSign size={15} /> },
+                    { id: 'payroll', label: '3. Salary & Banking', icon: <DollarSign size={15} /> },
                     { id: 'biometrics', label: '4. Face Biometrics', icon: <ShieldCheck size={15} /> },
                 ].map((tab) => (
                     <button
@@ -407,16 +407,16 @@ export default function EmployeeForm({
                 </div>
             )}
 
-            {/* Tab 3: Payroll & Compensation */}
+            {/* Tab 3: Salary & Banking */}
             {activeTab === 'payroll' && (
                 <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
                     <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
                         <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2">
                             <DollarSign size={15} className="text-emerald-600" />
-                            Salary Structure & Disbursement Banking
+                            Salary Structure & Bank Account
                         </h3>
                         <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                            Automated Payroll Ready
+                            Active Compensation
                         </span>
                     </div>
 

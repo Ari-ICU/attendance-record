@@ -279,7 +279,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                 <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
                     {[
                         { id: 'overview', label: 'Identity & Details', icon: <User size={15} /> },
-                        { id: 'payroll', label: 'Payroll & Bank', icon: <DollarSign size={15} /> },
+                        { id: 'payroll', label: 'Salary & Banking', icon: <DollarSign size={15} /> },
                         { id: 'attendance', label: 'Attendance History', icon: <Clock size={15} /> },
                         { id: 'biometrics', label: 'Biometric Access', icon: <Fingerprint size={15} /> },
                     ].map((tab) => (
@@ -394,13 +394,13 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                     </div>
                 )}
 
-                {/* Tab 2: Payroll & Compensation */}
+                {/* Tab 2: Salary & Compensation */}
                 {activeTab === 'payroll' && (
                     <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-6">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2">
                                 <DollarSign size={15} className="text-emerald-600" />
-                                Payroll & Compensation Package
+                                Salary & Compensation Package
                             </h3>
                             <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                                 Active Compensation
