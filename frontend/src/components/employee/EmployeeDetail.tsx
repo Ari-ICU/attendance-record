@@ -337,25 +337,31 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                         return eDept && targetDept && eDept.toLowerCase() === targetDept.toLowerCase() && /lead|manager|head|director|supervisor|admin/i.test(e.position || '');
                     }) || allEmployees.find(e => /admin|superadmin/i.test((e as any).role || '') || /admin/i.test(e.position || '')) || null;
 
-                    const isLeaderHimself = deptLeader && deptLeader._id === employee._id;
+                    const isLeaderHimself = Boolean(
+                        (deptLeader && (deptLeader._id === employee._id || deptLeader.email?.toLowerCase() === employee.email?.toLowerCase())) ||
+                        (isTeamLead && (employee.email?.toLowerCase() === user?.email?.toLowerCase() || employee._id === (deptLeader?._id || (user as any)?._id))) ||
+                        /lead|manager|head|director|supervisor/i.test(employee.position || '')
+                    );
+
+                    const showLeaderCard = deptLeader && !isLeaderHimself && !isTeamLead;
 
                     return (
                         <div className="space-y-6">
-                            {/* Department Team Leader / Manager Card */}
-                            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <div className="flex items-center gap-2">
-                                        <Crown size={16} className="text-amber-600" />
-                                        <h3 className="text-xs font-black uppercase tracking-wider text-black">
-                                            Department Team Leader / Manager
-                                        </h3>
+                            {/* Department Team Leader / Manager Card (Shown only for staff members, hidden for team leads/managers) */}
+                            {showLeaderCard && (
+                                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Crown size={16} className="text-amber-600" />
+                                            <h3 className="text-xs font-black uppercase tracking-wider text-black">
+                                                Department Team Leader / Manager
+                                            </h3>
+                                        </div>
+                                        <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 font-bold text-[10px]">
+                                            {deptName}
+                                        </span>
                                     </div>
-                                    <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 font-bold text-[10px]">
-                                        {deptName}
-                                    </span>
-                                </div>
 
-                                {deptLeader ? (
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                         <div className="flex items-center gap-3.5">
                                             <div className="w-13 h-13 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 border border-slate-200 shadow-2xs">
@@ -375,7 +381,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                                                         {deptLeader.firstName} {deptLeader.lastName}
                                                     </span>
                                                     <span className="px-2 py-0.5 rounded-md bg-slate-100 text-black text-[10px] font-bold border border-slate-200 uppercase">
-                                                        {isLeaderHimself ? 'You (Team Lead)' : 'Team Lead'}
+                                                        Team Lead
                                                     </span>
                                                 </div>
                                                 <p className="text-xs font-medium text-slate-700">
@@ -398,12 +404,8 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                                             </div>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
-                                        <p className="text-xs font-bold text-slate-600">No Team Leader Assigned</p>
-                                    </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
 
                             {/* Details Grid: Contact & Role */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
