@@ -37,6 +37,7 @@ import {
     Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { EmployeeService } from '@/services/employee.service';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -47,6 +48,28 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const { user, loading, initializing } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const [myEmployeeId, setMyEmployeeId] = useState<string>('');
+
+    useEffect(() => {
+        if (user) {
+            EmployeeService.getAllEmployees({ limit: 100 })
+                .then(res => {
+                    const employees = res?.employees || [];
+                    const matched = employees.find(
+                        (e: any) =>
+                            e.email?.toLowerCase() === user.email?.toLowerCase() ||
+                            (e.user && (typeof e.user === 'object' ? e.user._id === user._id : e.user === user._id)) ||
+                            (e.userId && e.userId === user._id)
+                    ) || employees[0];
+                    if (matched?._id) {
+                        setMyEmployeeId(matched._id);
+                    }
+                })
+                .catch(() => {});
+        }
+    }, [user]);
+
+    const profileHref = myEmployeeId ? `/dashboard/management/employee/${myEmployeeId}` : '/dashboard/profile';
 
     const isTeamLeadOrManager = user && (
         ['admin', 'manager', 'superadmin'].includes(user.role || '') ||
@@ -66,7 +89,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {
             section: 'MY WORKSPACE',
             name: 'My Profile & Team',
-            href: '/dashboard/profile',
+            href: profileHref,
             icon: <User size={17} />,
         },
 
@@ -158,7 +181,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {
             section: 'MY WORKSPACE',
             name: 'My Profile & Team Lead',
-            href: '/dashboard/profile',
+            href: profileHref,
             icon: <User size={17} />,
         },
         {

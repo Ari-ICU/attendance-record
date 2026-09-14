@@ -1,14 +1,15 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Bell, Menu, User, Settings, LogOut, Trash2, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/contexts/SocketContext';
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFullImageUrl } from '@/utils/url.utils';
 import { formatDistanceToNow } from 'date-fns';
+import { EmployeeService } from '@/services/employee.service';
 
 interface AHeaderProps {
     sidebarCollapsed: boolean;
@@ -21,6 +22,28 @@ export default function AHeader({ sidebarCollapsed, setSidebarCollapsed }: AHead
     const router = useRouter();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [myEmployeeId, setMyEmployeeId] = useState<string>('');
+
+    useEffect(() => {
+        if (user) {
+            EmployeeService.getAllEmployees({ limit: 100 })
+                .then(res => {
+                    const employees = res?.employees || [];
+                    const matched = employees.find(
+                        (e: any) =>
+                            e.email?.toLowerCase() === user.email?.toLowerCase() ||
+                            (e.user && (typeof e.user === 'object' ? e.user._id === user._id : e.user === user._id)) ||
+                            (e.userId && e.userId === user._id)
+                    ) || employees[0];
+                    if (matched?._id) {
+                        setMyEmployeeId(matched._id);
+                    }
+                })
+                .catch(() => {});
+        }
+    }, [user]);
+
+    const profileHref = myEmployeeId ? `/dashboard/management/employee/${myEmployeeId}` : '/dashboard/profile';
 
     const userName = user?.firstName
         ? `${user.firstName} ${user.lastName || ''}`.trim()
@@ -177,7 +200,7 @@ export default function AHeader({ sidebarCollapsed, setSidebarCollapsed }: AHead
 
                                     <div className="py-1">
                                         <Link
-                                            href="/dashboard/profile"
+                                            href={profileHref}
                                             onClick={() => setIsProfileOpen(false)}
                                             className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 hover:text-black transition-colors"
                                         >

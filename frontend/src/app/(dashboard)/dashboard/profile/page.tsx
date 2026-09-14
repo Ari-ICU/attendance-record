@@ -13,22 +13,34 @@ export default function ProfileRedirectPage() {
     const [failed, setFailed] = useState(false);
 
     useEffect(() => {
-        if (initializing) return;
-        if (!user) {
-            router.replace('/login');
-            return;
-        }
+        let isMounted = true;
 
         const resolveEmployee = async () => {
             try {
                 const res = await EmployeeService.getAllEmployees({ limit: 100 });
+                if (!isMounted) return;
+
                 const employees = res.employees || [];
-                const matched = employees.find(
-                    (e: any) =>
-                        e.email?.toLowerCase() === user.email?.toLowerCase() ||
-                        (e.user && (typeof e.user === 'object' ? e.user._id === user._id : e.user === user._id)) ||
-                        (e.userId && e.userId === user._id)
-                ) || employees[0];
+                if (employees.length === 0) {
+                    setFailed(true);
+                    return;
+                }
+
+                // Match user if available
+                let matched = null;
+                if (user) {
+                    matched = employees.find(
+                        (e: any) =>
+                            (user.email && e.email?.toLowerCase() === user.email?.toLowerCase()) ||
+                            (e.user && (typeof e.user === 'object' ? e.user._id === user._id : e.user === user._id)) ||
+                            (e.userId && (e.userId === user._id || e.userId === (user as any).id))
+                    );
+                }
+
+                // Fallback to first employee if not matched
+                if (!matched && employees.length > 0) {
+                    matched = employees[0];
+                }
 
                 if (matched?._id) {
                     router.replace(`/dashboard/management/employee/${matched._id}`);
@@ -36,11 +48,15 @@ export default function ProfileRedirectPage() {
                     setFailed(true);
                 }
             } catch {
-                setFailed(true);
+                if (isMounted) setFailed(true);
             }
         };
 
         resolveEmployee();
+
+        return () => {
+            isMounted = false;
+        };
     }, [user, initializing, router]);
 
     return (
