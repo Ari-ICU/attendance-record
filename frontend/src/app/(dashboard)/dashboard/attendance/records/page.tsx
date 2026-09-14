@@ -32,7 +32,11 @@ function AttendanceRecordsContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { user } = useAuth();
-    const isAdminOrManager = user && ['admin', 'manager', 'superadmin'].includes(user.role || '');
+    const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
+    const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
+    const isStaff = !isAdmin && !isTeamLead;
+    const userDept = user?.department || '';
+    const userEmail = (user?.email || '').toLowerCase();
 
     const initialStatus = searchParams.get('status') || 'all';
     const viewParam = searchParams.get('view') || '';
@@ -70,6 +74,7 @@ function AttendanceRecordsContent() {
     }, []);
 
     const handleDelete = async (id: string) => {
+        if (!isAdmin) return;
         if (!confirm('Are you sure you want to delete this record?')) return;
         try {
             await AttendanceService.deleteRecord(id);
@@ -93,7 +98,21 @@ function AttendanceRecordsContent() {
         }
     };
 
-    const filtered = records.filter(r => {
+    // Scoped attendance records:
+    // - Admin: sees all company records
+    // - Team Lead: sees records belonging to their department
+    // - Staff: sees ONLY their own attendance records
+    const scopedRecords = records.filter(r => {
+        const emp = typeof r.employeeId === 'object' && r.employeeId ? (r.employeeId as any) : null;
+        const empEmail = (emp?.email || '').toLowerCase();
+        const empDept = (typeof emp?.department === 'object' ? emp.department?.name : emp?.department || '').toLowerCase();
+
+        if (isAdmin) return true;
+        if (isTeamLead) return empDept === userDept.toLowerCase();
+        return empEmail === userEmail;
+    });
+
+    const filtered = scopedRecords.filter(r => {
         const empName = typeof r.employeeId === 'object' && r.employeeId
             ? `${(r.employeeId as any).firstName || ''} ${(r.employeeId as any).lastName || ''}`.trim()
             : '';
@@ -143,18 +162,22 @@ function AttendanceRecordsContent() {
     const isLateView = searchParams.get('status') === 'late';
     const isHistoryView = viewParam === 'history';
 
-    // Page title and subtitle based on active route
-    const pageTitle = isLateView
-        ? 'Late & Early Leave Logs'
-        : isHistoryView
-            ? 'Attendance History & Archives'
-            : 'Attendance Logs & Records';
+    // Page title and subtitle based on active route and role
+    const pageTitle = isStaff
+        ? (isLateView ? 'My Late & Early Leave Logs' : isHistoryView ? 'My Attendance History' : 'My Attendance Logs')
+        : isTeamLead
+            ? (isLateView ? `${userDept} Late Arrivals` : isHistoryView ? `${userDept} Attendance Archives` : `${userDept} Team Attendance Logs`)
+            : (isLateView ? 'Late & Early Leave Logs' : isHistoryView ? 'Attendance History & Archives' : 'Attendance Logs & Records');
 
-    const pageSubtitle = isLateView
-        ? 'Review staff arrivals exceeding grace period, late check-ins, and early departures'
-        : isHistoryView
-            ? 'Historical attendance records, biometric audit trails, and archived timesheets'
-            : 'Review biometric scans, check-in timestamps, and manual attendance entries';
+    const pageSubtitle = isStaff
+        ? 'Review your personal biometric check-in timestamps, working hours, and attendance history.'
+        : isTeamLead
+            ? `Review daily check-ins, punctuality, and timesheets for your ${userDept} team members.`
+            : (isLateView
+                ? 'Review staff arrivals exceeding grace period, late check-ins, and early departures'
+                : isHistoryView
+                    ? 'Historical attendance records, biometric audit trails, and archived timesheets'
+                    : 'Review biometric scans, check-in timestamps, and manual attendance entries');
 
     return (
         <div className="w-full space-y-5 sm:space-y-6 pb-12 font-sans max-w-full overflow-x-hidden">
@@ -176,7 +199,7 @@ function AttendanceRecordsContent() {
                     </p>
                 </div>
 
-                {isAdminOrManager && (
+                {(isAdmin || isTeamLead) && (
                     <div className="flex items-center gap-2.5 w-full sm:w-auto">
                         <Link
                             href="/dashboard/attendance/records/create"
@@ -278,7 +301,7 @@ function AttendanceRecordsContent() {
                                     >
                                         View Details
                                     </Link>
-                                    {isAdminOrManager && (
+                                    {isAdmin && (
                                         <>
                                             <Link
                                                 href={`/dashboard/attendance/records/${record._id}/edit`}
@@ -376,7 +399,7 @@ function AttendanceRecordsContent() {
                                                     >
                                                         View
                                                     </Link>
-                                                    {isAdminOrManager && (
+                                                    {isAdmin && (
                                                         <>
                                                             <Link
                                                                 href={`/dashboard/attendance/records/${record._id}/edit`}

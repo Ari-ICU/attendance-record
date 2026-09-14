@@ -19,10 +19,17 @@ import { AttendanceService } from '@/services/attendance.service';
 import { AttendanceRecord } from '@/types/attendance.types';
 import toast from 'react-hot-toast';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 export default function AttendanceRecordDetailPage() {
     const params = useParams();
     const router = useRouter();
     const id = params.id as string;
+    const { user } = useAuth();
+    const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
+    const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
+    const userDept = (user?.department || '').toLowerCase();
+    const userEmail = (user?.email || '').toLowerCase();
 
     const [record, setRecord] = useState<AttendanceRecord | null>(null);
     const [loading, setLoading] = useState(true);
@@ -62,6 +69,7 @@ export default function AttendanceRecordDetailPage() {
     }, [id]);
 
     const handleDelete = async () => {
+        if (!isAdmin) return;
         if (!confirm('Are you sure you want to delete this record?')) return;
         try {
             await AttendanceService.deleteRecord(id);
@@ -92,6 +100,20 @@ export default function AttendanceRecordDetailPage() {
     }
 
     const emp = typeof record.employeeId === 'object' ? record.employeeId : null;
+    const empDept = (typeof emp?.department === 'object' ? (emp.department as any)?.name : emp?.department || '').toLowerCase();
+    const empEmail = (emp?.email || '').toLowerCase();
+
+    const canView = isAdmin || (isTeamLead && empDept === userDept) || empEmail === userEmail;
+    if (!canView) {
+        return (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl shadow-xs">
+                <p className="text-sm font-bold text-rose-600">Access Restricted: You can only view your own attendance records.</p>
+                <Link href="/dashboard/attendance/records" className="mt-4 inline-block px-4 py-2 bg-black text-white rounded-xl text-xs font-bold">
+                    Back to My Attendance Logs
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full space-y-5 sm:space-y-6 pb-12 font-sans max-w-full overflow-x-hidden">

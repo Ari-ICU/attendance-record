@@ -8,11 +8,14 @@ import { AttendanceService } from '@/services/attendance.service';
 import { AttendanceRecord } from '@/types/attendance.types';
 import toast from 'react-hot-toast';
 import CustomDropdown from '@/components/ui/CustomDropdown';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function EditAttendanceRecordPage() {
     const params = useParams();
     const router = useRouter();
     const id = params.id as string;
+    const { user } = useAuth();
+    const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -69,6 +72,17 @@ export default function EditAttendanceRecordPage() {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    if (!isAdmin) {
+        return (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl shadow-xs">
+                <p className="text-sm font-bold text-rose-600">Access Restricted: Only Administrators can adjust attendance records.</p>
+                <Link href="/dashboard/attendance/records" className="mt-4 inline-block px-4 py-2 bg-black text-white rounded-xl text-xs font-bold">
+                    Back to Attendance Records
+                </Link>
             </div>
         );
     }

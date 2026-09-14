@@ -192,14 +192,36 @@ class AttendanceService {
             filter.date = { $gte: start };
         }
 
-        // Employee Filtering
-        if (['admin', 'manager', 'superadmin'].includes(user.role)) {
+        // Employee & Department Role-Based Filtering
+        const EmployeeModel = require('../models/employee.model');
+        const isSuperOrAdmin = user && ['admin', 'superadmin'].includes(user.role);
+        const isManagerOrLead = user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || ''));
+
+        if (isSuperOrAdmin) {
+            // Admins can view all or filter by specific employee
             if (query.employeeId) {
                 filter.employeeId = query.employeeId;
             }
+        } else if (isManagerOrLead) {
+            // Team Lead / Manager: Scoped strictly to employees in their own department
+            const userDept = user.department || '';
+            const deptEmployees = await EmployeeModel.find({
+                department: { $regex: new RegExp(`^${userDept}$`, 'i') }
+            }).select('_id');
+            const deptEmpIds = deptEmployees.map(e => e._id);
+
+            if (query.employeeId) {
+                // If filtering by specific employeeId, ensure they belong to this department
+                if (deptEmpIds.some(id => id.toString() === query.employeeId.toString())) {
+                    filter.employeeId = query.employeeId;
+                } else {
+                    return [];
+                }
+            } else {
+                filter.employeeId = { $in: deptEmpIds };
+            }
         } else {
-            // Find corresponding employee document for logged-in user
-            const EmployeeModel = require('../models/employee.model');
+            // Regular Staff: Show strictly their own attendance records only
             const emp = await EmployeeModel.findOne({
                 email: { $regex: new RegExp(`^${user.email}$`, 'i') }
             });
