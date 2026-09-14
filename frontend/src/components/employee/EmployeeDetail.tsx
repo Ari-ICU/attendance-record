@@ -26,12 +26,18 @@ import {
     Users,
     CreditCard,
     DollarSign,
-    Radio
+    Radio,
+    Crown,
+    UserCheck,
+    ArrowUpRight
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { DepartmentService } from '@/services/department.service';
+import { EmployeeService } from '@/services/employee.service';
+import { Department } from '@/types/department.types';
 
 interface EmployeeDetailProps {
     employee: Employee;
@@ -47,6 +53,18 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
     const { socket, isConnected } = useSocket();
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'payroll' | 'biometrics'>('overview');
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
+
+    useEffect(() => {
+        Promise.all([
+            DepartmentService.getAll().catch(() => ({ data: [] })),
+            EmployeeService.getAllEmployees({ limit: 100 }).catch(() => ({ employees: [] }))
+        ]).then(([deptRes, empRes]) => {
+            setDepartments(deptRes?.data || []);
+            setAllEmployees(empRes?.employees || []);
+        });
+    }, []);
 
     const fullName = employee.fullName || `${employee.firstName || ''} ${employee.lastName || ''}`.trim() || 'Unnamed Staff';
     const deptName = typeof employee.department === 'object' ? (employee.department as any)?.name : (employee.department || 'General');
@@ -141,11 +159,11 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs">
                     <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-bold text-slate-800">
                         <Link
-                            href={isAdmin ? "/dashboard/management/employee" : (isTeamLead ? "/dashboard/management/employee" : "/dashboard/profile")}
+                            href={isAdmin ? "/dashboard/management/employee" : (isTeamLead ? "/dashboard/management/employee" : "/dashboard/management/departments")}
                             className="flex items-center gap-1.5 text-slate-800 hover:text-black transition-colors"
                         >
                             <Users size={15} />
-                            <span>{isAdmin ? 'Employee Directory' : (isTeamLead ? 'My Department Team' : 'My Profile')}</span>
+                            <span>{isAdmin ? 'Employee Directory' : (isTeamLead ? 'My Department Team' : 'My Department')}</span>
                         </Link>
                         <ChevronRight size={14} className="text-slate-400" />
                         <span className="text-black font-black">{fullName}</span>
@@ -160,7 +178,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                             <span>Print Record (A4)</span>
                         </button>
 
-                        {isAdmin ? (
+                        {isAdmin && (
                             <button
                                 onClick={() => router.push(`/dashboard/management/employee/${employee._id}/edit`)}
                                 className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-100 text-black border border-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
@@ -168,15 +186,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                                 <Edit3 size={14} />
                                 <span>Edit Profile</span>
                             </button>
-                        ) : isSelf ? (
-                            <button
-                                onClick={() => router.push('/dashboard/profile')}
-                                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-100 text-black border border-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                            >
-                                <Edit3 size={14} />
-                                <span>Edit My Profile</span>
-                            </button>
-                        ) : null}
+                        )}
                     </div>
                 </div>
 
@@ -316,99 +326,339 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                 </div>
 
                 {/* Tab 1: Overview & Contact Details */}
-                {activeTab === 'overview' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Contact & Personal Card */}
-                        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-                            <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2 border-b border-slate-100 pb-3">
-                                <User size={15} className="text-blue-600" />
-                                Personal & Contact Information
-                            </h3>
+                {activeTab === 'overview' && (() => {
+                    const currentDept = departments.find(d => {
+                        const dName = typeof employee.department === 'object' ? (employee.department as any)?.name : employee.department;
+                        return d.name?.toLowerCase() === dName?.toLowerCase() || d._id === (employee.department as any)?._id || d._id === employee.department;
+                    });
 
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                    <span className="text-xs font-bold text-slate-600">Full Legal Name</span>
-                                    <span className="text-xs sm:text-sm font-bold text-black">{fullName}</span>
-                                </div>
+                    // Find department leader
+                    const deptLeader = currentDept?.head || allEmployees.find(e => {
+                        const eDept = typeof e.department === 'object' ? (e.department as any)?.name : e.department;
+                        const targetDept = typeof employee.department === 'object' ? (employee.department as any)?.name : employee.department;
+                        return eDept && targetDept && eDept.toLowerCase() === targetDept.toLowerCase() && /lead|manager|head|director|supervisor|admin/i.test(e.position || '');
+                    }) || allEmployees.find(e => /admin|superadmin/i.test((e as any).role || '') || /admin/i.test(e.position || '')) || null;
 
-                                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                    <span className="text-xs font-bold text-slate-600">Work Email Address</span>
-                                    <a
-                                        href={`mailto:${employee.email}`}
-                                        className="text-xs sm:text-sm font-bold text-blue-600 hover:underline flex items-center gap-1"
-                                    >
-                                        <Mail size={13} />
-                                        <span>{employee.email}</span>
-                                    </a>
-                                </div>
+                    // Find colleagues in this department
+                    const colleagues = allEmployees.filter(e => {
+                        const eDept = typeof e.department === 'object' ? (e.department as any)?.name : e.department;
+                        const targetDept = typeof employee.department === 'object' ? (employee.department as any)?.name : employee.department;
+                        return eDept && targetDept && eDept.toLowerCase() === targetDept.toLowerCase();
+                    });
 
-                                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                    <span className="text-xs font-bold text-slate-600">Phone Contact</span>
-                                    {employee.phone ? (
-                                        <a
-                                            href={`tel:${employee.phone}`}
-                                            className="text-xs sm:text-sm font-bold text-blue-600 hover:underline flex items-center gap-1"
-                                        >
-                                            <Phone size={13} />
-                                            <span>{employee.phone}</span>
-                                        </a>
+                    return (
+                        <div className="space-y-6">
+                            {/* Leadership & Department Hierarchy Cards */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {/* Department Team Leader / Manager Card */}
+                                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Crown size={16} className="text-amber-600" />
+                                            <h3 className="text-xs font-black uppercase tracking-wider text-black">
+                                                Department Team Leader / Manager
+                                            </h3>
+                                        </div>
+                                        <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 font-bold text-[10px]">
+                                            {deptName}
+                                        </span>
+                                    </div>
+
+                                    {deptLeader ? (
+                                        <div className="flex items-center gap-3.5">
+                                            <div className="w-12 h-12 rounded-xl bg-black text-white flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 border border-slate-200">
+                                                {deptLeader.photoUrl ? (
+                                                    <img
+                                                        src={getFullImageUrl(deptLeader.photoUrl) || ''}
+                                                        alt={`${deptLeader.firstName} ${deptLeader.lastName}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <span>{deptLeader.firstName?.[0] || 'L'}{deptLeader.lastName?.[0] || 'D'}</span>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <Link
+                                                        href={deptLeader._id ? `/dashboard/management/employee/${deptLeader._id}` : '#'}
+                                                        className="text-sm font-black text-black hover:underline truncate"
+                                                    >
+                                                        {deptLeader.firstName} {deptLeader.lastName}
+                                                    </Link>
+                                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-black text-[9px] font-bold border border-slate-200 uppercase shrink-0">
+                                                        Lead
+                                                    </span>
+                                                </div>
+                                                <p className="text-[11px] font-medium text-slate-700 truncate">
+                                                    {deptLeader.position || 'Department Team Leader'}
+                                                </p>
+                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-semibold text-slate-700 mt-1">
+                                                    {deptLeader.email && (
+                                                        <span className="flex items-center gap-1">
+                                                            <Mail size={11} className="text-blue-600" />
+                                                            <span className="truncate">{deptLeader.email}</span>
+                                                        </span>
+                                                    )}
+                                                    {deptLeader.phone && (
+                                                        <span className="flex items-center gap-1">
+                                                            <Phone size={11} className="text-emerald-600" />
+                                                            <span>{deptLeader.phone}</span>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                     ) : (
-                                        <span className="text-xs font-semibold text-slate-500">Not Provided</span>
+                                        <div className="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
+                                            <p className="text-xs font-bold text-slate-600">No Team Leader Assigned</p>
+                                        </div>
                                     )}
                                 </div>
 
-                                <div className="flex justify-between items-center py-2">
-                                    <span className="text-xs font-bold text-slate-600">
-                                        Date of Joining
+                                {/* Department & Child Team Structure Card */}
+                                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Users size={16} className="text-blue-600" />
+                                            <h3 className="text-xs font-black uppercase tracking-wider text-black">
+                                                Department & Child Team Structure
+                                            </h3>
+                                        </div>
+                                        <span className="px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-900 border border-blue-200 font-bold text-[10px]">
+                                            {colleagues.length} Team Members
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <span className="text-[11px] font-bold text-slate-600 block">Department Unit:</span>
+                                            <h4 className="text-base font-black text-black">{deptName}</h4>
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5">
+                                                My Role: <span className="font-bold text-black">{employee.position || 'Staff Member'}</span>
+                                            </p>
+                                        </div>
+                                        {currentDept?._id && (
+                                            <Link
+                                                href={`/dashboard/management/departments/${currentDept._id}`}
+                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-black hover:text-white text-black font-bold text-xs transition-colors shrink-0"
+                                            >
+                                                <span>View Department</span>
+                                                <ArrowUpRight size={13} />
+                                            </Link>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Assigned Colleagues Roster */}
+                            <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
+                                <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-sm font-black text-black flex items-center gap-2">
+                                            <Users size={16} className="text-blue-600" />
+                                            <span>{deptName} Team Members & Colleagues</span>
+                                        </h3>
+                                        <p className="text-xs font-semibold text-slate-700 mt-0.5">
+                                            Assigned colleagues, team leads, and peers within your department.
+                                        </p>
+                                    </div>
+                                    <span className="px-2.5 py-1 bg-slate-100 text-black border border-slate-200 rounded-lg text-xs font-bold">
+                                        {colleagues.length} Total Staff in {deptName}
                                     </span>
-                                    <span className="text-xs sm:text-sm font-bold text-black">
-                                        {employee.dateOfJoining ? formatDateToCustom(employee.dateOfJoining) : 'N/A'}
-                                    </span>
+                                </div>
+
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-black text-black uppercase tracking-wider">
+                                                <th className="py-3 px-5">Member Name</th>
+                                                <th className="py-3 px-5">Position / Role</th>
+                                                <th className="py-3 px-5">Contact</th>
+                                                <th className="py-3 px-5">Biometrics</th>
+                                                <th className="py-3 px-5 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 text-xs">
+                                            {colleagues.length > 0 ? (
+                                                colleagues.map((col) => {
+                                                    const isCurrent = col._id === employee._id;
+                                                    return (
+                                                        <tr key={col._id} className="hover:bg-slate-50/80 transition-colors">
+                                                            <td className="py-3.5 px-5">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-full bg-black text-white font-bold flex items-center justify-center text-xs overflow-hidden shrink-0">
+                                                                        {col.photoUrl ? (
+                                                                            <img
+                                                                                src={getFullImageUrl(col.photoUrl) || ''}
+                                                                                alt={`${col.firstName} ${col.lastName}`}
+                                                                                className="w-full h-full object-cover"
+                                                                            />
+                                                                        ) : (
+                                                                            <span>{col.firstName?.[0]}{col.lastName?.[0]}</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="font-bold text-black text-sm">
+                                                                                {col.firstName} {col.lastName}
+                                                                            </span>
+                                                                            {isCurrent && (
+                                                                                <span className="px-1.5 py-0.2 rounded-sm bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[9px]">
+                                                                                    You
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <span className="text-[11px] font-medium text-slate-600 block">
+                                                                            {col.type || 'employee'}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-3.5 px-5">
+                                                                <span className="font-bold text-black bg-slate-100 px-2.5 py-1 rounded-md text-[11px] border border-slate-200">
+                                                                    {col.position || 'Staff Member'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-3.5 px-5">
+                                                                <div className="space-y-0.5 text-[11px] font-semibold text-slate-800">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <Mail size={11} className="text-slate-500" />
+                                                                        <span>{col.email}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1">
+                                                                        <Phone size={11} className="text-slate-500" />
+                                                                        <span>{col.phone || 'N/A'}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-3.5 px-5">
+                                                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                                                    col.faceVerificationEnabled
+                                                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                                                        : 'bg-slate-100 text-slate-700 border border-slate-200'
+                                                                }`}>
+                                                                    <UserCheck size={11} />
+                                                                    <span>{col.faceVerificationEnabled ? 'Enrolled' : 'Pending'}</span>
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-3.5 px-5 text-right">
+                                                                <Link
+                                                                    href={`/dashboard/management/employee/${col._id}`}
+                                                                    className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-black hover:text-white text-black font-bold text-xs transition-colors inline-block"
+                                                                >
+                                                                    View Details
+                                                                </Link>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={5} className="py-8 text-center text-slate-600 font-bold">
+                                                        No colleagues found in this department.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Details Grid: Contact & Role */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Contact & Personal Card */}
+                                <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                                    <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2 border-b border-slate-100 pb-3">
+                                        <User size={15} className="text-blue-600" />
+                                        Personal & Contact Information
+                                    </h3>
+
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                            <span className="text-xs font-bold text-slate-600">Full Legal Name</span>
+                                            <span className="text-xs sm:text-sm font-bold text-black">{fullName}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                            <span className="text-xs font-bold text-slate-600">Work Email Address</span>
+                                            <a
+                                                href={`mailto:${employee.email}`}
+                                                className="text-xs sm:text-sm font-bold text-blue-600 hover:underline flex items-center gap-1"
+                                            >
+                                                <Mail size={13} />
+                                                <span>{employee.email}</span>
+                                            </a>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                            <span className="text-xs font-bold text-slate-600">Phone Contact</span>
+                                            {employee.phone ? (
+                                                <a
+                                                    href={`tel:${employee.phone}`}
+                                                    className="text-xs sm:text-sm font-bold text-blue-600 hover:underline flex items-center gap-1"
+                                                >
+                                                    <Phone size={13} />
+                                                    <span>{employee.phone}</span>
+                                                </a>
+                                            ) : (
+                                                <span className="text-xs font-semibold text-slate-500">Not Provided</span>
+                                            )}
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2">
+                                            <span className="text-xs font-bold text-slate-600">
+                                                Date of Joining
+                                            </span>
+                                            <span className="text-xs sm:text-sm font-bold text-black">
+                                                {employee.dateOfJoining ? formatDateToCustom(employee.dateOfJoining) : 'N/A'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Department & Role Card */}
+                                <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                                    <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2 border-b border-slate-100 pb-3">
+                                        <Building2 size={15} className="text-blue-600" />
+                                        Departmental & Role Placement
+                                    </h3>
+
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                            <span className="text-xs font-bold text-slate-600">
+                                                Department
+                                            </span>
+                                            <span className="text-xs sm:text-sm font-bold text-black">
+                                                {deptName}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                            <span className="text-xs font-bold text-slate-600">Job Title / Designation</span>
+                                            <span className="text-xs sm:text-sm font-bold text-black">
+                                                {employee.position || 'Staff Member'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                            <span className="text-xs font-bold text-slate-600">Employment Status</span>
+                                            <span className="text-xs font-bold uppercase tracking-wider text-black">
+                                                Full-Time Staff
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2">
+                                            <span className="text-xs font-bold text-slate-600">Standard Work Schedule</span>
+                                            <span className="text-xs sm:text-sm font-bold text-black">
+                                                08:00 AM - 05:00 PM (Mon - Fri)
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Department & Role Card */}
-                        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-                            <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2 border-b border-slate-100 pb-3">
-                                <Building2 size={15} className="text-blue-600" />
-                                Departmental & Role Placement
-                            </h3>
-
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                    <span className="text-xs font-bold text-slate-600">
-                                        Department
-                                    </span>
-                                    <span className="text-xs sm:text-sm font-bold text-black">
-                                        {deptName}
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                    <span className="text-xs font-bold text-slate-600">Job Title / Designation</span>
-                                    <span className="text-xs sm:text-sm font-bold text-black">
-                                        {employee.position || 'Staff Member'}
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                    <span className="text-xs font-bold text-slate-600">Employment Status</span>
-                                    <span className="text-xs font-bold uppercase tracking-wider text-black">
-                                        Full-Time Staff
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between items-center py-2">
-                                    <span className="text-xs font-bold text-slate-600">Standard Work Schedule</span>
-                                    <span className="text-xs sm:text-sm font-bold text-black">
-                                        08:00 AM - 05:00 PM (Mon - Fri)
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                    );
+                })()}
 
                 {/* Tab 2: Salary & Compensation */}
                 {activeTab === 'payroll' && (

@@ -14,13 +14,15 @@ import {
     Clock,
     UserCheck,
     Mail,
-    Phone
+    Phone,
+    Crown
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DepartmentService } from '@/services/department.service';
 import { EmployeeService } from '@/services/employee.service';
 import { Department } from '@/types/department.types';
 import { Employee } from '@/types/employee.types';
+import { getFullImageUrl } from '@/utils/url.utils';
 import toast from 'react-hot-toast';
 
 export default function DepartmentDetailPage() {
@@ -92,6 +94,10 @@ export default function DepartmentDetailPage() {
         );
     }
 
+    const deptLeader = department.head ||
+        members.find(m => /lead|manager|head|director|supervisor|admin/i.test(m.position || '')) ||
+        (members.length > 0 ? members[0] : null);
+
     return (
         <div className="w-full space-y-6 pb-12 font-sans">
             {/* Header */}
@@ -134,6 +140,92 @@ export default function DepartmentDetailPage() {
                         >
                             <Trash2 size={15} />
                         </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Department Team Leader / Manager Card */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                            <Crown size={16} />
+                        </div>
+                        <h2 className="text-xs font-black uppercase tracking-wider text-black">
+                            Department Team Leader / Manager
+                        </h2>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 font-bold text-[11px]">
+                        {department.name}
+                    </span>
+                </div>
+
+                {deptLeader ? (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-lg overflow-hidden shrink-0 border border-slate-200 shadow-2xs">
+                                {deptLeader.photoUrl ? (
+                                    <img
+                                        src={getFullImageUrl(deptLeader.photoUrl) || ''}
+                                        alt={`${deptLeader.firstName} ${deptLeader.lastName}`}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span>{deptLeader.firstName?.[0] || 'T'}{deptLeader.lastName?.[0] || 'R'}</span>
+                                )}
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <Link
+                                        href={deptLeader._id ? `/dashboard/management/employee/${deptLeader._id}` : '#'}
+                                        className="text-base font-black text-black hover:underline"
+                                    >
+                                        {deptLeader.firstName} {deptLeader.lastName}
+                                    </Link>
+                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-black text-[10px] font-bold border border-slate-200 uppercase">
+                                        Team Lead
+                                    </span>
+                                </div>
+                                <p className="text-xs font-medium text-slate-700 mt-0.5">
+                                    {deptLeader.position || 'Department Leader / System Administrator'}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-slate-700 mt-2">
+                                    {deptLeader.email && (
+                                        <a href={`mailto:${deptLeader.email}`} className="flex items-center gap-1.5 hover:text-black">
+                                            <Mail size={13} className="text-blue-600" />
+                                            <span>{deptLeader.email}</span>
+                                        </a>
+                                    )}
+                                    {deptLeader.phone && (
+                                        <a href={`tel:${deptLeader.phone}`} className="flex items-center gap-1.5 hover:text-black">
+                                            <Phone size={13} className="text-emerald-600" />
+                                            <span>{deptLeader.phone}</span>
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {deptLeader._id && (
+                            <Link
+                                href={`/dashboard/management/employee/${deptLeader._id}`}
+                                className="px-4 py-2 bg-slate-100 hover:bg-black hover:text-white text-black text-xs font-bold rounded-xl transition-colors shrink-0"
+                            >
+                                View Lead Profile
+                            </Link>
+                        )}
+                    </div>
+                ) : (
+                    <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
+                        <p className="text-xs font-bold text-slate-600">No Department Head Assigned</p>
+                        {isAdmin && (
+                            <Link
+                                href={`/dashboard/management/departments/${id}/edit`}
+                                className="inline-block mt-2 text-xs font-bold text-blue-600 hover:underline"
+                            >
+                                Assign Department Head
+                            </Link>
+                        )}
                     </div>
                 )}
             </div>
