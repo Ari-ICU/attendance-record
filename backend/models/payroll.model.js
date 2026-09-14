@@ -4,6 +4,10 @@ const earningsSchema = new mongoose.Schema({
     baseSalary: { type: Number, default: 0 },
     hourlyRate: { type: Number, default: 0 },
     regularHours: { type: Number, default: 160 },
+    workedHours: { type: Number, default: 0 },
+    workingDays: { type: Number, default: 0 },
+    targetDays: { type: Number, default: 22 },
+    presentDays: { type: Number, default: 0 },
     regularPay: { type: Number, default: 0 },
     overtimeHours: { type: Number, default: 0 },
     overtimeRate: { type: Number, default: 0 },
@@ -14,12 +18,33 @@ const earningsSchema = new mongoose.Schema({
 }, { _id: false });
 
 const deductionsSchema = new mongoose.Schema({
+    lateCount: { type: Number, default: 0 },
+    lateMinutes: { type: Number, default: 0 },
+    lateDeductions: { type: Number, default: 0 },
+    absentDays: { type: Number, default: 0 },
+    absentDeductions: { type: Number, default: 0 },
+    leaveDays: { type: Number, default: 0 },
+    permissionDays: { type: Number, default: 0 },
     unpaidLeaveDays: { type: Number, default: 0 },
     leaveDeductions: { type: Number, default: 0 },
     taxWithholding: { type: Number, default: 0 },
     socialSecurity: { type: Number, default: 0 },
     otherDeductions: { type: Number, default: 0 },
     totalDeductions: { type: Number, default: 0 }
+}, { _id: false });
+
+const attendanceMetricsSchema = new mongoose.Schema({
+    totalWorkingHours: { type: Number, default: 0 },
+    targetWorkingHours: { type: Number, default: 160 },
+    targetDays: { type: Number, default: 22 },
+    presentDays: { type: Number, default: 0 },
+    lateDays: { type: Number, default: 0 },
+    lateMinutes: { type: Number, default: 0 },
+    absentDays: { type: Number, default: 0 },
+    leaveDays: { type: Number, default: 0 },
+    permissionDays: { type: Number, default: 0 },
+    overtimeHours: { type: Number, default: 0 },
+    attendanceRate: { type: Number, default: 100 }
 }, { _id: false });
 
 const payrollSchema = new mongoose.Schema({
@@ -37,6 +62,7 @@ const payrollSchema = new mongoose.Schema({
     paymentDate: { type: String, default: '2026-09-30' },
     earnings: { type: earningsSchema, default: () => ({}) },
     deductions: { type: deductionsSchema, default: () => ({}) },
+    attendanceMetrics: { type: attendanceMetricsSchema, default: () => ({}) },
     netPay: { type: Number, required: true, default: 0 },
     baseAmount: { type: Number, default: 0 },
     bonus: { type: Number, default: 0 },

@@ -7,6 +7,10 @@ export interface EarningsBreakdown {
     baseSalary: number;
     hourlyRate: number;
     regularHours: number;
+    workedHours?: number;
+    workingDays?: number;
+    targetDays?: number;
+    presentDays?: number;
     regularPay: number;
     overtimeHours: number;
     overtimeRate: number; // usually 1.5x hourly rate
@@ -17,12 +21,33 @@ export interface EarningsBreakdown {
 }
 
 export interface DeductionsBreakdown {
+    lateCount?: number;
+    lateMinutes?: number;
+    lateDeductions?: number;
+    absentDays?: number;
+    absentDeductions?: number;
+    leaveDays?: number;
+    permissionDays?: number;
     unpaidLeaveDays: number;
     leaveDeductions: number;
     taxWithholding: number; // e.g. 5%
     socialSecurity: number;
     otherDeductions: number;
     totalDeductions: number;
+}
+
+export interface AttendanceMetrics {
+    totalWorkingHours: number;
+    targetWorkingHours: number;
+    targetDays: number;
+    presentDays: number;
+    lateDays: number;
+    lateMinutes: number;
+    absentDays: number;
+    leaveDays: number;
+    permissionDays: number;
+    overtimeHours: number;
+    attendanceRate: number;
 }
 
 export interface Payslip {
@@ -37,6 +62,7 @@ export interface Payslip {
     paymentDate: string; // "2026-09-30"
     earnings: EarningsBreakdown;
     deductions: DeductionsBreakdown;
+    attendanceMetrics?: AttendanceMetrics;
     netPay: number;
     status: PaymentStatus;
     paymentMethod: 'Direct Deposit / Bank Wire' | 'Cheque' | 'Cash';
@@ -53,6 +79,15 @@ export interface MonthlyPayrollSummary {
     totalOvertimePay: number;
     totalDeductions: number;
     totalNetPayout: number;
+    totalWorkingHours?: number;
+    totalOvertimeHours?: number;
+    totalLateCount?: number;
+    totalLateDeductions?: number;
+    totalAbsentDays?: number;
+    totalAbsentDeductions?: number;
+    totalLeaveDays?: number;
+    totalPermissionDays?: number;
     status: 'draft' | 'processed' | 'approved' | 'disbursed';
     payslips: Payslip[];
 }
+
