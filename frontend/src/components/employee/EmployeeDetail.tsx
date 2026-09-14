@@ -323,9 +323,7 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                             <span>{tab.label}</span>
                         </button>
                     ))}
-                </div>
-
-                {/* Tab 1: Overview & Contact Details */}
+                </div>                {/* Tab 1: Overview & Contact Details */}
                 {activeTab === 'overview' && (() => {
                     const currentDept = departments.find(d => {
                         const dName = typeof employee.department === 'object' ? (employee.department as any)?.name : employee.department;
@@ -339,34 +337,28 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                         return eDept && targetDept && eDept.toLowerCase() === targetDept.toLowerCase() && /lead|manager|head|director|supervisor|admin/i.test(e.position || '');
                     }) || allEmployees.find(e => /admin|superadmin/i.test((e as any).role || '') || /admin/i.test(e.position || '')) || null;
 
-                    // Find colleagues in this department
-                    const colleagues = allEmployees.filter(e => {
-                        const eDept = typeof e.department === 'object' ? (e.department as any)?.name : e.department;
-                        const targetDept = typeof employee.department === 'object' ? (employee.department as any)?.name : employee.department;
-                        return eDept && targetDept && eDept.toLowerCase() === targetDept.toLowerCase();
-                    });
+                    const isLeaderHimself = deptLeader && deptLeader._id === employee._id;
 
                     return (
                         <div className="space-y-6">
-                            {/* Leadership & Department Hierarchy Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                {/* Department Team Leader / Manager Card */}
-                                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
-                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                        <div className="flex items-center gap-2">
-                                            <Crown size={16} className="text-amber-600" />
-                                            <h3 className="text-xs font-black uppercase tracking-wider text-black">
-                                                Department Team Leader / Manager
-                                            </h3>
-                                        </div>
-                                        <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 font-bold text-[10px]">
-                                            {deptName}
-                                        </span>
+                            {/* Department Team Leader / Manager Card */}
+                            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Crown size={16} className="text-amber-600" />
+                                        <h3 className="text-xs font-black uppercase tracking-wider text-black">
+                                            Department Team Leader / Manager
+                                        </h3>
                                     </div>
+                                    <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 font-bold text-[10px]">
+                                        {deptName}
+                                    </span>
+                                </div>
 
-                                    {deptLeader ? (
+                                {deptLeader ? (
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                         <div className="flex items-center gap-3.5">
-                                            <div className="w-12 h-12 rounded-xl bg-black text-white flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 border border-slate-200">
+                                            <div className="w-13 h-13 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 border border-slate-200 shadow-2xs">
                                                 {deptLeader.photoUrl ? (
                                                     <img
                                                         src={getFullImageUrl(deptLeader.photoUrl) || ''}
@@ -377,191 +369,40 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                                                     <span>{deptLeader.firstName?.[0] || 'L'}{deptLeader.lastName?.[0] || 'D'}</span>
                                                 )}
                                             </div>
-                                            <div className="flex-1 min-w-0">
+                                            <div className="space-y-0.5">
                                                 <div className="flex items-center gap-2">
-                                                    <Link
-                                                        href={deptLeader._id ? `/dashboard/management/employee/${deptLeader._id}` : '#'}
-                                                        className="text-sm font-black text-black hover:underline truncate"
-                                                    >
+                                                    <span className="text-sm sm:text-base font-black text-black">
                                                         {deptLeader.firstName} {deptLeader.lastName}
-                                                    </Link>
-                                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-black text-[9px] font-bold border border-slate-200 uppercase shrink-0">
-                                                        Lead
+                                                    </span>
+                                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-black text-[10px] font-bold border border-slate-200 uppercase">
+                                                        {isLeaderHimself ? 'You (Team Lead)' : 'Team Lead'}
                                                     </span>
                                                 </div>
-                                                <p className="text-[11px] font-medium text-slate-700 truncate">
+                                                <p className="text-xs font-medium text-slate-700">
                                                     {deptLeader.position || 'Department Team Leader'}
                                                 </p>
-                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-semibold text-slate-700 mt-1">
+                                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-slate-700 pt-0.5">
                                                     {deptLeader.email && (
-                                                        <span className="flex items-center gap-1">
-                                                            <Mail size={11} className="text-blue-600" />
-                                                            <span className="truncate">{deptLeader.email}</span>
-                                                        </span>
+                                                        <a href={`mailto:${deptLeader.email}`} className="flex items-center gap-1.5 hover:text-black">
+                                                            <Mail size={12} className="text-blue-600" />
+                                                            <span>{deptLeader.email}</span>
+                                                        </a>
                                                     )}
                                                     {deptLeader.phone && (
-                                                        <span className="flex items-center gap-1">
-                                                            <Phone size={11} className="text-emerald-600" />
+                                                        <a href={`tel:${deptLeader.phone}`} className="flex items-center gap-1.5 hover:text-black">
+                                                            <Phone size={12} className="text-emerald-600" />
                                                             <span>{deptLeader.phone}</span>
-                                                        </span>
+                                                        </a>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
-                                    ) : (
-                                        <div className="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
-                                            <p className="text-xs font-bold text-slate-600">No Team Leader Assigned</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Department & Child Team Structure Card */}
-                                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
-                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                        <div className="flex items-center gap-2">
-                                            <Users size={16} className="text-blue-600" />
-                                            <h3 className="text-xs font-black uppercase tracking-wider text-black">
-                                                Department & Child Team Structure
-                                            </h3>
-                                        </div>
-                                        <span className="px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-900 border border-blue-200 font-bold text-[10px]">
-                                            {colleagues.length} Team Members
-                                        </span>
                                     </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[11px] font-bold text-slate-600 block">Department Unit:</span>
-                                            <h4 className="text-base font-black text-black">{deptName}</h4>
-                                            <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                                                My Role: <span className="font-bold text-black">{employee.position || 'Staff Member'}</span>
-                                            </p>
-                                        </div>
-                                        {currentDept?._id && (
-                                            <Link
-                                                href={`/dashboard/management/departments/${currentDept._id}`}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-black hover:text-white text-black font-bold text-xs transition-colors shrink-0"
-                                            >
-                                                <span>View Department</span>
-                                                <ArrowUpRight size={13} />
-                                            </Link>
-                                        )}
+                                ) : (
+                                    <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
+                                        <p className="text-xs font-bold text-slate-600">No Team Leader Assigned</p>
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Assigned Colleagues Roster */}
-                            <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
-                                <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-                                    <div>
-                                        <h3 className="text-sm font-black text-black flex items-center gap-2">
-                                            <Users size={16} className="text-blue-600" />
-                                            <span>{deptName} Team Members & Colleagues</span>
-                                        </h3>
-                                        <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                                            Assigned colleagues, team leads, and peers within your department.
-                                        </p>
-                                    </div>
-                                    <span className="px-2.5 py-1 bg-slate-100 text-black border border-slate-200 rounded-lg text-xs font-bold">
-                                        {colleagues.length} Total Staff in {deptName}
-                                    </span>
-                                </div>
-
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-black text-black uppercase tracking-wider">
-                                                <th className="py-3 px-5">Member Name</th>
-                                                <th className="py-3 px-5">Position / Role</th>
-                                                <th className="py-3 px-5">Contact</th>
-                                                <th className="py-3 px-5">Biometrics</th>
-                                                <th className="py-3 px-5 text-right">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 text-xs">
-                                            {colleagues.length > 0 ? (
-                                                colleagues.map((col) => {
-                                                    const isCurrent = col._id === employee._id;
-                                                    return (
-                                                        <tr key={col._id} className="hover:bg-slate-50/80 transition-colors">
-                                                            <td className="py-3.5 px-5">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-8 h-8 rounded-full bg-black text-white font-bold flex items-center justify-center text-xs overflow-hidden shrink-0">
-                                                                        {col.photoUrl ? (
-                                                                            <img
-                                                                                src={getFullImageUrl(col.photoUrl) || ''}
-                                                                                alt={`${col.firstName} ${col.lastName}`}
-                                                                                className="w-full h-full object-cover"
-                                                                            />
-                                                                        ) : (
-                                                                            <span>{col.firstName?.[0]}{col.lastName?.[0]}</span>
-                                                                        )}
-                                                                    </div>
-                                                                    <div>
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className="font-bold text-black text-sm">
-                                                                                {col.firstName} {col.lastName}
-                                                                            </span>
-                                                                            {isCurrent && (
-                                                                                <span className="px-1.5 py-0.2 rounded-sm bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[9px]">
-                                                                                    You
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                        <span className="text-[11px] font-medium text-slate-600 block">
-                                                                            {col.type || 'employee'}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="py-3.5 px-5">
-                                                                <span className="font-bold text-black bg-slate-100 px-2.5 py-1 rounded-md text-[11px] border border-slate-200">
-                                                                    {col.position || 'Staff Member'}
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-3.5 px-5">
-                                                                <div className="space-y-0.5 text-[11px] font-semibold text-slate-800">
-                                                                    <div className="flex items-center gap-1">
-                                                                        <Mail size={11} className="text-slate-500" />
-                                                                        <span>{col.email}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-1">
-                                                                        <Phone size={11} className="text-slate-500" />
-                                                                        <span>{col.phone || 'N/A'}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="py-3.5 px-5">
-                                                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                                                                    col.faceVerificationEnabled
-                                                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                                                        : 'bg-slate-100 text-slate-700 border border-slate-200'
-                                                                }`}>
-                                                                    <UserCheck size={11} />
-                                                                    <span>{col.faceVerificationEnabled ? 'Enrolled' : 'Pending'}</span>
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-3.5 px-5 text-right">
-                                                                <Link
-                                                                    href={`/dashboard/management/employee/${col._id}`}
-                                                                    className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-black hover:text-white text-black font-bold text-xs transition-colors inline-block"
-                                                                >
-                                                                    View Details
-                                                                </Link>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan={5} className="py-8 text-center text-slate-600 font-bold">
-                                                        No colleagues found in this department.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                )}
                             </div>
 
                             {/* Details Grid: Contact & Role */}

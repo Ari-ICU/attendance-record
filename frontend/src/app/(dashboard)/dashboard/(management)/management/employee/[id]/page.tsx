@@ -25,23 +25,20 @@ export default function EmployeeDetailPage() {
                 // Permission Enforcement:
                 const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
                 const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
-                const isSelf = data.email?.toLowerCase() === user?.email?.toLowerCase();
+                const isSelf = data.email?.toLowerCase() === user?.email?.toLowerCase() || data._id === (user as any)?.id || data._id === user?._id;
 
-                // 1. Regular staff can ONLY view their own profile
-                if (!isAdmin && !isTeamLead && !isSelf) {
-                    toast.error('Access restricted: You can only view your own profile.', { id: 'view-restrict' });
-                    router.push('/dashboard/profile');
+                const empDept = typeof data.department === 'object' ? (data.department as any)?.name : data.department;
+                const userDept = typeof user?.department === 'object' ? (user.department as any)?.name : user?.department;
+                const isSameDept = empDept && userDept && empDept.toLowerCase() === userDept.toLowerCase();
+                const isTargetLeader = /lead|manager|head|director|supervisor|admin/i.test(data.position || '') || ['admin', 'manager', 'superadmin'].includes((data as any).role || '');
+
+                // Allow access if admin, self, team lead viewing department member, or staff viewing department leader
+                const hasAccess = isAdmin || isSelf || (isTeamLead && isSameDept) || (isSameDept && isTargetLeader);
+
+                if (!hasAccess) {
+                    toast.error('Access restricted: You can only view your own profile and your department team lead.', { id: 'view-restrict' });
+                    router.push('/dashboard/management/departments');
                     return;
-                }
-
-                // 2. Team leads can only view members in their own department (or self)
-                if (isTeamLead && !isAdmin && !isSelf) {
-                    const empDept = typeof data.department === 'object' ? (data.department as any)?.name : data.department;
-                    if (empDept?.toLowerCase() !== user?.department?.toLowerCase()) {
-                        toast.error(`Access restricted: You can only view members in ${user?.department || 'your department'}.`, { id: 'dept-restrict' });
-                        router.push('/dashboard/profile');
-                        return;
-                    }
                 }
 
                 setEmployee(data);
