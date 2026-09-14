@@ -78,6 +78,17 @@ export default function OvertimePage() {
         return matchesSearch && matchesStatus;
     });
 
+    const formatDateDisplay = (dateStr?: string) => {
+        if (!dateStr) return '—';
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        } catch {
+            return dateStr;
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'approved':
@@ -194,7 +205,7 @@ export default function OvertimePage() {
                                 </div>
                                 <div className="col-span-2">
                                     <span className="text-[11px] font-semibold text-slate-600 block">Date & Window</span>
-                                    <span className="font-medium text-black">{req.date} ({req.startTime || '17:30'} - {req.endTime || '20:30'})</span>
+                                    <span className="font-bold text-black">{formatDateDisplay(req.date)} ({req.startTime || '17:30'} - {req.endTime || '20:30'})</span>
                                 </div>
                             </div>
 
@@ -276,8 +287,20 @@ export default function OvertimePage() {
                                                 {req.project}
                                             </span>
                                         </td>
-                                        <td className="py-3.5 px-5 font-bold text-black">
-                                            {req.date} ({req.startTime || '17:30'} - {req.endTime || '20:30'})
+                                        <td className="py-3.5 px-5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 border border-slate-200">
+                                                    <Calendar size={13} />
+                                                </div>
+                                                <div>
+                                                    <span className="font-bold text-black block text-xs">
+                                                        {formatDateDisplay(req.date)}
+                                                    </span>
+                                                    <span className="text-[10px] font-semibold text-slate-500 block">
+                                                        {req.startTime || '17:30'} – {req.endTime || '20:30'}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="py-3.5 px-5 font-bold text-black">
                                             {req.hours} hrs

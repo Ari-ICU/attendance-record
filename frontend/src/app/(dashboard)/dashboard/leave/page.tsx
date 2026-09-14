@@ -79,6 +79,54 @@ export default function LeavePage() {
         return matchesSearch && matchesStatus;
     });
 
+    const formatLeaveDuration = (startDate?: string, endDate?: string) => {
+        if (!startDate) return { primary: '—', secondary: null };
+        try {
+            const s = new Date(startDate);
+            const e = endDate ? new Date(endDate) : s;
+            if (isNaN(s.getTime())) return { primary: startDate, secondary: null };
+
+            const sYear = s.getFullYear();
+            const eYear = e.getFullYear();
+            const sMonth = s.toLocaleDateString('en-US', { month: 'short' });
+            const eMonth = e.toLocaleDateString('en-US', { month: 'short' });
+            const sDay = s.getDate();
+            const eDay = e.getDate();
+
+            // Same single day
+            if (sYear === eYear && sMonth === eMonth && sDay === eDay) {
+                return {
+                    primary: `${sMonth} ${sDay}, ${sYear}`,
+                    secondary: 'Single Day'
+                };
+            }
+
+            // Same month & year: e.g. "Sep 15 – 18, 2026"
+            if (sYear === eYear && sMonth === eMonth) {
+                return {
+                    primary: `${sMonth} ${sDay} – ${eDay}, ${sYear}`,
+                    secondary: null
+                };
+            }
+
+            // Same year, different month: e.g. "Sep 28 – Oct 02, 2026"
+            if (sYear === eYear) {
+                return {
+                    primary: `${sMonth} ${sDay} – ${eMonth} ${eDay}, ${sYear}`,
+                    secondary: null
+                };
+            }
+
+            // Different year
+            return {
+                primary: `${sMonth} ${sDay}, ${sYear} – ${eMonth} ${eDay}, ${eYear}`,
+                secondary: null
+            };
+        } catch {
+            return { primary: `${startDate} → ${endDate || ''}`, secondary: null };
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'approved':
@@ -200,8 +248,27 @@ export default function LeavePage() {
                                                 {req.type}
                                             </span>
                                         </td>
-                                        <td className="py-3.5 px-5 font-bold text-black">
-                                            {req.startDate} → {req.endDate}
+                                        <td className="py-3.5 px-5">
+                                            {(() => {
+                                                const dur = formatLeaveDuration(req.startDate, req.endDate);
+                                                return (
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 border border-slate-200">
+                                                            <Calendar size={13} />
+                                                        </div>
+                                                        <div>
+                                                            <span className="font-bold text-black block text-xs">
+                                                                {dur.primary}
+                                                            </span>
+                                                            {dur.secondary && (
+                                                                <span className="text-[10px] font-semibold text-slate-500 block">
+                                                                    {dur.secondary}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="py-3.5 px-5 font-bold text-black">
                                             {req.days || req.totalDays || 1} {(req.days || req.totalDays || 1) === 1 ? 'Day' : 'Days'}

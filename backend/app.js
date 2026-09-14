@@ -35,7 +35,6 @@ const workScheduleRoutes = require('./routes/workSchedule.routes');
 const employeeRoutes = require('./routes/employee.route');
 const departmentRoutes = require('./routes/department.routes');
 const systemSettingRoutes = require('./routes/systemSetting.routes');
-const payrollRoutes = require('./routes/payroll.routes');
 const reportRoutes = require('./routes/report.routes');
 const backupRoutes = require('./routes/backup.routes');
 const securityRoutes = require('./routes/security.routes');
@@ -180,9 +179,6 @@ app.use('/api/overtime', overtimeRoutes);
 app.use('/api/overtimes', overtimeRoutes);
 app.use('/api/positions', positionRoutes);
 app.use('/api/calendar', calendarRoutes);
-
-// Payroll routes
-app.use('/api/payroll', payrollRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/backups', backupRoutes);
 app.use('/api/security', securityRoutes);

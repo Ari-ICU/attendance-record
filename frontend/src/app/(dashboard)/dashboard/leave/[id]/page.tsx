@@ -158,8 +158,38 @@ export default function LeaveDetailPage() {
                     </div>
 
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                        <span className="text-xs font-bold text-black uppercase">Date Duration</span>
-                        <h3 className="text-base font-black text-black mt-1">{req.startDate} → {req.endDate}</h3>
+                        <span className="text-xs font-bold text-black uppercase flex items-center gap-1.5">
+                            <Calendar size={13} className="text-slate-600" />
+                            <span>Date Duration</span>
+                        </span>
+                        <h3 className="text-base font-black text-black mt-1">
+                            {(() => {
+                                if (!req.startDate) return '—';
+                                try {
+                                    const s = new Date(req.startDate);
+                                    const e = req.endDate ? new Date(req.endDate) : s;
+                                    const sMonth = s.toLocaleDateString('en-US', { month: 'short' });
+                                    const eMonth = e.toLocaleDateString('en-US', { month: 'short' });
+                                    const sDay = s.getDate();
+                                    const eDay = e.getDate();
+                                    const sYear = s.getFullYear();
+                                    const eYear = e.getFullYear();
+
+                                    if (sYear === eYear && sMonth === eMonth && sDay === eDay) {
+                                        return `${sMonth} ${sDay}, ${sYear}`;
+                                    }
+                                    if (sYear === eYear && sMonth === eMonth) {
+                                        return `${sMonth} ${sDay} – ${eDay}, ${sYear}`;
+                                    }
+                                    if (sYear === eYear) {
+                                        return `${sMonth} ${sDay} – ${eMonth} ${eDay}, ${sYear}`;
+                                    }
+                                    return `${sMonth} ${sDay}, ${sYear} – ${eMonth} ${eDay}, ${eYear}`;
+                                } catch {
+                                    return `${req.startDate} → ${req.endDate || ''}`;
+                                }
+                            })()}
+                        </h3>
                     </div>
 
                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">

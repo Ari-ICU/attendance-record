@@ -106,14 +106,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             icon: <Timer size={17} />,
         },
 
-        // PAYROLL & COMPENSATION
-        {
-            section: 'PAYROLL & SALARY',
-            name: 'Payroll & Payslips',
-            href: '/dashboard/payroll',
-            icon: <DollarSign size={17} />,
-        },
-
         // REPORTS
         {
             section: 'REPORTS',
