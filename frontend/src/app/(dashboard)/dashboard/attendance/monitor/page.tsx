@@ -40,8 +40,14 @@ import { Employee } from '@/types/employee.types';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LiveMonitorPage() {
+    const { user } = useAuth();
+    const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
+    const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
+    const userDept = user?.department || '';
+
     const [records, setRecords] = useState<AttendanceRecord[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
@@ -176,7 +182,22 @@ export default function LiveMonitorPage() {
         return true;
     };
 
-    const todayRecords = records.filter(isRecordToday);
+    const scopedEmployees = isAdmin
+        ? employees
+        : employees.filter(e => {
+            const eDept = typeof e.department === 'object' ? (e.department as any)?.name : e.department;
+            return (eDept || '').toLowerCase() === userDept.toLowerCase();
+        });
+
+    const scopedRecords = isAdmin
+        ? records
+        : records.filter(r => {
+            const emp = typeof r.employeeId === 'object' ? r.employeeId : null;
+            const empDept = (typeof emp?.department === 'object' ? (emp.department as any)?.name : emp?.department || '').toLowerCase();
+            return empDept === userDept.toLowerCase();
+        });
+
+    const todayRecords = scopedRecords.filter(isRecordToday);
     
     // Checked in employee IDs
     const checkedInEmpIds = new Set(
@@ -186,7 +207,7 @@ export default function LiveMonitorPage() {
     const presentCount = todayRecords.filter(r => r.status === 'present').length;
     const lateCount = todayRecords.filter(r => r.status === 'late').length;
     const checkedOutCount = todayRecords.filter(r => !!r.checkOut?.time).length;
-    const totalStaff = employees.length || 6;
+    const totalStaff = scopedEmployees.length || 1;
     const checkedInCount = todayRecords.length;
     const pendingCount = Math.max(0, totalStaff - checkedInCount);
     const attendanceRate = totalStaff > 0 ? Math.round((checkedInCount / totalStaff) * 100) : 0;
@@ -212,7 +233,7 @@ export default function LiveMonitorPage() {
     });
 
     // Unrecorded / Pending Staff
-    const pendingEmployees = employees.filter(emp => !checkedInEmpIds.has(emp._id)).filter(emp => {
+    const pendingEmployees = scopedEmployees.filter(emp => !checkedInEmpIds.has(emp._id)).filter(emp => {
         const name = `${emp.firstName} ${emp.lastName}`.toLowerCase();
         const dept = (typeof emp.department === 'object' ? (emp.department as any)?.name : emp.department || '').toLowerCase();
         const matchesSearch = name.includes(searchTerm.toLowerCase()) || dept.includes(searchTerm.toLowerCase());

@@ -13,31 +13,45 @@ import {
     Building2
 } from 'lucide-react';
 import { PositionService } from '@/services/position.service';
+import { EmployeeService } from '@/services/employee.service';
 import { PositionItem } from '@/types/position.types';
+import { Employee } from '@/types/employee.types';
+import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function PositionsPage() {
+    const { user } = useAuth();
+    const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
+    const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
+    const userDept = user?.department || '';
+
     const [positions, setPositions] = useState<PositionItem[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const fetchPositions = async () => {
+    const fetchData = async () => {
         try {
             setLoading(true);
-            const data = await PositionService.getAll();
-            setPositions(data);
+            const [posData, empRes] = await Promise.all([
+                PositionService.getAll(),
+                EmployeeService.getAllEmployees({ limit: 1000 })
+            ]);
+            setPositions(posData || []);
+            setEmployees(empRes?.employees || []);
         } catch {
-            toast.error('Failed to load positions');
+            toast.error('Failed to load positions data');
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchPositions();
+        fetchData();
     }, []);
 
     const handleDelete = async (id: string) => {
+        if (!isAdmin) return;
         if (!confirm('Are you sure you want to delete this position?')) return;
         try {
             await PositionService.delete(id);
@@ -48,10 +62,24 @@ export default function PositionsPage() {
         }
     };
 
-    const filtered = positions.filter(p =>
+    const getPositionHeadcount = (pos: PositionItem) => {
+        return employees.filter(e => {
+            const eDept = typeof e.department === 'object' ? (e.department as any)?.name : e.department;
+            const deptMatch = !pos.department || (eDept || '').trim().toLowerCase() === pos.department.trim().toLowerCase();
+            const posMatch = (e.position || '').trim().toLowerCase() === pos.title.trim().toLowerCase();
+            return posMatch && deptMatch;
+        }).length;
+    };
+
+    // Scope positions: Admins see all; Team Leads and Staff ONLY see their department positions
+    const scopedPositions = isAdmin
+        ? positions
+        : positions.filter(p => (p.department || '').toLowerCase() === userDept.toLowerCase());
+
+    const filtered = scopedPositions.filter(p =>
         p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchTerm.toLowerCase())
+        p.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -61,24 +89,30 @@ export default function PositionsPage() {
                 <div>
                     <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
                         <h1 className="text-lg sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
-                            <span>Staff Positions & Roles</span>
+                            <span>
+                                {isAdmin ? 'Staff Positions & Roles' : `${userDept || 'Department'} Roles & Positions`}
+                            </span>
                         </h1>
                         <span className="px-2.5 py-0.5 rounded-full bg-black text-white text-[11px] sm:text-xs font-bold shrink-0">
-                            {positions.length} Titles
+                            {filtered.length} {filtered.length === 1 ? 'Role' : 'Roles'}
                         </span>
                     </div>
                     <p className="text-xs sm:text-sm font-medium text-black mt-1">
-                        Define campus titles, seniority tiers, and departmental assignments
+                        {isAdmin
+                            ? 'Define campus titles, seniority tiers, and departmental assignments.'
+                            : `View assigned job roles and responsibilities within ${userDept}.`}
                     </p>
                 </div>
 
-                <Link
-                    href="/dashboard/management/positions/create"
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
-                >
-                    <Plus size={16} />
-                    <span>Add Position</span>
-                </Link>
+                {isAdmin && (
+                    <Link
+                        href="/dashboard/management/positions/create"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl shadow-xs transition-all text-xs sm:text-sm font-bold active:scale-95 cursor-pointer"
+                    >
+                        <Plus size={16} />
+                        <span>Add Position</span>
+                    </Link>
+                )}
             </div>
 
             {/* Search Toolbar */}
@@ -104,7 +138,7 @@ export default function PositionsPage() {
                                 <th className="py-3 px-5">Role Title</th>
                                 <th className="py-3 px-5">Department</th>
                                 <th className="py-3 px-5">Seniority Tier</th>
-                                <th className="py-3 px-5">Staff Count</th>
+                                <th className="py-3 px-5">Headcount</th>
                                 <th className="py-3 px-5 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -139,7 +173,7 @@ export default function PositionsPage() {
                                         <td className="py-3.5 px-5">
                                             <span className="font-bold text-black flex items-center gap-1.5">
                                                 <Users size={14} className="text-black" />
-                                                <span>{pos.employeeCount} Staff</span>
+                                                <span>{getPositionHeadcount(pos)} Staff</span>
                                             </span>
                                         </td>
                                         <td className="py-3.5 px-5 text-right">
@@ -150,20 +184,24 @@ export default function PositionsPage() {
                                                 >
                                                     View
                                                 </Link>
-                                                <Link
-                                                    href={`/dashboard/management/positions/${pos.id || pos._id}/edit`}
-                                                    className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
-                                                    title="Edit Position"
-                                                >
-                                                    <Edit2 size={14} />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDelete(pos.id || pos._id || '')}
-                                                    className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                                    title="Delete Position"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                                {isAdmin && (
+                                                    <>
+                                                        <Link
+                                                            href={`/dashboard/management/positions/${pos.id || pos._id}/edit`}
+                                                            className="p-1.5 rounded-lg text-black hover:bg-slate-200 transition-colors"
+                                                            title="Edit Position"
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => handleDelete(pos.id || pos._id || '')}
+                                                            className="p-1.5 rounded-lg text-black hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                            title="Delete Position"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -171,7 +209,7 @@ export default function PositionsPage() {
                             ) : (
                                 <tr>
                                     <td colSpan={5} className="py-12 text-center text-black font-bold">
-                                        No positions found.
+                                        No positions found for your department.
                                     </td>
                                 </tr>
                             )}
