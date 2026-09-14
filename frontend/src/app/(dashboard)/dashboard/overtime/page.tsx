@@ -22,7 +22,12 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function OvertimePage() {
     const { user } = useAuth();
-    const isAdminOrManager = user && ['admin', 'manager', 'superadmin'].includes(user.role || '');
+    const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
+    const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
+    const isStaff = !isAdmin && !isTeamLead;
+    const userDept = user?.department || '';
+    const userEmail = (user?.email || '').toLowerCase();
+
     const [overtimes, setOvertimes] = useState<OvertimeItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -32,7 +37,7 @@ export default function OvertimePage() {
         try {
             setLoading(true);
             const data = await OvertimeService.getAll();
-            setOvertimes(data);
+            setOvertimes(data || []);
         } catch {
             toast.error('Failed to load overtime records');
         } finally {
@@ -45,7 +50,7 @@ export default function OvertimePage() {
     }, []);
 
     const handleDelete = async (id: string) => {
-        if (!isAdminOrManager) return;
+        if (!isAdmin) return;
         if (!confirm('Are you sure you want to delete this overtime submission?')) return;
         try {
             await OvertimeService.delete(id);
@@ -57,7 +62,7 @@ export default function OvertimePage() {
     };
 
     const handleApprove = async (id: string) => {
-        if (!isAdminOrManager) return;
+        if (!isAdmin && !isTeamLead) return;
         try {
             await OvertimeService.updateStatus(id, 'approved');
             setOvertimes(prev => prev.map(o => (o.id === id || o._id === id) ? { ...o, status: 'approved' } : o));
@@ -68,6 +73,7 @@ export default function OvertimePage() {
     };
 
     const handleReject = async (id: string) => {
+        if (!isAdmin && !isTeamLead) return;
         try {
             await OvertimeService.updateStatus(id, 'rejected');
             setOvertimes(prev => prev.map(o => (o.id === id || o._id === id) ? { ...o, status: 'rejected' } : o));
@@ -77,7 +83,21 @@ export default function OvertimePage() {
         }
     };
 
-    const filtered = overtimes.filter(o => {
+    // Scoped overtime submissions:
+    // - Admin: sees all company requests
+    // - Team Lead: sees requests from their department members
+    // - Staff: sees ONLY their own overtime requests
+    const scopedOvertimes = overtimes.filter(o => {
+        const emp = typeof o.employeeId === 'object' && o.employeeId ? (o.employeeId as any) : null;
+        const empEmail = (emp?.email || (o as any).email || '').toLowerCase();
+        const empDept = (typeof emp?.department === 'object' ? emp.department?.name : emp?.department || (o as any).department || '').toLowerCase();
+
+        if (isAdmin) return true;
+        if (isTeamLead) return empDept === userDept.toLowerCase();
+        return empEmail === userEmail;
+    });
+
+    const filtered = scopedOvertimes.filter(o => {
         const matchesSearch = (o.employeeName || '').toLowerCase().includes(searchTerm.toLowerCase()) || (o.project || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
         return matchesSearch && matchesStatus;
@@ -107,6 +127,19 @@ export default function OvertimePage() {
         }
     };
 
+    // Header title and subtitle based on active role
+    const pageTitle = isStaff
+        ? 'My Overtime Submissions'
+        : isTeamLead
+            ? `${userDept} Overtime Requests`
+            : 'Overtime Submissions & Governance';
+
+    const pageSubtitle = isStaff
+        ? 'Review your extra hours submissions, compensation estimates, and supervisor approvals.'
+        : isTeamLead
+            ? `Review and approve extra hour submissions and overtime allowances for ${userDept} staff.`
+            : 'Review extra hour submissions, overtime multipliers, and supervisor sign-offs across all departments.';
+
     return (
         <div className="w-full space-y-6 pb-12 font-sans">
             {/* Header */}
@@ -114,14 +147,14 @@ export default function OvertimePage() {
                 <div>
                     <div className="flex items-center gap-3">
                         <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight flex items-center gap-2">
-                            <span>Overtime Submissions</span>
+                            <span>{pageTitle}</span>
                         </h1>
                         <span className="px-2.5 py-0.5 rounded-full bg-black text-white text-xs font-bold">
-                            {overtimes.length} Logs
+                            {filtered.length} {filtered.length === 1 ? 'Log' : 'Logs'}
                         </span>
                     </div>
                     <p className="text-xs sm:text-sm font-medium text-black mt-1">
-                        Review extra hour submissions, overtime multipliers, and supervisor sign-offs
+                        {pageSubtitle}
                     </p>
                 </div>
 
@@ -139,19 +172,19 @@ export default function OvertimePage() {
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
                     <span className="text-xs font-bold text-black uppercase">Pending Approval</span>
                     <h3 className="text-xl sm:text-2xl font-black text-amber-900 mt-1">
-                        {overtimes.filter(o => o.status === 'pending').length} Submissions
+                        {filtered.filter(o => o.status === 'pending').length} Submissions
                     </h3>
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
                     <span className="text-xs font-bold text-black uppercase">Approved Extra Hours</span>
                     <h3 className="text-xl sm:text-2xl font-black text-emerald-800 mt-1">
-                        {overtimes.filter(o => o.status === 'approved').reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs
+                        {filtered.filter(o => o.status === 'approved').reduce((acc, curr) => acc + (curr.hours || 0), 0)} hrs
                     </h3>
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
                     <span className="text-xs font-bold text-black uppercase">Total Requests</span>
                     <h3 className="text-xl sm:text-2xl font-black text-black mt-1">
-                        {overtimes.length} Submissions
+                        {filtered.length} Submissions
                     </h3>
                 </div>
             </div>
@@ -215,7 +248,7 @@ export default function OvertimePage() {
                             </div>
 
                             <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                                {isAdminOrManager && req.status === 'pending' && (
+                                {(isAdmin || isTeamLead) && req.status === 'pending' && (
                                     <>
                                         <button
                                             onClick={() => handleApprove(req.id || req._id || '')}
@@ -237,7 +270,7 @@ export default function OvertimePage() {
                                 >
                                     View
                                 </Link>
-                                {isAdminOrManager && (
+                                {isAdmin && (
                                     <>
                                         <Link
                                             href={`/dashboard/overtime/${req.id || req._id}/edit`}
@@ -319,7 +352,7 @@ export default function OvertimePage() {
                                         </td>
                                         <td className="py-3.5 px-5 text-right">
                                             <div className="flex items-center justify-end gap-1.5">
-                                                {isAdminOrManager && req.status === 'pending' && (
+                                                {(isAdmin || isTeamLead) && req.status === 'pending' && (
                                                     <>
                                                         <button
                                                             onClick={() => handleApprove(req.id || req._id || '')}
@@ -341,7 +374,7 @@ export default function OvertimePage() {
                                                 >
                                                     View
                                                 </Link>
-                                                {isAdminOrManager && (
+                                                {isAdmin && (
                                                     <>
                                                         <Link
                                                             href={`/dashboard/overtime/${req.id || req._id}/edit`}

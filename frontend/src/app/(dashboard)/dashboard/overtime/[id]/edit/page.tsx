@@ -10,9 +10,13 @@ import { OvertimeService } from '@/services/overtime.service';
 import { EmployeeService } from '@/services/employee.service';
 import { DepartmentService } from '@/services/department.service';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 export default function EditOvertimePage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuth();
+    const isAdminOrManager = Boolean(user && ['admin', 'manager', 'superadmin'].includes(user.role || '') || /lead|manager|head|director|supervisor/i.test(user?.position || ''));
     const id = params.id as string;
 
     const [loading, setLoading] = useState(false);
@@ -31,6 +35,13 @@ export default function EditOvertimePage() {
         reason: '',
         status: 'pending'
     });
+
+    useEffect(() => {
+        if (user && !isAdminOrManager) {
+            toast.error('Only team leads and administrators can edit overtime approvals');
+            router.push(`/dashboard/overtime/${id}`);
+        }
+    }, [user, isAdminOrManager, id, router]);
 
     useEffect(() => {
         const loadInitial = async () => {

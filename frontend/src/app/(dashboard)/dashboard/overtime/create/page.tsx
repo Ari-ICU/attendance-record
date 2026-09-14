@@ -10,8 +10,17 @@ import { EmployeeService } from '@/services/employee.service';
 import { DepartmentService } from '@/services/department.service';
 import { OvertimeService } from '@/services/overtime.service';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 export default function CreateOvertimePage() {
     const router = useRouter();
+    const { user } = useAuth();
+    const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
+    const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
+    const isStaff = !isAdmin && !isTeamLead;
+    const userDept = user?.department || '';
+    const userEmail = (user?.email || '').toLowerCase();
+
     const [loading, setLoading] = useState(false);
     const [employees, setEmployees] = useState<any[]>([]);
     const [departments, setDepartments] = useState<any[]>([]);
@@ -34,17 +43,30 @@ export default function CreateOvertimePage() {
                     EmployeeService.getAllEmployees(),
                     DepartmentService.getAll()
                 ]);
-                const empList = empRes.employees || [];
-                setEmployees(empList);
+                let empList: any[] = empRes.employees || [];
                 const deptList = deptRes?.data || [];
                 setDepartments(deptList);
 
-                if (empList.length > 0) {
-                    const first = empList[0];
+                // Scope employee list based on role
+                if (isStaff) {
+                    empList = empList.filter(e => (e.email || '').toLowerCase() === userEmail);
+                } else if (isTeamLead) {
+                    empList = empList.filter(e => {
+                        const d = typeof e.department === 'object' ? e.department?.name : e.department;
+                        return (d || '').toLowerCase() === userDept.toLowerCase();
+                    });
+                }
+                setEmployees(empList);
+
+                // Auto-select initial employee
+                let selfEmp = empList.find(e => (e.email || '').toLowerCase() === userEmail);
+                let selected = selfEmp || empList[0];
+                if (selected) {
+                    const deptName = typeof selected.department === 'object' ? selected.department?.name : selected.department;
                     setFormData(prev => ({
                         ...prev,
-                        employeeId: first._id,
-                        department: first.department || (deptList[0]?.name || 'General')
+                        employeeId: selected._id,
+                        department: deptName || userDept || (deptList[0]?.name || 'General')
                     }));
                 }
             } catch (err) {
@@ -52,7 +74,7 @@ export default function CreateOvertimePage() {
             }
         };
         loadInitialData();
-    }, []);
+    }, [isStaff, isTeamLead, userDept, userEmail]);
 
     const employeeOptions = employees.map(emp => ({
         value: emp._id,

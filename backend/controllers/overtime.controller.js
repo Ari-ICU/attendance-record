@@ -53,16 +53,36 @@ exports.getAllOvertime = async (req, res) => {
             if (endDate) filter.date.$lte = new Date(endDate);
         }
 
-        // If regular employee, only allow viewing their own overtime records
-        if (req.user && !['admin', 'manager', 'superadmin'].includes(req.user.role)) {
-            const selfEmp = await Employee.findOne({ email: { $regex: new RegExp(`^${req.user.email}$`, 'i') } });
+        const isSuperOrAdmin = req.user && ['admin', 'superadmin'].includes(req.user.role);
+        const isManagerOrLead = req.user && (req.user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(req.user.position || ''));
+
+        if (isSuperOrAdmin) {
+            if (employeeId) filter.employeeId = employeeId;
+        } else if (isManagerOrLead) {
+            // Team Lead / Manager: Scoped strictly to employees belonging to their department
+            const userDept = req.user.department || '';
+            const deptEmployees = await Employee.find({
+                department: { $regex: new RegExp(`^${userDept}$`, 'i') }
+            }).select('_id');
+            const deptEmpIds = deptEmployees.map(e => e._id);
+
+            if (employeeId) {
+                if (deptEmpIds.some(id => id.toString() === employeeId.toString())) {
+                    filter.employeeId = employeeId;
+                } else {
+                    return res.status(200).json({ success: true, data: [] });
+                }
+            } else {
+                filter.employeeId = { $in: deptEmpIds };
+            }
+        } else {
+            // Regular Staff: Show strictly their own overtime requests
+            const selfEmp = await Employee.findOne({ email: { $regex: new RegExp(`^${req.user?.email}$`, 'i') } });
             if (selfEmp) {
                 filter.employeeId = selfEmp._id;
             } else {
                 return res.status(200).json({ success: true, data: [] });
             }
-        } else if (employeeId) {
-            filter.employeeId = employeeId;
         }
 
         const overtimes = await Overtime.find(filter)
