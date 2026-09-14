@@ -31,6 +31,7 @@ import {
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EmployeeDetailProps {
     employee: Employee;
@@ -38,6 +39,11 @@ interface EmployeeDetailProps {
 
 export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
     const router = useRouter();
+    const { user } = useAuth();
+    const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
+    const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
+    const isSelf = Boolean(user && employee.email?.toLowerCase() === user.email?.toLowerCase());
+
     const { socket, isConnected } = useSocket();
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'payroll' | 'biometrics'>('overview');
@@ -135,11 +141,11 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs">
                     <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-bold text-slate-800">
                         <Link
-                            href="/dashboard/management/employee"
+                            href={isAdmin ? "/dashboard/management/employee" : (isTeamLead ? "/dashboard/management/employee" : "/dashboard/profile")}
                             className="flex items-center gap-1.5 text-slate-800 hover:text-black transition-colors"
                         >
                             <Users size={15} />
-                            <span>Employee Directory</span>
+                            <span>{isAdmin ? 'Employee Directory' : (isTeamLead ? 'My Department Team' : 'My Profile')}</span>
                         </Link>
                         <ChevronRight size={14} className="text-slate-400" />
                         <span className="text-black font-black">{fullName}</span>
@@ -154,13 +160,23 @@ export default function EmployeeDetail({ employee }: EmployeeDetailProps) {
                             <span>Print Record (A4)</span>
                         </button>
 
-                        <button
-                            onClick={() => router.push(`/dashboard/management/employee/${employee._id}/edit`)}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-100 text-black border border-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                        >
-                            <Edit3 size={14} />
-                            <span>Edit Profile</span>
-                        </button>
+                        {isAdmin ? (
+                            <button
+                                onClick={() => router.push(`/dashboard/management/employee/${employee._id}/edit`)}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-100 text-black border border-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                            >
+                                <Edit3 size={14} />
+                                <span>Edit Profile</span>
+                            </button>
+                        ) : isSelf ? (
+                            <button
+                                onClick={() => router.push('/dashboard/profile')}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-100 text-black border border-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                            >
+                                <Edit3 size={14} />
+                                <span>Edit My Profile</span>
+                            </button>
+                        ) : null}
                     </div>
                 </div>
 

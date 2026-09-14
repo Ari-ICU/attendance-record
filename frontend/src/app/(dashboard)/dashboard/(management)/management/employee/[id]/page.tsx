@@ -6,10 +6,12 @@ import EmployeeDetail from '@/components/employee/EmployeeDetail';
 import { Employee } from '@/types/employee.types';
 import toast from 'react-hot-toast';
 import { EmployeeService } from '@/services/employee.service';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function EmployeeDetailPage() {
     const router = useRouter();
     const params = useParams();
+    const { user } = useAuth();
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [loading, setLoading] = useState(true);
     const { id } = params as { id: string };
@@ -19,6 +21,29 @@ export default function EmployeeDetailPage() {
             try {
                 setLoading(true);
                 const data = await EmployeeService.getEmployeeById(id);
+                
+                // Permission Enforcement:
+                const isAdmin = Boolean(user && ['admin', 'superadmin'].includes(user.role || ''));
+                const isTeamLead = Boolean(user && (user.role === 'manager' || /lead|manager|head|director|supervisor/i.test(user.position || '')));
+                const isSelf = data.email?.toLowerCase() === user?.email?.toLowerCase();
+
+                // 1. Regular staff can ONLY view their own profile
+                if (!isAdmin && !isTeamLead && !isSelf) {
+                    toast.error('Access restricted: You can only view your own profile.', { id: 'view-restrict' });
+                    router.push('/dashboard/profile');
+                    return;
+                }
+
+                // 2. Team leads can only view members in their own department (or self)
+                if (isTeamLead && !isAdmin && !isSelf) {
+                    const empDept = typeof data.department === 'object' ? (data.department as any)?.name : data.department;
+                    if (empDept?.toLowerCase() !== user?.department?.toLowerCase()) {
+                        toast.error(`Access restricted: You can only view members in ${user?.department || 'your department'}.`, { id: 'dept-restrict' });
+                        router.push('/dashboard/profile');
+                        return;
+                    }
+                }
+
                 setEmployee(data);
             } catch (error: unknown) {
                 if (error instanceof Error) {
@@ -26,14 +51,14 @@ export default function EmployeeDetailPage() {
                 } else {
                     toast.error('Failed to load profile');
                 }
-                router.push('/dashboard/management/employee');
+                router.push('/dashboard/profile');
             } finally {
                 setLoading(false);
             }
         }
 
-        if (id) fetchEmployee();
-    }, [id, router]);
+        if (id && user) fetchEmployee();
+    }, [id, user, router]);
 
     if (loading) {
         return (
@@ -49,10 +74,10 @@ export default function EmployeeDetailPage() {
             <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl shadow-xs space-y-3">
                 <p className="text-sm font-bold text-black">Employee profile not found.</p>
                 <button
-                    onClick={() => router.push('/dashboard/management/employee')}
+                    onClick={() => router.push('/dashboard/profile')}
                     className="px-4 py-2 bg-black text-white text-xs font-bold rounded-xl"
                 >
-                    Back to Staff Directory
+                    Back to My Profile
                 </button>
             </div>
         );
