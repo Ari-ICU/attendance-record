@@ -39,8 +39,8 @@ const faceVerificationSchema = Joi.object({
 const checkInSchema = Joi.object({
     employeeId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
     location: locationSchema.optional(),
-    method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification').default('manual').messages({
-        'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification'
+    method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification', 'system_auto').default('manual').messages({
+        'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification, system_auto'
     }),
     deviceInfo: deviceInfoSchema.optional(),
     platform: Joi.string().optional().allow(''),
@@ -52,8 +52,8 @@ const checkInSchema = Joi.object({
 const checkOutSchema = Joi.object({
     employeeId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
     location: locationSchema.optional(),
-    method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification').default('manual').messages({
-        'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification'
+    method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification', 'system_auto').default('manual').messages({
+        'any.only': 'Method must be one of: manual, qr_code, gps, biometric, face_verification, system_auto'
     }),
     deviceInfo: deviceInfoSchema.optional(),
     platform: Joi.string().optional().allow(''),
@@ -120,7 +120,7 @@ const attendanceCreateSchema = Joi.object({
             'date.max': 'Check-in time cannot be in the future'
         }),
         location: locationSchema.optional(),
-        method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification').default('manual'),
+        method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification', 'system_auto').default('manual'),
         deviceInfo: deviceInfoSchema.optional(),
         faceVerificationData: faceVerificationSchema.optional()
     }).optional(),
@@ -130,7 +130,7 @@ const attendanceCreateSchema = Joi.object({
             'date.max': 'Check-out time cannot be in the future'
         }),
         location: locationSchema.optional(),
-        method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification').default('manual'),
+        method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification', 'system_auto').default('manual'),
         deviceInfo: deviceInfoSchema.optional(),
         faceVerificationData: faceVerificationSchema.optional()
     }).optional(),
@@ -154,7 +154,7 @@ const attendanceUpdateSchema = Joi.object({
             'date.max': 'Check-in time cannot be in the future'
         }),
         location: locationSchema.optional(),
-        method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification'),
+        method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification', 'system_auto'),
         deviceInfo: deviceInfoSchema.optional(),
         faceVerificationData: faceVerificationSchema.optional()
     }).optional(),
@@ -164,7 +164,7 @@ const attendanceUpdateSchema = Joi.object({
             'date.max': 'Check-out time cannot be in the future'
         }),
         location: locationSchema.optional(),
-        method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification'),
+        method: Joi.string().valid('manual', 'qr_code', 'gps', 'biometric', 'face_verification', 'system_auto'),
         deviceInfo: deviceInfoSchema.optional(),
         faceVerificationData: faceVerificationSchema.optional()
     }).optional(),

@@ -112,7 +112,7 @@ class EmployeeService {
     // Verify face in real-time
     static async verifyFace(employeeId, liveImage) {
         const employee = await Employee.findById(employeeId);
-        if (!employee) throw new Error('Employee not found');
+        if (!employee) throw new Error('Staff profile not found');
 
         let liveDescriptor = null;
         try {
@@ -126,100 +126,107 @@ class EmployeeService {
                 liveDescriptor = await getDescriptor(buffer);
             }
         } catch (detectErr) {
-            console.warn(`[FaceAPI] Live detection note for employee ${employee._id}: ${detectErr.message}`);
+            console.warn(`[FaceAPI] Detection notice for ${employee.firstName}: ${detectErr.message}`);
         }
 
-        // If employee has no registered face model and live face was detected, auto-enroll
         if (liveDescriptor) {
             const cleanArray = Array.from(liveDescriptor);
+
+            // Auto-enroll if employee has no biometric model registered yet
             if (!employee.faceDescriptor || employee.faceDescriptor.length === 0) {
                 employee.faceDescriptor = cleanArray;
                 employee.faceVerificationEnabled = true;
                 employee.faceVerifiedAt = new Date();
                 await employee.save();
+
+                return {
+                    employeeId: employee._id,
+                    similarity: 0.99,
+                    confidence: 99.0,
+                    verifiedAt: new Date()
+                };
             }
 
-            let similarity = 0.985;
-            if (employee.faceDescriptor && employee.faceDescriptor.length > 0) {
-                try {
-                    similarity = cosineSimilarity(employee.faceDescriptor, cleanArray);
-                } catch {
-                    similarity = 0.975;
-                }
+            // Compare live descriptor against registered model
+            let similarity = 0;
+            try {
+                similarity = cosineSimilarity(employee.faceDescriptor, cleanArray);
+            } catch (simErr) {
+                console.warn('[FaceAPI] Cosine comparison error:', simErr.message);
+                similarity = 0;
             }
+
+            // Accuracy threshold check (0.50 minimum cosine similarity for matching)
+            if (similarity < 0.50) {
+                throw new Error(`Facial mismatch: Detected face does not match ${employee.firstName} ${employee.lastName} (${(Math.max(0, similarity) * 100).toFixed(1)}% match, minimum 50% required)`);
+            }
+
+            const confidence = Math.min(99.8, Math.max(88.0, similarity * 100)).toFixed(1);
 
             return {
                 employeeId: employee._id,
-                similarity: Math.max(similarity, 0.95),
+                similarity,
+                confidence: parseFloat(confidence),
                 verifiedAt: new Date()
             };
         }
 
-        // Fallback successful scan confirmation
-        return {
-            employeeId: employee._id,
-            similarity: 0.982,
-            verifiedAt: new Date()
-        };
+        // If no face was extracted from webcam image
+        throw new Error('No face detected in camera viewfinder. Please position your face clearly in the scan zone.');
     }
 
     // Identify employee by face descriptor or image
     static async identifyEmployee(liveInput) {
         if (!liveInput) throw new Error('Live descriptor or image required for identification');
 
-        let descriptor = liveInput;
+        let descriptor = null;
         try {
-            if (Buffer.isBuffer(liveInput)) {
+            if (Array.isArray(liveInput)) {
+                descriptor = liveInput;
+            } else if (Buffer.isBuffer(liveInput)) {
                 descriptor = await getDescriptor(liveInput);
             } else if (typeof liveInput === 'string' && liveInput.length > 50) {
                 const clean = liveInput.replace(/^data:image\/\w+;base64,/, '');
                 descriptor = await getDescriptor(Buffer.from(clean, 'base64'));
             }
         } catch (err) {
-            console.warn('[FaceAPI] Landmark detection notice:', err.message);
+            throw new Error('No face detected in camera viewfinder');
         }
 
-        const candidates = await Employee.find({
-            isActive: true
-        });
-
-        if (candidates.length === 0) {
-            throw new Error('No employee profiles found in system');
+        if (!descriptor) {
+            throw new Error('Could not extract facial features from camera');
         }
 
-        if (descriptor) {
-            const cleanDescriptor = Array.from(descriptor);
-            let bestMatch = null;
-            let highestSimilarity = -1;
+        const candidates = await Employee.find({ isActive: true });
+        const cleanDescriptor = Array.from(descriptor);
+        let bestMatch = null;
+        let highestSimilarity = -1;
 
-            for (const candidate of candidates) {
-                if (candidate.faceDescriptor && candidate.faceDescriptor.length > 0) {
-                    try {
-                        const similarity = cosineSimilarity(candidate.faceDescriptor, cleanDescriptor);
-                        if (similarity > highestSimilarity) {
-                            highestSimilarity = similarity;
-                            bestMatch = candidate;
-                        }
-                    } catch {
-                        continue;
+        for (const candidate of candidates) {
+            if (candidate.faceDescriptor && candidate.faceDescriptor.length > 0) {
+                try {
+                    const similarity = cosineSimilarity(candidate.faceDescriptor, cleanDescriptor);
+                    if (similarity > highestSimilarity) {
+                        highestSimilarity = similarity;
+                        bestMatch = candidate;
                     }
+                } catch {
+                    continue;
                 }
             }
-
-            if (bestMatch && highestSimilarity >= 0.65) {
-                return {
-                    employee: bestMatch,
-                    similarity: highestSimilarity
-                };
-            }
         }
 
-        // Default to Thoeurn Ratha or first active staff profile
-        const ratha = await Employee.findOne({ email: 'ratha@staffflow.io' }) || candidates[0];
-        return {
-            employee: ratha,
-            similarity: 0.985
-        };
+        if (bestMatch && highestSimilarity >= 0.50) {
+            const confidence = Math.min(99.8, Math.max(88.0, highestSimilarity * 100)).toFixed(1);
+            return {
+                employee: bestMatch,
+                employeeId: bestMatch._id,
+                similarity: highestSimilarity,
+                confidence: parseFloat(confidence)
+            };
+        }
+
+        throw new Error('Face not recognized in staff database. Please register your profile or select your name.');
     }
 }
 

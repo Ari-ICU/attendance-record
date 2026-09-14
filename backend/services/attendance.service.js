@@ -51,11 +51,7 @@ class AttendanceService {
         if (value.method === 'face_verification') {
             const faceInput = value.faceDescriptor || value.faceImage || null;
             if (faceInput) {
-                try {
-                    faceData = await EmployeeService.verifyFace(employee._id, faceInput);
-                } catch (faceErr) {
-                    console.warn('[Attendance] Face verification fallback:', faceErr.message);
-                }
+                faceData = await EmployeeService.verifyFace(employee._id, faceInput);
             }
         }
 
@@ -156,11 +152,7 @@ class AttendanceService {
         if (value.method === 'face_verification') {
             const faceInput = value.faceDescriptor || value.faceImage || null;
             if (faceInput) {
-                try {
-                    faceData = await EmployeeService.verifyFace(employee._id, faceInput);
-                } catch (faceErr) {
-                    console.warn('[Attendance/Out] Face verification fallback:', faceErr.message);
-                }
+                faceData = await EmployeeService.verifyFace(employee._id, faceInput);
             }
         }
 

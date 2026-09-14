@@ -18,7 +18,7 @@ const attendanceSchema = new mongoose.Schema({
             longitude: Number,
             address: { type: String, trim: true }
         },
-        method: { type: String, enum: ['manual', 'qr_code', 'gps', 'biometric', 'face_verification'], default: 'manual' },
+        method: { type: String, enum: ['manual', 'qr_code', 'gps', 'biometric', 'face_verification', 'system_auto'], default: 'manual' },
         ipAddress: String,
         deviceInfo: { userAgent: String, platform: String, browser: String },
         faceVerificationData: { verificationId: String, confidenceScore: Number },
@@ -31,7 +31,7 @@ const attendanceSchema = new mongoose.Schema({
             longitude: Number,
             address: { type: String, trim: true }
         },
-        method: { type: String, enum: ['manual', 'qr_code', 'gps', 'biometric', 'face_verification'], default: 'manual' },
+        method: { type: String, enum: ['manual', 'qr_code', 'gps', 'biometric', 'face_verification', 'system_auto'], default: 'manual' },
         ipAddress: String,
         deviceInfo: { userAgent: String, platform: String, browser: String },
         faceVerificationData: { verificationId: String, confidenceScore: Number },

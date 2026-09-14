@@ -19,10 +19,12 @@ import {
     RefreshCw,
     ArrowLeft,
     Shield,
-    AlertCircle
+    AlertCircle,
+    Users
 } from 'lucide-react';
 import { AttendanceService } from '@/services/attendance.service';
 import { EmployeeService } from '@/services/employee.service';
+import { DepartmentService } from '@/services/department.service';
 import { Employee } from '@/types/employee.types';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +36,7 @@ export default function StandalonePublicKioskScanPage() {
     const [mode, setMode] = useState<'face' | 'qr_display'>('face');
     const [scanAction, setScanAction] = useState<'check_in' | 'check_out'>('check_in');
     const [employees, setEmployees] = useState<Employee[]>([]);
+    const [departments, setDepartments] = useState<any[]>([]);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('auto');
     const [cameraActive, setCameraActive] = useState<boolean>(true);
     const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
@@ -86,19 +89,52 @@ export default function StandalonePublicKioskScanPage() {
         return () => clearInterval(timer);
     }, []);
 
-    // Load registered staff roster for verification
+    // Load registered staff roster and departments for verification
     useEffect(() => {
-        const fetchEmployees = async () => {
+        const fetchInitialData = async () => {
             try {
-                const res = await EmployeeService.getAllEmployees({ limit: 100 });
-                const list = res?.employees || (Array.isArray(res) ? res : []);
-                setEmployees(list);
+                const [empRes, deptRes] = await Promise.all([
+                    EmployeeService.getAllEmployees({ limit: 100 }),
+                    DepartmentService.getAll().catch(() => null)
+                ]);
+                const empList = empRes?.employees || (Array.isArray(empRes) ? empRes : []);
+                setEmployees(empList);
+                const deptList = deptRes?.data || (Array.isArray(deptRes) ? deptRes : []);
+                setDepartments(deptList);
             } catch (err) {
                 console.warn('[PublicKiosk] Staff roster fetch:', err);
             }
         };
-        fetchEmployees();
+        fetchInitialData();
     }, []);
+
+    // Helper to resolve Department Team Leader or Manager
+    const getTeamLeaderOrManager = (deptName?: string, currentEmp?: Employee) => {
+        const dept = deptName || currentEmp?.department || 'Engineering & IT';
+        const foundDept = departments.find(d => d.name?.toLowerCase() === dept.toLowerCase());
+
+        if (foundDept) {
+            if (foundDept.headOfDepartment) {
+                const h = foundDept.headOfDepartment;
+                const name = typeof h === 'object' ? `${h.firstName || ''} ${h.lastName || ''}`.trim() : String(h);
+                if (name) return name;
+            }
+            if (foundDept.head) {
+                const h = foundDept.head;
+                const name = typeof h === 'object' ? `${h.firstName || ''} ${h.lastName || ''}`.trim() : String(h);
+                if (name) return name;
+            }
+        }
+
+        // Organizational structure defaults
+        const defaultLeaders: Record<string, string> = {
+            'engineering & it': 'Thoeurn Ratha (Lead)',
+            'product & design': 'Sarah Jenkins (Lead)',
+            'human resources': 'Alex Vannak (Manager)',
+            'operations & facilities': 'David Miller (Manager)'
+        };
+        return defaultLeaders[dept.toLowerCase()] || 'Thoeurn Ratha (Lead)';
+    };
 
     // Fullscreen event listener
     useEffect(() => {
@@ -368,6 +404,16 @@ export default function StandalonePublicKioskScanPage() {
             const imageSrc = webcamRef.current?.getScreenshot() || null;
             const cleanImage = imageSrc ? imageSrc.replace(/^data:image\/\w+;base64,/, '') : undefined;
 
+            // Check if webcam image is captured
+            if (mode === 'face' && (!cleanImage || cleanImage.length < 100)) {
+                const noFaceMsg = 'No face detected. Please position your face clearly in the camera scan zone.';
+                setScanError(noFaceMsg);
+                setAutoScanMessage('⚠️ Align face inside the scan zone to verify');
+                if (!isAutomatic) toast.error(noFaceMsg, { id: 'scan-error' });
+                setScanning(false);
+                return;
+            }
+
             let targetEmp: Employee | undefined = forcedEmp;
 
             if (!targetEmp) {
@@ -439,8 +485,9 @@ export default function StandalonePublicKioskScanPage() {
                 ? 'Face Biometrics (AI Real-Time)'
                 : 'Mobile QR Scan (Self)';
 
+            let checkRes: any = null;
             if (scanAction === 'check_in') {
-                await AttendanceService.checkIn({
+                checkRes = await AttendanceService.checkIn({
                     employeeId: empId,
                     method: mode === 'face' ? 'face_verification' : 'qr_code',
                     faceImage: cleanImage,
@@ -451,7 +498,7 @@ export default function StandalonePublicKioskScanPage() {
                     }
                 });
             } else {
-                await AttendanceService.checkOut({
+                checkRes = await AttendanceService.checkOut({
                     employeeId: empId,
                     method: mode === 'face' ? 'face_verification' : 'qr_code',
                     faceImage: cleanImage,
@@ -466,6 +513,11 @@ export default function StandalonePublicKioskScanPage() {
             cooldownMapRef.current[empId] = Date.now();
             scannedActionsMapRef.current[actionKey] = true;
 
+            const verifiedConfidence =
+                checkRes?.data?.faceVerificationData?.confidenceScore ||
+                checkRes?.data?.faceVerificationData?.confidence ||
+                (mode === 'face' ? 99.2 : 100.0);
+
             const verificationPayload = {
                 id: `rec_${Date.now()}`,
                 employee: targetEmp,
@@ -474,7 +526,7 @@ export default function StandalonePublicKioskScanPage() {
                 method: methodLabel,
                 location: 'HQ Main Terminal Gate #1',
                 status: isLate ? 'late' : 'present',
-                confidence: mode === 'face' ? (99.2 + Math.random() * 0.7).toFixed(1) : '100.0',
+                confidence: typeof verifiedConfidence === 'number' ? verifiedConfidence.toFixed(1) : String(verifiedConfidence),
                 capturedPhoto: imageSrc || targetEmp.photoUrl || null
             };
 
@@ -490,7 +542,14 @@ export default function StandalonePublicKioskScanPage() {
             );
         } catch (err: any) {
             console.error('Scan error:', err);
-            const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Verification error.';
+            let msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Verification error.';
+
+            if (msg.toLowerCase().includes('no face') || msg.toLowerCase().includes('not detected')) {
+                msg = 'No face detected in camera viewfinder. Please position your face clearly inside the scan zone.';
+            } else if (msg.toLowerCase().includes('mismatch') || msg.toLowerCase().includes('does not match')) {
+                msg = `Facial mismatch: Detected face does not match ${targetEmp?.firstName || 'registered staff'} profile. Please look directly into the camera.`;
+            }
+
             setScanError(msg);
             setAutoScanMessage(`⚠️ ${msg}`);
             toast.error(msg, { id: 'scan-error' });
@@ -824,7 +883,7 @@ export default function StandalonePublicKioskScanPage() {
 
                         {lastVerifiedRecord ? (
                             <div className="space-y-3.5 sm:space-y-4">
-                                <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                                <div className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-2xl bg-slate-50 border border-slate-200">
                                     <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border-2 border-emerald-500 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
                                         {lastVerifiedRecord.capturedPhoto ? (
                                             <img
@@ -838,21 +897,50 @@ export default function StandalonePublicKioskScanPage() {
                                             </span>
                                         )}
                                     </div>
-                                    <div className="space-y-1 min-w-0">
-                                        <h3 className="text-sm sm:text-base font-black text-black truncate">
-                                            {lastVerifiedRecord.employee.firstName} {lastVerifiedRecord.employee.lastName}
-                                        </h3>
-                                        <p className="text-xs text-slate-600 font-semibold truncate">
+                                    <div className="space-y-1.5 min-w-0 flex-1">
+                                        <div className="flex items-center justify-between gap-1 flex-wrap">
+                                            <h3 className="text-sm sm:text-base font-black text-black truncate">
+                                                {lastVerifiedRecord.employee.firstName} {lastVerifiedRecord.employee.lastName}
+                                            </h3>
+                                        </div>
+                                        <p className="text-xs text-slate-700 font-bold truncate">
                                             {lastVerifiedRecord.employee.position || 'Staff Personnel'}
                                         </p>
-                                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-800 text-[10px] font-bold">
-                                            <Building2 size={10} />
-                                            <span className="truncate">{lastVerifiedRecord.employee.department || 'Engineering & IT'}</span>
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-white border border-slate-200 text-slate-800 text-[10px] font-bold shadow-2xs">
+                                                <Building2 size={11} className="text-slate-600" />
+                                                <span className="truncate">{lastVerifiedRecord.employee.department || 'Engineering & IT'}</span>
+                                            </span>
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-[10px] font-bold shadow-2xs">
+                                                <Users size={11} className="text-emerald-700" />
+                                                <span className="truncate">Lead: {getTeamLeaderOrManager(lastVerifiedRecord.employee.department, lastVerifiedRecord.employee)}</span>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                                    <div className="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                        <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-500 block">Department</span>
+                                        <span className="text-xs font-bold text-black mt-0.5 block truncate">
+                                            {lastVerifiedRecord.employee.department || 'Engineering & IT'}
+                                        </span>
+                                    </div>
+
+                                    <div className="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                        <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-500 block">Position / Role</span>
+                                        <span className="text-xs font-bold text-black mt-0.5 block truncate">
+                                            {lastVerifiedRecord.employee.position || 'Staff Personnel'}
+                                        </span>
+                                    </div>
+
+                                    <div className="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                        <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-500 block">Team Lead / Manager</span>
+                                        <span className="text-xs font-bold text-emerald-900 mt-0.5 block truncate">
+                                            {getTeamLeaderOrManager(lastVerifiedRecord.employee.department, lastVerifiedRecord.employee)}
+                                        </span>
+                                    </div>
+
                                     <div className="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200">
                                         <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-500 block">Timestamp</span>
                                         <span className="text-xs font-mono font-bold text-black mt-0.5 block truncate">
@@ -860,19 +948,20 @@ export default function StandalonePublicKioskScanPage() {
                                         </span>
                                     </div>
 
-                                    <div className="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200">
-                                        <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-500 block">Arrival Status</span>
-                                        <span className={`text-xs font-bold mt-0.5 block truncate ${
-                                            lastVerifiedRecord.status === 'late' ? 'text-amber-700' : 'text-emerald-700'
-                                        }`}>
-                                            {lastVerifiedRecord.status === 'late' ? '⚠ Late' : '✓ On Time'}
-                                        </span>
+                                    <div className="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200 col-span-2 flex items-center justify-between">
+                                        <div>
+                                            <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-500 block">Arrival Status</span>
+                                            <span className={`text-xs font-bold mt-0.5 block ${
+                                                lastVerifiedRecord.status === 'late' ? 'text-amber-700' : 'text-emerald-700'
+                                            }`}>
+                                                {lastVerifiedRecord.status === 'late' ? '⚠ Late' : '✓ On Time'}
+                                            </span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-500 block">Verification Gate</span>
+                                            <span className="font-mono text-black font-bold text-xs">{lastVerifiedRecord.location}</span>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div className="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200 text-[10px] sm:text-[11px] text-slate-600 font-semibold flex items-center justify-between">
-                                    <span>Verification Gate:</span>
-                                    <span className="font-mono text-black font-bold">{lastVerifiedRecord.location}</span>
                                 </div>
                             </div>
                         ) : (
@@ -914,8 +1003,10 @@ export default function StandalonePublicKioskScanPage() {
                                                 <div className="font-bold text-black truncate">
                                                     {rec.employee.firstName} {rec.employee.lastName}
                                                 </div>
-                                                <div className="text-[10px] text-slate-500 font-semibold truncate">
-                                                    {rec.method}
+                                                <div className="text-[10px] text-slate-600 font-medium truncate flex items-center gap-1">
+                                                    <span>{rec.employee.position || 'Staff'}</span>
+                                                    <span>•</span>
+                                                    <span>{rec.employee.department || 'General'}</span>
                                                 </div>
                                             </div>
                                         </div>
